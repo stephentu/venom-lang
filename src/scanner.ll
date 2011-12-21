@@ -76,6 +76,10 @@ LSTRCHAR [^\n']
 "def"   { return token::DEF;   }
 "class" { return token::CLASS; }
 
+ /* Operator tokens */
+"<<"    { return token::LSHIFT; }
+">>"    { return token::RSHIFT; }
+
 "#"[^\n]* {
     yylloc->step();
 }

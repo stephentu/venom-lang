@@ -74,6 +74,9 @@
 %token   DEF            "def"
 %token   CLASS          "class"
 
+%token   LSHIFT         "<<"
+%token   RSHIFT         ">>"
+
 %token   <integerVal>   INTEGER
 %token   <doubleVal>    DOUBLE
 %token   <stringVal>    STRING
@@ -82,7 +85,9 @@
 %type <astNode> start
 
 %type <expNode> intlit doublelit strlit arraylit dictlit
-                pairkey pairvalue variable expr
+                pairkey pairvalue variable expr literal atom
+                unop binop_mult binop_add binop_shift binop_and
+                binop_xor binop_or
 
 %type <exprs>   exprlist
 %type <pairs>   pairlist
@@ -110,12 +115,53 @@ start  : /* empty */
        | start expr EOL
        | start expr END
 
-expr   : intlit
-       | doublelit
-       | strlit
-       | arraylit
-       | dictlit
-       | variable
+expr   : binop_or
+
+literal : intlit
+        | doublelit
+        | strlit
+        | arraylit
+        | dictlit
+
+atom : literal
+     | variable
+
+unop : atom
+     | '-' unop { $$ = new ast::UnopNode($2, ast::UnopNode::MINUS);   }
+     | '+' unop { $$ = new ast::UnopNode($2, ast::UnopNode::PLUS);    }
+     | '~' unop { $$ = new ast::UnopNode($2, ast::UnopNode::BIT_NOT); }
+
+binop_mult : unop
+           | binop_mult '*' unop
+             { $$ = new ast::BinopNode($1, $3, ast::BinopNode::MULT); }
+           | binop_mult '/' unop
+             { $$ = new ast::BinopNode($1, $3, ast::BinopNode::DIV);  }
+           | binop_mult '%' unop
+             { $$ = new ast::BinopNode($1, $3, ast::BinopNode::MOD);  }
+
+binop_add : binop_mult
+          | binop_add '+' binop_mult
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::ADD); }
+          | binop_add '-' binop_mult
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::SUB); }
+
+binop_shift : binop_add
+            | binop_shift "<<" binop_add
+              { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_LSHIFT); }
+            | binop_shift ">>" binop_add
+              { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_RSHIFT); }
+
+binop_and : binop_shift
+          | binop_and '&' binop_shift
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_AND); }
+
+binop_xor : binop_and
+          | binop_xor '^' binop_and
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_XOR); }
+
+binop_or : binop_xor
+         | binop_or '|' binop_xor
+           { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_OR); }
 
 intlit : INTEGER { $$ = new ast::IntLiteralNode($1); }
 

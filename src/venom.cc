@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
   Driver driver(pctx);
   bool readfile = false;
 
-  for(int ai = 1; ai < argc; ++ai) {
+  for (int ai = 1; ai < argc; ++ai) {
     if (argv[ai] == string ("-p")) {
       driver.trace_parsing = true;
     } else if (argv[ai] == string ("-s")) {
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         return 0;
       }
 
-      bool result = driver.parse_stream(infile, argv[ai]);
+      driver.parse_stream(infile, argv[ai]);
       readfile = true;
     }
   }
@@ -34,6 +34,6 @@ int main(int argc, char **argv) {
 
   string line;
   while (cout << "input: " && getline(cin, line) && !line.empty()) {
-    bool result = driver.parse_string(line, "input");
+    driver.parse_string(line, "input");
   }
 }

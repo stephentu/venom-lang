@@ -21,4 +21,3 @@ private:
 }
 
 #endif /* VENOM_AST_VARIABLE_H */
-
