@@ -8,12 +8,10 @@
 
 namespace venom {
 
-Driver::Driver(class CalcContext& _calc)
+Driver::Driver(ParseContext& ctx)
     : trace_scanning(false),
       trace_parsing(false),
-      calc(_calc)
-{
-}
+      ctx(ctx) {}
 
 bool Driver::parse_stream(std::istream& in, const std::string& sname)
 {

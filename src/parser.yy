@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "expression.h"
+#include <ast/expression/include.h>
 
 %}
 
@@ -54,22 +54,39 @@
     int64_t         integerVal;
     double          doubleVal;
     std::string*    stringVal;
-    CalcNode*       calcnode;
+
+    ast::ASTNode* astNode;
+
+    ast::ASTExpressionNode* expNode;
+    ast::ExprNodeVec*       exprs;
+    ast::DictPairVec*       pairs;
+    ast::DictPair*          pair;
 }
 
-%token               END       0
-%token               EOL
-%token <integerVal>  INTEGER
-%token <doubleVal>   DOUBLE
-%token <stringVal>   STRING
-%token <stringVal>   IDENTIFIER
+%token   END            0
+%token   EOL
 
-%type <calcnode>  constant variable
-%type <calcnode>  atomexpr powexpr unaryexpr mulexpr addexpr expr
+%token   IF             "if"
+%token   ELSE           "else"
+%token   ELSIF          "elsif"
+%token   FOR            "for"
+%token   WHILE          "while"
+%token   DEF            "def"
+%token   CLASS          "class"
 
-%destructor { delete $$; } IDENTIFIER
-%destructor { delete $$; } constant variable
-%destructor { delete $$; } atomexpr powexpr unaryexpr mulexpr addexpr expr
+%token   <integerVal>   INTEGER
+%token   <doubleVal>    DOUBLE
+%token   <stringVal>    STRING
+%token   <stringVal>    IDENTIFIER
+
+%type <astNode> start
+
+%type <expNode> intlit doublelit strlit arraylit dictlit
+                pairkey pairvalue variable expr
+
+%type <exprs>   exprlist
+%type <pairs>   pairlist
+%type <pair>    pair
 
 %{
 
@@ -86,128 +103,52 @@
 
 %% /*** Grammar Rules ***/
 
-constant : INTEGER
-           {
-         $$ = new CNConstant($1);
-     }
-         | DOUBLE
-           {
-         $$ = new CNConstant($1);
-     }
-
-variable : IDENTIFIER
-           {
-         if (!driver.calc.existsVariable(*$1)) {
-       error(yyloc, std::string("Unknown variable \"") + *$1 + "\"");
-       delete $1;
-       YYERROR;
-         }
-         else {
-       $$ = new CNConstant( driver.calc.getVariable(*$1) );
-       delete $1;
-         }
-     }
-
-atomexpr : constant
-           {
-         $$ = $1;
-     }
-         | variable
-           {
-         $$ = $1;
-     }
-         | '(' expr ')'
-           {
-         $$ = $2;
-     }
-
-powexpr  : atomexpr
-          {
-        $$ = $1;
-    }
-        | atomexpr '^' powexpr
-          {
-        $$ = new CNPower($1, $3);
-    }
-
-unaryexpr : powexpr
-            {
-    $$ = $1;
-      }
-          | '+' powexpr
-            {
-    $$ = $2;
-      }
-          | '-' powexpr
-            {
-    $$ = new CNNegate($2);
-      }
-
-mulexpr : unaryexpr
-          {
-        $$ = $1;
-    }
-        | mulexpr '*' unaryexpr
-          {
-        $$ = new CNMultiply($1, $3);
-    }
-        | mulexpr '/' unaryexpr
-          {
-        $$ = new CNDivide($1, $3);
-    }
-        | mulexpr '%' unaryexpr
-          {
-        $$ = new CNModulo($1, $3);
-    }
-
-addexpr : mulexpr
-          {
-        $$ = $1;
-    }
-        | addexpr '+' mulexpr
-          {
-        $$ = new CNAdd($1, $3);
-    }
-        | addexpr '-' mulexpr
-          {
-        $$ = new CNSubtract($1, $3);
-    }
-
-expr  : addexpr
-          {
-        $$ = $1;
-    }
-
-assignment : IDENTIFIER '=' expr
-             {
-     driver.calc.variables[*$1] = $3->evaluate();
-     std::cout << "Setting variable " << *$1
-         << " = " << driver.calc.variables[*$1] << "\n";
-     delete $1;
-     delete $3;
-       }
-
 start  : /* empty */
-        | start ';'
-        | start EOL
-  | start assignment ';'
-  | start assignment EOL
-  | start assignment END
-        | start expr ';'
-          {
-        driver.calc.expressions.push_back($2);
-    }
-        | start expr EOL
-          {
-        driver.calc.expressions.push_back($2);
-    }
-        | start expr END
-          {
-        driver.calc.expressions.push_back($2);
-    }
+       | start ';'
+       | start EOL
+       | start expr ';'
+       | start expr EOL
+       | start expr END
+
+expr   : intlit
+       | doublelit
+       | strlit
+       | arraylit
+       | dictlit
+       | variable
+
+intlit : INTEGER { $$ = new ast::IntLiteralNode($1); }
+
+doublelit : DOUBLE { $$ = new ast::DoubleLiteralNode($1); }
+
+strlit : STRING { $$ = new ast::StringLiteralNode(*$1); delete $1; }
+
+arraylit : '[' exprlist ']' { $$ = new ast::ArrayLiteralNode(*$2); delete $2; }
+
+exprlist : /* empty */       { $$ = new ast::ExprNodeVec;  }
+         | expr              { $$ = ast::MakeExprVec1($1); }
+         | expr ',' exprlist { $3->push_back($1); $$ = $3; }
+
+dictlit : '{' pairlist '}' { $$ = new ast::DictLiteralNode(*$2); delete $2; }
+
+pairkey : intlit
+        | doublelit
+        | strlit
+        | variable
+
+pairvalue : expr
+
+pair : pairkey ':' pairvalue { $$ = new ast::DictPair($1, $3); }
+
+pairlist : /* empty */       { $$ = new ast::DictPairVec; }
+         | pair              { $$ = ast::MakeDictPairVec1(*$1); delete $1; }
+         | pair ',' pairlist { $3->push_back(*$1); $$ = $3; delete $1; }
+
+variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
 
 %% /*** Additional Code ***/
 
-void venom::Parser::error(const Parser::location_type& l, const std::string& m) {
+void venom::Parser::error(const Parser::location_type& l,
+                          const std::string& m) {
     driver.error(l, m);
 }

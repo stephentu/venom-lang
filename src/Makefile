@@ -1,15 +1,16 @@
-
 CXX = g++
 LEX = flex
 YACC = bison
 
-CXXFLAGS = -Wall -g 
+PWD := $(shell pwd)
+
+CXXFLAGS = -Wall -g  -I$(PWD)
 LDFLAGS = 
 
 HEADERS = driver.h parser.h scanner.h expression.h \
     y.tab.h
 
-all: exprtest
+all: venom
 
 # Generate scanner and parser
 
@@ -26,8 +27,10 @@ scanner.cc: scanner.ll
 
 # Link executable
 
-exprtest: exprtest.o parser.o scanner.o driver.o
-	$(CXX) $(LDFLAGS) -o $@ exprtest.o parser.o scanner.o driver.o
+venom: venom.o parser.o scanner.o driver.o
+	$(CXX) $(LDFLAGS) -o $@ venom.o parser.o scanner.o driver.o
+
+GENERATED = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
 
 clean:
-	rm -f exprtest *.o parser.cc parser.h scanner.cc location.hh position.hh stack.hh
+	rm -f venom *.o $(GENERATED)

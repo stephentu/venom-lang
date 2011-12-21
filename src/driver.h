@@ -6,10 +6,17 @@
 #include <string>
 #include <vector>
 
-// forward declaration
-class CalcContext;
-
 namespace venom {
+
+/** Forward decl of ASTNode */
+namespace ast {
+  class ASTNode;
+}
+
+class ParseContext {
+public:
+  ast::ASTNode *root;
+};
 
 /** The Driver class brings together all components. It creates an instance of
  * the Parser and Scanner classes and connects them. Then the input stream is
@@ -21,7 +28,7 @@ class Driver
 {
 public:
     /// construct a new parser driver context
-    Driver(class CalcContext& calc);
+    Driver(class ParseContext& ctx);
 
     /// enable debug output in the flex scanner
     bool trace_scanning;
@@ -73,7 +80,7 @@ public:
 
     /** Reference to the calculator context filled during parsing of the
      * expressions. */
-    class CalcContext& calc;
+    ParseContext& ctx;
 };
 
 } // namespace venom

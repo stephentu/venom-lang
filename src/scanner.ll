@@ -67,6 +67,15 @@ LSTRCHAR [^\n']
     yylloc->step();
 %}
 
+ /* Keywords */
+"if"    { return token::IF;    }
+"else"  { return token::ELSE;  }
+"elsif" { return token::ELSIF; }
+"for"   { return token::FOR;   }
+"while" { return token::WHILE; }
+"def"   { return token::DEF;   }
+"class" { return token::CLASS; }
+
 "#"[^\n]* {
     yylloc->step();
 }
@@ -153,4 +162,4 @@ int VenomFlexLexer::yylex() { return 0; }
 
 int VenomFlexLexer::yywrap() { return 1; }
 
-/* vim: set ft=lex */
+/* vim: set ft=lex : */
