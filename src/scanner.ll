@@ -7,8 +7,8 @@
 #include "scanner.h"
 
 /* import the parser's token type into a local typedef */
-typedef si::Parser::token      token;
-typedef si::Parser::token_type token_type;
+typedef venom::Parser::token      token;
+typedef venom::Parser::token_type token_type;
 
 /* By default yylex returns int, we use token_type. Unfortunately yyterminate
  * by default returns 0, which is not of token_type. */
@@ -25,8 +25,8 @@ typedef si::Parser::token_type token_type;
 /* enable c++ scanner class generation */
 %option c++
 
-/* change the name of the scanner class. results in "SiFlexLexer" */
-%option prefix="Si"
+/* change the name of the scanner class. results in "VenomFlexLexer" */
+%option prefix="Venom"
 
 /* the manual says "somewhat more optimized" */
 %option batch
@@ -56,6 +56,9 @@ EXPFLOAT ([0-9]|{POINTFLOAT})[eE][+-]?[0-9]+
 
 IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
 
+STRCHAR ([^\n\\"]|\\.)
+LSTRCHAR [^\n']
+
 %% /*** Tokens part ***/
 
  /* code to place at the beginning of yylex() */
@@ -63,6 +66,10 @@ IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
     // reset location
     yylloc->step();
 %}
+
+"#"[^\n]* {
+    yylloc->step();
+}
 
 0{OCTDIGIT}+ {
     yylval->integerVal = strtol(yytext, NULL, 8);
@@ -82,6 +89,16 @@ IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
 {POINTFLOAT}|{EXPFLOAT} {
     yylval->doubleVal = strtod(yytext, NULL);
     return token::DOUBLE;
+}
+
+\"{STRCHAR}*\" {
+    yylval->stringVal = new std::string(yytext + 1, yyleng - 2);
+    return token::STRING;
+}
+
+'{LSTRCHAR}*' {
+    yylval->stringVal = new std::string(yytext + 1, yyleng - 2);
+    return token::STRING;
 }
 
 {IDENTIFIER} {
@@ -107,10 +124,10 @@ IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
 
 %% /*** Additional Code ***/
 
-namespace si {
+namespace venom {
 
 Scanner::Scanner(std::istream* in, std::ostream* out)
-    : SiFlexLexer(in, out) {}
+    : VenomFlexLexer(in, out) {}
 
 Scanner::~Scanner() {}
 
@@ -118,15 +135,15 @@ void Scanner::set_debug(bool b) { yy_flex_debug = b; }
 
 }
 
-/* This implementation of SiFlexLexer::yylex() is required to fill the
- * vtable of the class SiFlexLexer. We define the scanner's main yylex
+/* This implementation of VenomFlexLexer::yylex() is required to fill the
+ * vtable of the class VenomFlexLexer. We define the scanner's main yylex
  * function via YY_DECL to reside in the Scanner class instead. */
 
 #ifdef yylex
 #undef yylex
 #endif
 
-int SiFlexLexer::yylex() { return 0; }
+int VenomFlexLexer::yylex() { return 0; }
 
 /* When the scanner receives an end-of-file indication from YY_INPUT, it then
  * checks the yywrap() function. If yywrap() returns false (zero), then it is
@@ -134,4 +151,6 @@ int SiFlexLexer::yylex() { return 0; }
  * another input file, and scanning continues. If it returns true (non-zero),
  * then the scanner terminates, returning 0 to its caller. */
 
-int SiFlexLexer::yywrap() { return 1; }
+int VenomFlexLexer::yywrap() { return 1; }
+
+/* vim: set ft=lex */

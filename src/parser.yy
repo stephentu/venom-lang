@@ -29,7 +29,7 @@
 %skeleton "lalr1.cc"
 
 /* namespace to enclose parser in */
-%name-prefix="si"
+%name-prefix="venom"
 
 /* set the parser's class identifier */
 %define "parser_class_name" "Parser"
@@ -57,10 +57,11 @@
     CalcNode*       calcnode;
 }
 
-%token      END       0
-%token      EOL
-%token <integerVal>   INTEGER
+%token               END       0
+%token               EOL
+%token <integerVal>  INTEGER
 %token <doubleVal>   DOUBLE
+%token <stringVal>   STRING
 %token <stringVal>   IDENTIFIER
 
 %type <calcnode>  constant variable
@@ -207,8 +208,6 @@ start  : /* empty */
 
 %% /*** Additional Code ***/
 
-void si::Parser::error(const Parser::location_type& l,
-          const std::string& m)
-{
+void venom::Parser::error(const Parser::location_type& l, const std::string& m) {
     driver.error(l, m);
 }

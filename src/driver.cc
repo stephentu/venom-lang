@@ -1,4 +1,4 @@
-/** driver.cc Implementation of the si::Driver class. */
+/** driver.cc Implementation of the venom::Driver class. */
 
 #include <fstream>
 #include <sstream>
@@ -6,7 +6,7 @@
 #include "driver.h"
 #include "scanner.h"
 
-namespace si {
+namespace venom {
 
 Driver::Driver(class CalcContext& _calc)
     : trace_scanning(false),
@@ -51,4 +51,4 @@ void Driver::error(const std::string& m)
     std::cerr << m << std::endl;
 }
 
-} // namespace si
+} // namespace venom

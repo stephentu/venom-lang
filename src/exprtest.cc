@@ -1,5 +1,3 @@
-// $Id: exprtest.cc 18 2007-08-19 19:51:52Z tb $
-
 #include <iostream>
 #include <fstream>
 
@@ -9,7 +7,7 @@
 int main(int argc, char *argv[])
 {
     CalcContext calc;
-    si::Driver driver(calc);
+    venom::Driver driver(calc);
     bool readfile = false;
 
     for(int ai = 1; ai < argc; ++ai)

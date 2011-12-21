@@ -1,7 +1,7 @@
-/** driver.h Declaration of the si::Driver class. */
+/** driver.h Declaration of the venom::Driver class. */
 
-#ifndef SI_DRIVER_H
-#define SI_DRIVER_H
+#ifndef VENOM_DRIVER_H
+#define VENOM_DRIVER_H
 
 #include <string>
 #include <vector>
@@ -9,7 +9,7 @@
 // forward declaration
 class CalcContext;
 
-namespace si {
+namespace venom {
 
 /** The Driver class brings together all components. It creates an instance of
  * the Parser and Scanner classes and connects them. Then the input stream is
@@ -76,6 +76,6 @@ public:
     class CalcContext& calc;
 };
 
-} // namespace si
+} // namespace venom
 
-#endif // SI_DRIVER_H
+#endif // VENOM_DRIVER_H
