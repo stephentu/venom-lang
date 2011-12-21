@@ -76,6 +76,13 @@
 
 %token   LSHIFT         "<<"
 %token   RSHIFT         ">>"
+%token   LE             "<="
+%token   GE             ">="
+%token   EQ             "=="
+%token   NEQ            "!="
+%token   AND            "and"
+%token   OR             "or"
+%token   NOT            "not"
 
 %token   <integerVal>   INTEGER
 %token   <doubleVal>    DOUBLE
@@ -86,8 +93,9 @@
 
 %type <expNode> intlit doublelit strlit arraylit dictlit
                 pairkey pairvalue variable expr literal atom
-                unop binop_mult binop_add binop_shift binop_and
-                binop_xor binop_or
+                unop_pm unop_bool binop_mult binop_add binop_shift
+                binop_cmp binop_eq binop_bit_and binop_xor
+                binop_bit_or binop_and binop_or
 
 %type <exprs>   exprlist
 %type <pairs>   pairlist
@@ -125,18 +133,22 @@ literal : intlit
 
 atom : literal
      | variable
+     | '(' expr ')' { $$ = $2; }
 
-unop : atom
-     | '-' unop { $$ = new ast::UnopNode($2, ast::UnopNode::MINUS);   }
-     | '+' unop { $$ = new ast::UnopNode($2, ast::UnopNode::PLUS);    }
-     | '~' unop { $$ = new ast::UnopNode($2, ast::UnopNode::BIT_NOT); }
+unop_pm : atom
+        | '-' unop_pm { $$ = new ast::UnopNode($2, ast::UnopNode::MINUS); }
+        | '+' unop_pm { $$ = new ast::UnopNode($2, ast::UnopNode::PLUS);  }
 
-binop_mult : unop
-           | binop_mult '*' unop
+unop_bool : unop_pm
+          | '~' unop_bool   { $$ = new ast::UnopNode($2, ast::UnopNode::BIT_NOT); }
+          | "not" unop_bool { $$ = new ast::UnopNode($2, ast::UnopNode::CMP_NOT); }
+
+binop_mult : unop_bool
+           | binop_mult '*' unop_bool
              { $$ = new ast::BinopNode($1, $3, ast::BinopNode::MULT); }
-           | binop_mult '/' unop
+           | binop_mult '/' unop_bool
              { $$ = new ast::BinopNode($1, $3, ast::BinopNode::DIV);  }
-           | binop_mult '%' unop
+           | binop_mult '%' unop_bool
              { $$ = new ast::BinopNode($1, $3, ast::BinopNode::MOD);  }
 
 binop_add : binop_mult
@@ -151,17 +163,41 @@ binop_shift : binop_add
             | binop_shift ">>" binop_add
               { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_RSHIFT); }
 
-binop_and : binop_shift
-          | binop_and '&' binop_shift
-            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_AND); }
+binop_cmp : binop_shift
+          | binop_cmp '<' binop_shift
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_LT); }
+          | binop_cmp "<=" binop_shift
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_LE); }
+          | binop_cmp '>' binop_shift
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_GT); }
+          | binop_cmp ">=" binop_shift
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_GE); }
 
-binop_xor : binop_and
-          | binop_xor '^' binop_and
+binop_eq : binop_cmp
+         | binop_eq "==" binop_cmp
+           { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_EQ);  }
+         | binop_eq "!=" binop_cmp
+           { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_NEQ); }
+
+binop_bit_and : binop_eq
+              | binop_bit_and '&' binop_eq
+                { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_AND); }
+
+binop_xor : binop_bit_and
+          | binop_xor '^' binop_bit_and
             { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_XOR); }
 
-binop_or : binop_xor
-         | binop_or '|' binop_xor
-           { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_OR); }
+binop_bit_or : binop_xor
+             | binop_bit_or '|' binop_xor
+               { $$ = new ast::BinopNode($1, $3, ast::BinopNode::BIT_OR); }
+
+binop_and : binop_bit_or
+          | binop_and "and" binop_bit_or
+            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_AND); }
+
+binop_or : binop_and
+         | binop_or "or" binop_and
+           { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_OR); }
 
 intlit : INTEGER { $$ = new ast::IntLiteralNode($1); }
 
@@ -177,11 +213,7 @@ exprlist : /* empty */       { $$ = new ast::ExprNodeVec;  }
 
 dictlit : '{' pairlist '}' { $$ = new ast::DictLiteralNode(*$2); delete $2; }
 
-pairkey : intlit
-        | doublelit
-        | strlit
-        | variable
-
+pairkey   : expr
 pairvalue : expr
 
 pair : pairkey ':' pairvalue { $$ = new ast::DictPair($1, $3); }

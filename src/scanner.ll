@@ -79,6 +79,13 @@ LSTRCHAR [^\n']
  /* Operator tokens */
 "<<"    { return token::LSHIFT; }
 ">>"    { return token::RSHIFT; }
+"<="    { return token::LE;     }
+">="    { return token::GE;     }
+"=="    { return token::EQ;     }
+"!="    { return token::NEQ;    }
+"and"   { return token::AND;    }
+"or"    { return token::OR;     }
+"not"   { return token::NOT;    }
 
 "#"[^\n]* {
     yylloc->step();

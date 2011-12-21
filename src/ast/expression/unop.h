@@ -17,7 +17,7 @@ public:
     MINUS,
 
     /* comparsion */
-    NOT,
+    CMP_NOT,
 
     /* bit ops */
     BIT_NOT,

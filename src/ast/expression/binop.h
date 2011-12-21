@@ -20,14 +20,14 @@ public:
     MOD,
 
     /* comparison */
-    AND,
-    OR,
-    LT,
-    LE,
-    GT,
-    GE,
-    EQ,
-    NEQ,
+    CMP_AND,
+    CMP_OR,
+    CMP_LT,
+    CMP_LE,
+    CMP_GT,
+    CMP_GE,
+    CMP_EQ,
+    CMP_NEQ,
 
     /* bit ops */
     BIT_AND,
