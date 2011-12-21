@@ -17,6 +17,12 @@ private:
   std::string name;
 };
 
+class VariableSelfNode : public VariableNode {
+public:
+  VariableSelfNode()
+    : VariableNode("self") {}
+};
+
 }
 }
 

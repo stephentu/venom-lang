@@ -15,7 +15,7 @@ all: venom
 # Generate scanner and parser
 
 parser.cc: parser.yy
-	$(YACC) -o parser.cc --defines=parser.h parser.yy
+	$(YACC) -v -o parser.cc --defines=parser.h parser.yy
 
 scanner.cc: scanner.ll
 	$(LEX) -o scanner.cc scanner.ll

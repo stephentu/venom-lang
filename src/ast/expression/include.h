@@ -10,3 +10,8 @@
 #include <ast/expression/unop.h>
 
 #include <ast/expression/variable.h>
+
+#include <ast/expression/attraccess.h>
+#include <ast/expression/arrayaccess.h>
+
+#include <ast/expression/functioncall.h>

@@ -68,24 +68,30 @@ LSTRCHAR [^\n']
 %}
 
  /* Keywords */
-"if"    { return token::IF;    }
-"else"  { return token::ELSE;  }
-"elsif" { return token::ELSIF; }
-"for"   { return token::FOR;   }
-"while" { return token::WHILE; }
-"def"   { return token::DEF;   }
-"class" { return token::CLASS; }
+"if"     { return token::IF;     }
+"else"   { return token::ELSE;   }
+"elsif"  { return token::ELSIF;  }
+"for"    { return token::FOR;    }
+"while"  { return token::WHILE;  }
+"def"    { return token::DEF;    }
+"class"  { return token::CLASS;  }
+"return" { return token::RETURN; }
+"import" { return token::IMPORT; }
+"self"   { return token::SELF;   }
 
  /* Operator tokens */
-"<<"    { return token::LSHIFT; }
-">>"    { return token::RSHIFT; }
-"<="    { return token::LE;     }
-">="    { return token::GE;     }
-"=="    { return token::EQ;     }
-"!="    { return token::NEQ;    }
-"and"   { return token::AND;    }
-"or"    { return token::OR;     }
-"not"   { return token::NOT;    }
+"<<"     { return token::LSHIFT; }
+">>"     { return token::RSHIFT; }
+"<="     { return token::LE;     }
+">="     { return token::GE;     }
+"=="     { return token::EQ;     }
+"!="     { return token::NEQ;    }
+"and"    { return token::AND;    }
+"or"     { return token::OR;     }
+"not"    { return token::NOT;    }
+
+ /* Misc tokens */
+"::"     { return token::COLONCOLON; }
 
 "#"[^\n]* {
     yylloc->step();

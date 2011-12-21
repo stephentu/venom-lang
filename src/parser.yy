@@ -2,7 +2,9 @@
 
 %{ /*** C/C++ Declarations ***/
 
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
+
 #include <string>
 #include <vector>
 
@@ -73,6 +75,8 @@
 %token   WHILE          "while"
 %token   DEF            "def"
 %token   CLASS          "class"
+%token   RETURN         "return"
+%token   IMPORT         "import"
 
 %token   LSHIFT         "<<"
 %token   RSHIFT         ">>"
@@ -84,15 +88,18 @@
 %token   OR             "or"
 %token   NOT            "not"
 
+%token   COLONCOLON     "::"
+
 %token   <integerVal>   INTEGER
 %token   <doubleVal>    DOUBLE
 %token   <stringVal>    STRING
 %token   <stringVal>    IDENTIFIER
+%token   <stringVal>    SELF          "self"
 
 %type <astNode> start
 
 %type <expNode> intlit doublelit strlit arraylit dictlit
-                pairkey pairvalue variable expr literal atom
+                pairkey pairvalue variable expr literal atom self primary
                 unop_pm unop_bool binop_mult binop_add binop_shift
                 binop_cmp binop_eq binop_bit_and binop_xor
                 binop_bit_or binop_and binop_or
@@ -133,9 +140,18 @@ literal : intlit
 
 atom : literal
      | variable
+     | self
      | '(' expr ')' { $$ = $2; }
 
-unop_pm : atom
+primary : atom
+        | primary '.' IDENTIFIER
+          { $$ = new ast::AttrAccessNode($1, *$3); delete $3; }
+        | primary '[' expr ']'
+          { $$ = new ast::ArrayAccessNode($1, $3); }
+        | primary '(' exprlist ')'
+          { $$ = new ast::FunctionCallNode($1, *$3); delete $3; }
+
+unop_pm : primary
         | '-' unop_pm { $$ = new ast::UnopNode($2, ast::UnopNode::MINUS); }
         | '+' unop_pm { $$ = new ast::UnopNode($2, ast::UnopNode::PLUS);  }
 
@@ -223,6 +239,8 @@ pairlist : /* empty */       { $$ = new ast::DictPairVec; }
          | pair ',' pairlist { $3->push_back(*$1); $$ = $3; delete $1; }
 
 variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
+
+self     : "self" { $$ = new ast::VariableSelfNode; }
 
 %% /*** Additional Code ***/
 
