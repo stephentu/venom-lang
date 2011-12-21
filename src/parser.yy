@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <ast/expression/include.h>
+#include <ast/include.h>
 
 %}
 
@@ -57,10 +57,12 @@
     double          doubleVal;
     std::string*    stringVal;
 
-    ast::ASTNode* astNode;
-
+    ast::ASTStatementNode*  stmtNode;
     ast::ASTExpressionNode* expNode;
+
+    ast::StmtNodeVec*       stmts;
     ast::ExprNodeVec*       exprs;
+
     ast::DictPairVec*       pairs;
     ast::DictPair*          pair;
 }
@@ -96,17 +98,18 @@
 %token   <stringVal>    IDENTIFIER
 %token   <stringVal>    SELF          "self"
 
-%type <astNode> start
+%type <stmtNode> stmt stmtexpr
 
-%type <expNode> intlit doublelit strlit arraylit dictlit
-                pairkey pairvalue variable expr literal atom self primary
-                unop_pm unop_bool binop_mult binop_add binop_shift
-                binop_cmp binop_eq binop_bit_and binop_xor
-                binop_bit_or binop_and binop_or
+%type <expNode>  intlit doublelit strlit arraylit dictlit
+                 pairkey pairvalue variable expr literal atom self primary
+                 unop_pm unop_bool binop_mult binop_add binop_shift
+                 binop_cmp binop_eq binop_bit_and binop_xor
+                 binop_bit_or binop_and binop_or
 
-%type <exprs>   exprlist
-%type <pairs>   pairlist
-%type <pair>    pair
+%type <stmts>    stmtlist start
+%type <exprs>    exprlist
+%type <pairs>    pairlist
+%type <pair>     pair
 
 %{
 
@@ -123,12 +126,16 @@
 
 %% /*** Grammar Rules ***/
 
-start  : /* empty */
-       | start ';'
-       | start EOL
-       | start expr ';'
-       | start expr EOL
-       | start expr END
+start  : stmtlist { driver.ctx.stmts = $1; $$ = $1; }
+
+stmtlist : /* empty */   { $$ = new ast::StmtNodeVec; }
+         | stmt stmtlist { $2->push_back($1); $$ = $2; }
+
+stmt   : stmtexpr
+
+stmtexpr : expr ';' { $$ = new ast::StmtExprNode($1); }
+         | expr EOL { $$ = new ast::StmtExprNode($1); }
+         | expr END { $$ = new ast::StmtExprNode($1); }
 
 expr   : binop_or
 

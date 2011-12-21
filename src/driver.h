@@ -8,14 +8,15 @@
 
 namespace venom {
 
-/** Forward decl of ASTNode */
+/** Forward decl of ASTStatementNode */
 namespace ast {
-  class ASTNode;
+  class ASTStatementNode;
 }
 
 class ParseContext {
 public:
-  ast::ASTNode *root;
+  // the StmtNodeVec typedef is not available in this scope
+  std::vector<ast::ASTStatementNode*>* stmts;
 };
 
 /** The Driver class brings together all components. It creates an instance of
