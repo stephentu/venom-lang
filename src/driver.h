@@ -15,8 +15,7 @@ namespace ast {
 
 class ParseContext {
 public:
-  // the StmtNodeVec typedef is not available in this scope
-  std::vector<ast::ASTStatementNode*>* stmts;
+  ast::ASTStatementNode* stmts;
 };
 
 /** The Driver class brings together all components. It creates an instance of

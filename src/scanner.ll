@@ -69,11 +69,14 @@ LSTRCHAR [^\n']
 
  /* Keywords */
 "if"     { return token::IF;     }
+"then"   { return token::THEN;   }
 "else"   { return token::ELSE;   }
 "elsif"  { return token::ELSIF;  }
 "for"    { return token::FOR;    }
 "while"  { return token::WHILE;  }
 "def"    { return token::DEF;    }
+ /* Must be ENDTOK since token::END is already taken */
+"end"    { return token::ENDTOK; }
 "class"  { return token::CLASS;  }
 "return" { return token::RETURN; }
 "import" { return token::IMPORT; }
@@ -140,7 +143,7 @@ LSTRCHAR [^\n']
  /* gobble up end-of-lines */
 \n {
     yylloc->lines(yyleng); yylloc->step();
-    return token::EOL;
+    //return token::EOL;
 }
 
  /* pass all other characters up to bison */

@@ -10,11 +10,13 @@ namespace ast {
 
 class VariableNode : public ASTExpressionNode {
 public:
-  VariableNode(const std::string& name)
-    : name(name) {}
+  VariableNode(const std::string& name,
+               const std::string& explicit_type_name = "")
+    : name(name), explicit_type_name(explicit_type_name) {}
 
 private:
   std::string name;
+  std::string explicit_type_name;
 };
 
 class VariableSelfNode : public VariableNode {

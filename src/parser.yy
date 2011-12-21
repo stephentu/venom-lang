@@ -71,11 +71,13 @@
 %token   EOL
 
 %token   IF             "if"
+%token   THEN           "then"
 %token   ELSE           "else"
 %token   ELSIF          "elsif"
 %token   FOR            "for"
 %token   WHILE          "while"
 %token   DEF            "def"
+%token   ENDTOK         "end"
 %token   CLASS          "class"
 %token   RETURN         "return"
 %token   IMPORT         "import"
@@ -98,18 +100,20 @@
 %token   <stringVal>    IDENTIFIER
 %token   <stringVal>    SELF          "self"
 
-%type <stmtNode> stmt stmtexpr
+%type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
 
-%type <expNode>  intlit doublelit strlit arraylit dictlit
-                 pairkey pairvalue variable expr literal atom self primary
-                 unop_pm unop_bool binop_mult binop_add binop_shift
-                 binop_cmp binop_eq binop_bit_and binop_xor
-                 binop_bit_or binop_and binop_or
+%type <expNode>   intlit doublelit strlit arraylit dictlit
+                  pairkey pairvalue variable typedvariable expr literal atom
+                  self primary unop_pm unop_bool binop_mult binop_add
+                  binop_shift binop_cmp binop_eq binop_bit_and binop_xor
+                  binop_bit_or binop_and binop_or
 
-%type <stmts>    stmtlist start
-%type <exprs>    exprlist
-%type <pairs>    pairlist
-%type <pair>     pair
+%type <stmts>     stmtlist_buffer
+%type <exprs>     exprlist
+%type <pairs>     pairlist
+%type <pair>      pair
+
+%type <stringVal> typename typename0
 
 %{
 
@@ -126,16 +130,33 @@
 
 %% /*** Grammar Rules ***/
 
-start  : stmtlist { driver.ctx.stmts = $1; $$ = $1; }
+start  : stmtlist END { driver.ctx.stmts = $1; $$ = $1; }
 
-stmtlist : /* empty */   { $$ = new ast::StmtNodeVec; }
-         | stmt stmtlist { $2->push_back($1); $$ = $2; }
+stmtlist : stmtlist_buffer { $$ = new ast::StmtListNode(*$1); delete $1; }
+
+stmtlist_buffer : /* empty */          { $$ = new ast::StmtNodeVec;  }
+                | stmt stmtlist_buffer { $2->push_back($1); $$ = $2; }
 
 stmt   : stmtexpr
+       | assignstmt
+       | ifstmt
 
-stmtexpr : expr ';' { $$ = new ast::StmtExprNode($1); }
-         | expr EOL { $$ = new ast::StmtExprNode($1); }
-         | expr END { $$ = new ast::StmtExprNode($1); }
+stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
+
+exprend  : ';'
+
+assignstmt : variable      '=' expr exprend { $$ = new ast::AssignNode($1, $3); }
+           | typedvariable '=' expr exprend { $$ = new ast::AssignNode($1, $3); }
+
+ifstmt : "if" expr "then" stmtlist ifstmt_else "end"
+         { $$ = new ast::IfStmtNode($2, $4, $5); }
+
+ifstmt_else : /* empty */
+              { $$ = new ast::StmtListNode(ast::StmtNodeVec()); }
+            | "elsif" expr "then" stmtlist ifstmt_else
+              { $$ = new ast::IfStmtNode($2, $4, $5); }
+            | "else" stmtlist
+              { $$ = $2; }
 
 expr   : binop_or
 
@@ -246,6 +267,23 @@ pairlist : /* empty */       { $$ = new ast::DictPairVec; }
          | pair ',' pairlist { $3->push_back(*$1); $$ = $3; delete $1; }
 
 variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
+
+typedvariable : IDENTIFIER "::" typename
+                { $$ = new ast::VariableNode(*$1, *$3); delete $1; delete $3; }
+
+typename : IDENTIFIER typename0
+           {
+              $$ = util::MakeString2(*$1, *$2);
+              delete $1; delete $2;
+           }
+
+typename0 : /* empty */
+           { $$ = new std::string; }
+          | '.' IDENTIFIER typename0
+           {
+              $$ = util::MakeString3(".", *$2, *$3);
+              delete $2; delete $3;
+           }
 
 self     : "self" { $$ = new ast::VariableSelfNode; }
 

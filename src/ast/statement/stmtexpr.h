@@ -26,4 +26,3 @@ private:
 }
 
 #endif /* VENOM_AST_STMTEXPR_H */
-
