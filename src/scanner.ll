@@ -97,6 +97,7 @@ LSTRCHAR [^\n']
  /* Misc tokens */
 "::"     { return token::COLONCOLON; }
 "<-"     { return token::LEFTARROW;  }
+"->"     { return token::RIGHTARROW; }
 
 "#"[^\n]* {
     yylloc->step();

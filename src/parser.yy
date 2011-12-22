@@ -95,6 +95,7 @@
 
 %token   COLONCOLON     "::"
 %token   LEFTARROW      "<-"
+%token   RIGHTARROW     "->"
 
 %token   <integerVal>   INTEGER
 %token   <doubleVal>    DOUBLE
@@ -103,7 +104,7 @@
 %token   <stringVal>    SELF          "self"
 
 %type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
-                  whilestmt forstmt
+                  whilestmt forstmt funcdeclstmt
 
 %type <expNode>   intlit doublelit strlit arraylit dictlit
                   pairkey pairvalue variable typedvariable expr literal atom
@@ -112,7 +113,7 @@
                   binop_bit_or binop_and binop_or
 
 %type <stmts>     stmtlist_buffer
-%type <exprs>     exprlist
+%type <exprs>     exprlist paramlist paramlist0
 %type <pairs>     pairlist
 %type <pair>      pair
 
@@ -138,13 +139,14 @@ start  : stmtlist END { driver.ctx.stmts = $1; $$ = $1; }
 stmtlist : stmtlist_buffer { $$ = new ast::StmtListNode(*$1); delete $1; }
 
 stmtlist_buffer : /* empty */          { $$ = new ast::StmtNodeVec;  }
-                | stmt stmtlist_buffer { $2->push_back($1); $$ = $2; }
+                | stmtlist_buffer stmt { $1->push_back($2); $$ = $1; }
 
 stmt   : stmtexpr
        | assignstmt
        | ifstmt
        | whilestmt
        | forstmt
+       | funcdeclstmt
 
 stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
 
@@ -168,6 +170,22 @@ whilestmt : "while" expr "do" stmtlist "end"
 
 forstmt : "for" variable "<-" expr "do" stmtlist "end"
            { $$ = new ast::ForStmtNode($2, $4, $6); }
+
+funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' "->" typename stmtlist "end"
+               {
+                 $$ = new ast::FuncDeclNode(*$2, *$4, *$7, $8);
+                 delete $2; delete $4; delete $7;
+               }
+
+paramlist : /* empty */
+            { $$ = new ast::ExprNodeVec;  }
+          | paramlist0 typedvariable
+            { $1->push_back($2); $$ = $1; }
+
+paramlist0 : /* empty */
+             { $$ = new ast::ExprNodeVec;  }
+           | paramlist0 typedvariable ','
+             { $1->push_back($2); $$ = $1; }
 
 expr   : binop_or
 
@@ -264,7 +282,7 @@ arraylit : '[' exprlist ']' { $$ = new ast::ArrayLiteralNode(*$2); delete $2; }
 
 exprlist : /* empty */       { $$ = new ast::ExprNodeVec;  }
          | expr              { $$ = ast::MakeExprVec1($1); }
-         | expr ',' exprlist { $3->push_back($1); $$ = $3; }
+         | exprlist ',' expr { $1->push_back($3); $$ = $1; }
 
 dictlit : '{' pairlist '}' { $$ = new ast::DictLiteralNode(*$2); delete $2; }
 
@@ -273,9 +291,9 @@ pairvalue : expr
 
 pair : pairkey ':' pairvalue { $$ = new ast::DictPair($1, $3); }
 
-pairlist : /* empty */       { $$ = new ast::DictPairVec; }
+pairlist : /* empty */       { $$ = new ast::DictPairVec;                  }
          | pair              { $$ = ast::MakeDictPairVec1(*$1); delete $1; }
-         | pair ',' pairlist { $3->push_back(*$1); $$ = $3; delete $1; }
+         | pairlist ',' pair { $1->push_back(*$3); $$ = $1; delete $3;     }
 
 variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
 
