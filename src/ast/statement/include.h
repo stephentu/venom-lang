@@ -4,6 +4,7 @@
 #include <ast/statement/return.h>
 
 #include <ast/statement/classdecl.h>
+#include <ast/statement/classattrdecl.h>
 #include <ast/statement/funcdecl.h>
 
 #include <ast/statement/ifstmt.h>

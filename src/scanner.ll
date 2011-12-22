@@ -79,6 +79,7 @@ LSTRCHAR [^\n']
  /* Must be ENDTOK since token::END is already taken */
 "end"    { return token::ENDTOK; }
 "class"  { return token::CLASS;  }
+"attr"   { return token::ATTR;   }
 "return" { return token::RETURN; }
 "import" { return token::IMPORT; }
 "self"   { return token::SELF;   }

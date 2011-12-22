@@ -82,6 +82,7 @@
 %token   DEF            "def"
 %token   ENDTOK         "end"
 %token   CLASS          "class"
+%token   ATTR           "attr"
 %token   RETURN         "return"
 %token   IMPORT         "import"
 
@@ -107,14 +108,15 @@
 
 %type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
                   whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
+                  classbodystmt classbodystmtlist attrdeclstmt
 
 %type <expNode>   intlit doublelit strlit arraylit dictlit
                   pairkey pairvalue variable typedvariable expr literal atom
                   self primary unop_pm unop_bool binop_mult binop_add
                   binop_shift binop_cmp binop_eq binop_bit_and binop_xor
-                  binop_bit_or binop_and binop_or
+                  binop_bit_or binop_and binop_or attropteq
 
-%type <stmts>     stmtlist_buffer
+%type <stmts>     stmtlist_buffer classbodystmtlist_buffer
 %type <exprs>     exprlist paramlist paramlist0
 %type <pairs>     pairlist
 %type <pair>      pair
@@ -157,7 +159,7 @@ stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
 
 exprend  : ';'
 
-assignstmt : variable      '=' expr exprend { $$ = new ast::AssignNode($1, $3); }
+assignstmt : expr          '=' expr exprend { $$ = new ast::AssignNode($1, $3); }
            | typedvariable '=' expr exprend { $$ = new ast::AssignNode($1, $3); }
 
 ifstmt : "if" expr "then" stmtlist ifstmt_else "end"
@@ -185,11 +187,31 @@ funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' rettype stmtlist "end"
                  delete $2; delete $4; if ($6) delete $6;
                }
 
-classdeclstmt : "class" IDENTIFIER inheritance stmtlist "end"
+classdeclstmt : "class" IDENTIFIER inheritance classbodystmtlist "end"
                 {
                   $$ = new ast::ClassDeclNode(*$2, *$3, $4);
                   delete $2; delete $3;
                 }
+
+attrdeclstmt : "attr" variable '=' expr
+             { $$ = new ast::ClassAttrDeclNode($2, $4);  }
+             | "attr" typedvariable attropteq
+             { $$ = new ast::ClassAttrDeclNode($2, $3);  }
+
+attropteq : /* empty */ { $$ = NULL; }
+          | '=' expr    { $$ = $2;   }
+
+classbodystmt : funcdeclstmt
+              | classdeclstmt
+              | attrdeclstmt
+
+classbodystmtlist : classbodystmtlist_buffer
+                    { $$ = new ast::StmtListNode(*$1); delete $1; }
+
+classbodystmtlist_buffer : /* empty */
+                           { $$ = new ast::StmtNodeVec;  }
+                         | classbodystmtlist_buffer classbodystmt
+                           { $1->push_back($2); $$ = $1; }
 
 inheritance : /* empty */    { $$ = new std::vector<std::string>; }
             | "<-" typenames { $$ = $2; }
