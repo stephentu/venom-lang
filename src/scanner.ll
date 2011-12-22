@@ -74,6 +74,7 @@ LSTRCHAR [^\n']
 "elsif"  { return token::ELSIF;  }
 "for"    { return token::FOR;    }
 "while"  { return token::WHILE;  }
+"do"     { return token::DO;     }
 "def"    { return token::DEF;    }
  /* Must be ENDTOK since token::END is already taken */
 "end"    { return token::ENDTOK; }
@@ -95,6 +96,7 @@ LSTRCHAR [^\n']
 
  /* Misc tokens */
 "::"     { return token::COLONCOLON; }
+"<-"     { return token::LEFTARROW;  }
 
 "#"[^\n]* {
     yylloc->step();

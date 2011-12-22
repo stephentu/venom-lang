@@ -76,6 +76,7 @@
 %token   ELSIF          "elsif"
 %token   FOR            "for"
 %token   WHILE          "while"
+%token   DO             "do"
 %token   DEF            "def"
 %token   ENDTOK         "end"
 %token   CLASS          "class"
@@ -93,6 +94,7 @@
 %token   NOT            "not"
 
 %token   COLONCOLON     "::"
+%token   LEFTARROW      "<-"
 
 %token   <integerVal>   INTEGER
 %token   <doubleVal>    DOUBLE
@@ -101,6 +103,7 @@
 %token   <stringVal>    SELF          "self"
 
 %type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
+                  whilestmt forstmt
 
 %type <expNode>   intlit doublelit strlit arraylit dictlit
                   pairkey pairvalue variable typedvariable expr literal atom
@@ -140,6 +143,8 @@ stmtlist_buffer : /* empty */          { $$ = new ast::StmtNodeVec;  }
 stmt   : stmtexpr
        | assignstmt
        | ifstmt
+       | whilestmt
+       | forstmt
 
 stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
 
@@ -157,6 +162,12 @@ ifstmt_else : /* empty */
               { $$ = new ast::IfStmtNode($2, $4, $5); }
             | "else" stmtlist
               { $$ = $2; }
+
+whilestmt : "while" expr "do" stmtlist "end"
+            { $$ = new ast::WhileStmtNode($2, $4); }
+
+forstmt : "for" variable "<-" expr "do" stmtlist "end"
+           { $$ = new ast::ForStmtNode($2, $4, $6); }
 
 expr   : binop_or
 
