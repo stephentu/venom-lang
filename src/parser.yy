@@ -53,18 +53,20 @@
 %error-verbose
 
 %union {
-    int64_t         integerVal;
-    double          doubleVal;
-    std::string*    stringVal;
+    int64_t                   integerVal;
+    double                    doubleVal;
+    std::string*              stringVal;
 
-    ast::ASTStatementNode*  stmtNode;
-    ast::ASTExpressionNode* expNode;
+    std::vector<std::string>* stringVec;
 
-    ast::StmtNodeVec*       stmts;
-    ast::ExprNodeVec*       exprs;
+    ast::ASTStatementNode*    stmtNode;
+    ast::ASTExpressionNode*   expNode;
 
-    ast::DictPairVec*       pairs;
-    ast::DictPair*          pair;
+    ast::StmtNodeVec*         stmts;
+    ast::ExprNodeVec*         exprs;
+
+    ast::DictPairVec*         pairs;
+    ast::DictPair*            pair;
 }
 
 %token   END            0
@@ -104,7 +106,7 @@
 %token   <stringVal>    SELF          "self"
 
 %type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
-                  whilestmt forstmt returnstmt funcdeclstmt
+                  whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
 
 %type <expNode>   intlit doublelit strlit arraylit dictlit
                   pairkey pairvalue variable typedvariable expr literal atom
@@ -117,7 +119,8 @@
 %type <pairs>     pairlist
 %type <pair>      pair
 
-%type <stringVal> typename typename0
+%type <stringVal> rettype typename typename0
+%type <stringVec> inheritance typenames typenames0
 
 %{
 
@@ -148,6 +151,7 @@ stmt   : stmtexpr
        | forstmt
        | returnstmt
        | funcdeclstmt
+       | classdeclstmt
 
 stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
 
@@ -175,11 +179,31 @@ forstmt : "for" variable "<-" expr "do" stmtlist "end"
 returnstmt : "return" expr exprend
              { $$ = new ast::ReturnNode($2); }
 
-funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' "->" typename stmtlist "end"
+funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' rettype stmtlist "end"
                {
-                 $$ = new ast::FuncDeclNode(*$2, *$4, *$7, $8);
-                 delete $2; delete $4; delete $7;
+                 $$ = new ast::FuncDeclNode(*$2, *$4, $6 ? *$6 : "", $7);
+                 delete $2; delete $4; if ($6) delete $6;
                }
+
+classdeclstmt : "class" IDENTIFIER inheritance stmtlist "end"
+                {
+                  $$ = new ast::ClassDeclNode(*$2, *$3, $4);
+                  delete $2; delete $3;
+                }
+
+inheritance : /* empty */    { $$ = new std::vector<std::string>; }
+            | "<-" typenames { $$ = $2; }
+
+typenames : typenames0 typename
+            { $1->push_back(*$2); delete $2; $$ = $1; }
+
+typenames0 : /* empty */
+             { $$ = new std::vector<std::string>;      }
+           | typenames0 typename ','
+             { $1->push_back(*$2); delete $2; $$ = $1; }
+
+rettype : /* empty */   { $$ = NULL; }
+        | "->" typename { $$ = $2;   }
 
 paramlist : /* empty */
             { $$ = new ast::ExprNodeVec;  }
