@@ -104,7 +104,7 @@
 %token   <stringVal>    SELF          "self"
 
 %type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
-                  whilestmt forstmt funcdeclstmt
+                  whilestmt forstmt returnstmt funcdeclstmt
 
 %type <expNode>   intlit doublelit strlit arraylit dictlit
                   pairkey pairvalue variable typedvariable expr literal atom
@@ -146,6 +146,7 @@ stmt   : stmtexpr
        | ifstmt
        | whilestmt
        | forstmt
+       | returnstmt
        | funcdeclstmt
 
 stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
@@ -170,6 +171,9 @@ whilestmt : "while" expr "do" stmtlist "end"
 
 forstmt : "for" variable "<-" expr "do" stmtlist "end"
            { $$ = new ast::ForStmtNode($2, $4, $6); }
+
+returnstmt : "return" expr exprend
+             { $$ = new ast::ReturnNode($2); }
 
 funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' "->" typename stmtlist "end"
                {

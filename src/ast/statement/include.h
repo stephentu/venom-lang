@@ -1,6 +1,7 @@
 #include <ast/statement/node.h>
 
 #include <ast/statement/assign.h>
+#include <ast/statement/return.h>
 
 #include <ast/statement/funcdecl.h>
 
