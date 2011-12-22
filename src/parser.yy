@@ -341,9 +341,9 @@ pairvalue : expr
 
 pair : pairkey ':' pairvalue { $$ = new ast::DictPair($1, $3); }
 
-pairlist : /* empty */       { $$ = new ast::DictPairVec;                  }
-         | pair              { $$ = ast::MakeDictPairVec1(*$1); delete $1; }
-         | pairlist ',' pair { $1->push_back(*$3); $$ = $1; delete $3;     }
+pairlist : /* empty */       { $$ = new ast::DictPairVec;      }
+         | pair              { $$ = ast::MakeDictPairVec1($1); }
+         | pairlist ',' pair { $1->push_back($3); $$ = $1;     }
 
 variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
 

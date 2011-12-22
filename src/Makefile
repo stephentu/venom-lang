@@ -2,13 +2,13 @@ CXX = g++
 LEX = flex
 YACC = bison
 
-PWD := $(shell pwd)
+PWD = $(shell pwd)
 
 CXXFLAGS = -Wall -g  -I$(PWD)
 LDFLAGS = 
 
-HEADERS = driver.h parser.h scanner.h expression.h \
-    y.tab.h
+SRCFILES = $(shell find . -type f -name '*.cc')
+OBJFILES = $(patsubst %.cc,%.o,$(SRCFILES))
 
 all: venom
 
@@ -25,12 +25,17 @@ scanner.cc: scanner.ll
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+.PHONY: generated
+generated: parser.o scanner.o
+
 # Link executable
 
-venom: venom.o parser.o scanner.o driver.o
-	$(CXX) $(LDFLAGS) -o $@ venom.o parser.o scanner.o driver.o
+venom: generated $(OBJFILES)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJFILES)
 
 GENERATED = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
 
 clean:
-	rm -f venom *.o $(GENERATED)
+	rm -f $(OBJFILES) 
+	rm -f $(GENERATED)
+	rm -f venom

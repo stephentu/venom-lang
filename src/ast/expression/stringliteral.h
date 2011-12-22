@@ -12,6 +12,14 @@ class StringLiteralNode : public ASTExpressionNode {
 public:
   StringLiteralNode(const std::string& value) : value(value) {}
 
+  virtual size_t getNumKids() const { return 0; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    throw std::out_of_range(__func__);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stringlit '" << value << "')";
   }

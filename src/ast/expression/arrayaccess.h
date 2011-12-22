@@ -4,6 +4,7 @@
 #include <string>
 
 #include <ast/expression/node.h>
+#include <util/macros.h>
 
 namespace venom {
 namespace ast {
@@ -18,6 +19,15 @@ public:
     delete primary;
     delete index;
   }
+
+  virtual size_t getNumKids() const { return 2; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    ASTNode *kids[] = {primary, index};
+    VENOM_SAFE_RETURN(kids, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(arrayaccess ";

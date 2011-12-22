@@ -9,6 +9,7 @@
 #include <ast/statement/node.h>
 
 #include <util/stl.h>
+#include <util/macros.h>
 
 namespace venom {
 namespace ast {
@@ -24,6 +25,15 @@ public:
   ~ClassDeclNode() {
     delete stmts;
   }
+
+  virtual size_t getNumKids() const { return 1; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    ASTNode *kids[] = {stmts};
+    VENOM_SAFE_RETURN(kids, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return true; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(class" << std::endl << util::indent(indent + 1);

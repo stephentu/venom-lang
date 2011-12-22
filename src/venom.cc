@@ -37,7 +37,13 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (readfile) return 0;
+  if (readfile) {
+    // semantic check
+
+    // type check
+
+    return 0;
+  }
 
   string line;
   while (cout << "input: " && getline(cin, line) && !line.empty()) {

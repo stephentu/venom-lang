@@ -20,6 +20,22 @@ inline void delete_pointers(Iter begin, Iter end) {
   }
 }
 
+template <typename Iter>
+inline void delete_key_pointers(Iter begin, Iter end) {
+  while (begin != end) {
+    delete begin->first;
+    ++begin;
+  }
+}
+
+template <typename Iter>
+inline void delete_value_pointers(Iter begin, Iter end) {
+  while (begin != end) {
+    delete begin->second;
+    ++begin;
+  }
+}
+
 struct indent {
   indent(size_t i) : i(i) {}
   const size_t i;
@@ -49,6 +65,33 @@ inline std::string* MakeString3(const std::string& a0,
   s->append(a1);
   s->append(a2);
   return s;
+}
+
+template <typename T>
+inline std::vector<T> vec1(const T& a0) {
+  typename std::vector<T> v;
+  v.reserve(1);
+  v.push_back(a0);
+  return v;
+}
+
+template <typename T>
+inline std::vector<T> vec2(const T& a0, const T& a1) {
+  typename std::vector<T> v;
+  v.reserve(2);
+  v.push_back(a0);
+  v.push_back(a1);
+  return v;
+}
+
+template <typename T>
+inline std::vector<T> vec3(const T& a0, const T& a1, const T& a2) {
+  typename std::vector<T> v;
+  v.reserve(3);
+  v.push_back(a0);
+  v.push_back(a1);
+  v.push_back(a2);
+  return v;
 }
 
 }

@@ -21,6 +21,17 @@ public:
     util::delete_pointers(args.begin(), args.end());
   }
 
+  virtual size_t getNumKids() const { return 1 + args.size(); }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    switch (kid) {
+    case 0:  return primary;
+    default: return args.at(kid);
+    }
+  }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(funccall ";
     primary->print(o, indent);

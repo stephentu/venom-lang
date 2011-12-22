@@ -1,6 +1,7 @@
 #ifndef VENOM_AST_VARIABLE_H
 #define VENOM_AST_VARIABLE_H
 
+#include <stdexcept>
 #include <string>
 
 #include <ast/expression/node.h>
@@ -13,6 +14,14 @@ public:
   VariableNode(const std::string& name,
                const std::string& explicit_type_name = "")
     : name(name), explicit_type_name(explicit_type_name) {}
+
+  virtual size_t getNumKids() const { return 0; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    throw std::out_of_range(__func__);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;

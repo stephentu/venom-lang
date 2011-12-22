@@ -5,19 +5,37 @@
 #include <utility>
 
 #include <ast/expression/node.h>
+#include <util/macros.h>
+#include <util/stl.h>
 
 namespace venom {
 namespace ast {
 
 class DictPair :
+  public ASTExpressionNode,
   public std::pair< ASTExpressionNode*, ASTExpressionNode* > {
 public:
   DictPair(ASTExpressionNode* key, ASTExpressionNode* value)
     : std::pair< ASTExpressionNode*, ASTExpressionNode* >(key, value) {}
+
+  ~DictPair() {
+    delete first;
+    delete second;
+  }
+
+  virtual size_t getNumKids() const { return 2; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    ASTNode *kids[] = {first, second};
+    VENOM_SAFE_RETURN(kids, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
+
   inline ASTExpressionNode* key()   { return first;  }
   inline ASTExpressionNode* value() { return second; }
 
-  void print(std::ostream& o, size_t indent = 0) {
+  virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(pair ";
     key()->print(o, indent);
     o << " ";
@@ -27,9 +45,9 @@ public:
 
 };
 
-typedef std::vector<DictPair> DictPairVec;
+typedef std::vector<DictPair*> DictPairVec;
 
-inline DictPairVec* MakeDictPairVec1(const DictPair& pair) {
+inline DictPairVec* MakeDictPairVec1(DictPair* pair) {
   DictPairVec *v = new DictPairVec;
   v->push_back(pair);
   return v;
@@ -43,19 +61,21 @@ public:
     : pairs(pairs) {}
 
   ~DictLiteralNode() {
-    for (DictPairVec::iterator it = pairs.begin();
-         it != pairs.end(); ++it) {
-      delete it->key();
-      delete it->value();
-    }
+    util::delete_pointers(pairs.begin(), pairs.end());
   }
+
+  virtual size_t getNumKids() const { return pairs.size(); }
+
+  virtual ASTNode* getNthKid(size_t kid) { return pairs.at(kid); }
+
+  virtual bool needsNewScope(size_t k) const { return false; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(dictliteral ";
     // TODO: abstract this away with Print{Expr,Stmt}NodeVec
     for (DictPairVec::iterator it = pairs.begin();
          it != pairs.end(); ++it) {
-      it->print(o, indent);
+      (*it)->print(o, indent);
       if (it + 1 != pairs.end()) o << " ";
 
     }

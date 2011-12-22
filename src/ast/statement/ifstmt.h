@@ -7,6 +7,7 @@
 #include <ast/statement/node.h>
 
 #include <util/stl.h>
+#include <util/macros.h>
 
 namespace venom {
 namespace ast {
@@ -24,6 +25,15 @@ public:
     delete true_branch;
     delete false_branch;
   }
+
+  virtual size_t getNumKids() const { return 3; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    ASTNode *kids[] = {cond, true_branch, false_branch};
+    VENOM_SAFE_RETURN(kids, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const { return k != 0; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(if ";
