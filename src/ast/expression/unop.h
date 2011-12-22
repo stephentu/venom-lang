@@ -30,6 +30,13 @@ public:
     delete kid;
   }
 
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    // TODO: stringify type meaningfully
+    o << "(unop " << int(type) << " ";
+    kid->print(o, indent);
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* kid;
   Type type;

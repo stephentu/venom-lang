@@ -1,11 +1,14 @@
 #ifndef VENOM_AST_CLASSDECL_H
 #define VENOM_AST_CLASSDECL_H
 
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include <ast/expression/node.h>
 #include <ast/statement/node.h>
+
+#include <util/stl.h>
 
 namespace venom {
 namespace ast {
@@ -21,6 +24,13 @@ public:
   ~ClassDeclNode() {
     delete stmts;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(class" << std::endl << util::indent(indent + 1);
+    stmts->print(o, indent + 1);
+    o << ")";
+  }
+
 private:
   std::string              name;
   std::vector<std::string> parents;

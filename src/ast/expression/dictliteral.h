@@ -16,6 +16,15 @@ public:
     : std::pair< ASTExpressionNode*, ASTExpressionNode* >(key, value) {}
   inline ASTExpressionNode* key()   { return first;  }
   inline ASTExpressionNode* value() { return second; }
+
+  void print(std::ostream& o, size_t indent = 0) {
+    o << "(pair ";
+    key()->print(o, indent);
+    o << " ";
+    value()->print(o, indent);
+    o << ")";
+  }
+
 };
 
 typedef std::vector<DictPair> DictPairVec;
@@ -40,6 +49,19 @@ public:
       delete it->value();
     }
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(dictliteral ";
+    // TODO: abstract this away with Print{Expr,Stmt}NodeVec
+    for (DictPairVec::iterator it = pairs.begin();
+         it != pairs.end(); ++it) {
+      it->print(o, indent);
+      if (it + 1 != pairs.end()) o << " ";
+
+    }
+    o << ")";
+  }
+
 private:
   DictPairVec pairs;
 };

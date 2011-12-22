@@ -18,6 +18,15 @@ public:
     delete primary;
     delete index;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(arrayaccess ";
+    primary->print(o, indent);
+    o << " ";
+    index->print(o, indent);
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* primary;
   ASTExpressionNode* index;

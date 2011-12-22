@@ -18,6 +18,17 @@ public:
     delete variable;
     if (value) delete value;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(attr ";
+    variable->print(o, indent);
+    if (value) {
+      o << " ";
+      value->print(o, indent);
+    }
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* variable;
   ASTExpressionNode* value;

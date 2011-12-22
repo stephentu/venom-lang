@@ -1,8 +1,6 @@
 #ifndef VENOM_AST_STMTEXPR_H
 #define VENOM_AST_STMTEXPR_H
 
-#include <string>
-
 #include <ast/expression/node.h>
 #include <ast/statement/node.h>
 
@@ -18,6 +16,13 @@ public:
   ~StmtExprNode() {
     delete expr;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(stmtexpr ";
+    expr->print(o, indent);
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* expr;
 };

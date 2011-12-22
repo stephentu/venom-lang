@@ -16,6 +16,13 @@ public:
   ~ReturnNode() {
     delete expr;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(return ";
+    expr->print(o, indent);
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* expr;
 };

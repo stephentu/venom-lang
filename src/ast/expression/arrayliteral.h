@@ -17,6 +17,13 @@ public:
   ~ArrayLiteralNode() {
     util::delete_pointers(values.begin(), values.end());
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(arrayliteral ";
+    PrintExprNodeVec(o, values, indent);
+    o << ")";
+  }
+
 private:
   ExprNodeVec values;
 };

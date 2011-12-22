@@ -1,6 +1,7 @@
 #ifndef VENOM_UTIL_STL_H
 #define VENOM_UTIL_STL_H
 
+#include <iostream>
 #include <string>
 
 namespace venom {
@@ -17,6 +18,17 @@ inline void delete_pointers(Iter begin, Iter end) {
     delete *begin;
     ++begin;
   }
+}
+
+struct indent {
+  indent(size_t i) : i(i) {}
+  const size_t i;
+};
+
+inline std::ostream& operator<<(std::ostream& o, const indent& i) {
+  std::string s(i.i * 2, ' ');
+  o << s;
+  return o;
 }
 
 inline std::string* MakeString2(const std::string& a0,

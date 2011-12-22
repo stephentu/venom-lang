@@ -18,6 +18,12 @@ public:
     util::delete_pointers(stmts.begin(), stmts.end());
   }
 
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(stmts" << std::endl << util::indent(indent + 1);
+    PrintStmtNodeVec(o, stmts, indent + 1);
+    o << ")";
+  }
+
 private:
   StmtNodeVec stmts;
 };

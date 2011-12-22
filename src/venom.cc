@@ -1,7 +1,9 @@
+#include <cassert>
 #include <iostream>
 #include <fstream>
 
-#include "driver.h"
+#include <ast/include.h>
+#include <driver.h>
 
 using namespace std;
 using namespace venom;
@@ -25,7 +27,12 @@ int main(int argc, char **argv) {
         return 0;
       }
 
-      driver.parse_stream(infile, argv[ai]);
+      bool result = driver.parse_stream(infile, argv[ai]);
+      if (result) {
+        assert(pctx.stmts != NULL);
+        pctx.stmts->print(cout);
+        cout << endl;
+      }
       readfile = true;
     }
   }
@@ -34,6 +41,11 @@ int main(int argc, char **argv) {
 
   string line;
   while (cout << "input: " && getline(cin, line) && !line.empty()) {
-    driver.parse_string(line, "input");
+    bool result = driver.parse_string(line, "input");
+    if (result) {
+      assert(pctx.stmts != NULL);
+      pctx.stmts->print(cout);
+      cout << endl;
+    }
   }
 }

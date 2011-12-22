@@ -45,6 +45,15 @@ public:
     delete right;
   }
 
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    // TODO: stringify the type
+    o << "(binop " << int(type) << " ";
+    left->print(o, indent);
+    o << " ";
+    right->print(o, indent);
+    o << ")";
+  }
+
 private:
   ASTExpressionNode* left;
   ASTExpressionNode* right;

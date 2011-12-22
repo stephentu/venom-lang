@@ -1,6 +1,7 @@
 #ifndef VENOM_AST_FUNCDECL_H
 #define VENOM_AST_FUNCDECL_H
 
+#include <iostream>
 #include <string>
 
 #include <ast/expression/node.h>
@@ -24,6 +25,17 @@ public:
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
     delete stmts;
+  }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(func " << name << " -> " << ret_typename << std::endl
+      << util::indent(indent + 1);
+    o << "(params ";
+    PrintExprNodeVec(o, params, indent + 1);
+    o << ")";
+    o << std::endl << util::indent(indent + 1);
+    stmts->print(o, indent + 1);
+    o << ")";
   }
 
 private:

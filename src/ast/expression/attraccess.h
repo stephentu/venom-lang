@@ -17,6 +17,13 @@ public:
   ~AttrAccessNode() {
     delete primary;
   }
+
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(attraccess ";
+    primary->print(o, indent);
+    o << " " << name << ")";
+  }
+
 private:
   ASTExpressionNode* primary;
   std::string name;
