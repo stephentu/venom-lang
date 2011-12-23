@@ -26,7 +26,7 @@ public:
   virtual ASTNode* getNthKid(size_t kid) {
     switch (kid) {
     case 0:  return primary;
-    default: return args.at(kid);
+    default: return args.at(kid - 1);
     }
   }
 

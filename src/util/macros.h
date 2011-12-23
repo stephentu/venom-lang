@@ -13,4 +13,21 @@
     throw std::out_of_range(__func__); \
   } while (0)
 
+/**
+ * Use forchild as such:
+ * forchild (kid) {
+ *   // do something with kid
+ * } endfor
+ */
+#define forchild(kid) \
+  for (size_t i = 0; i < getNumKids(); i++) { \
+    ASTNode *kid = getNthKid(i); \
+    {
+
+#define endfor }}
+
+#define SAFE_SELECT(x, y) ((x) ? ((x)->y) : NULL)
+
+#define SAFE_ADDR(x, y) ((x) ? (&((x)->y)) : NULL)
+
 #endif /* VENOM_UTIL_MACROS_H */

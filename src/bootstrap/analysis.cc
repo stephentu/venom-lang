@@ -27,7 +27,7 @@ NewBootstrapSymbolTable(analysis::SemanticContext* ctx) {
   root->createClassSymbol("void", voidType);
   root->createClassSymbol("list", listType);
   root->createClassSymbol("map", mapType);
-  root->createClassSymbol("obj", objType);
+  root->createClassSymbol("object", objType);
 
   // func symbols
   root->createFuncSymbol("print", util::vec1(any), voidType);

@@ -7,6 +7,7 @@ namespace venom {
 
 namespace analysis {
   /** Forward decls **/
+  class SemanticContext;
   class SymbolTable;
 }
 
@@ -35,6 +36,8 @@ public:
    * Must only call once (subsequent calls will trigger assert failures).
    * NOTE: ASTNodes do NOT take ownership of symbols */
   void initSymbolTable(analysis::SymbolTable* symbols);
+
+  virtual void semanticCheck(analysis::SemanticContext* ctx);
 
   /** Debugging helpers **/
 

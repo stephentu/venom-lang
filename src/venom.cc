@@ -3,6 +3,9 @@
 #include <fstream>
 
 #include <ast/include.h>
+#include <analysis/semanticcontext.h>
+#include <bootstrap/analysis.h>
+
 #include <driver.h>
 
 using namespace std;
@@ -38,10 +41,19 @@ int main(int argc, char **argv) {
   }
 
   if (readfile) {
-    // semantic check
+    if (pctx.stmts) {
+      analysis::SemanticContext ctx("main");
 
-    // type check
+      // bootstrap
+      analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
+      pctx.stmts->initSymbolTable(root->newChildScope());
 
+      // semantic check
+      pctx.stmts->semanticCheck(&ctx);
+
+      // type check
+
+    }
     return 0;
   }
 
