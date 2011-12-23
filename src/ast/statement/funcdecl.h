@@ -15,16 +15,17 @@ namespace ast {
 
 class FuncDeclNode : public ASTStatementNode {
 public:
-  /** Takes ownership of params and stmts */
-  FuncDeclNode(const std::string& name,
-               const ExprNodeVec& params,
-               const std::string& ret_typename,
-               ASTStatementNode*  stmts)
+  /** Takes ownership of params, ret_typename, and stmts */
+  FuncDeclNode(const std::string&       name,
+               const ExprNodeVec&       params,
+               ParameterizedTypeString* ret_typename,
+               ASTStatementNode*        stmts)
     : name(name), params(params), ret_typename(ret_typename),
       stmts(stmts) {}
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
+    if (ret_typename) delete ret_typename;
     delete stmts;
   }
 
@@ -38,8 +39,10 @@ public:
   virtual bool needsNewScope(size_t k) const { return true; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
-    o << "(func " << name << " -> " << ret_typename << std::endl
-      << util::indent(indent + 1);
+    o << "(func " << name << " -> ";
+    if (ret_typename) o << *ret_typename;
+    else o << "void";
+    o << std::endl << util::indent(indent + 1);
     o << "(params ";
     PrintExprNodeVec(o, params, indent + 1);
     o << ")";
@@ -49,10 +52,10 @@ public:
   }
 
 private:
-  std::string       name;
-  ExprNodeVec       params;
-  std::string       ret_typename;
-  ASTStatementNode* stmts;
+  std::string              name;
+  ExprNodeVec              params;
+  ParameterizedTypeString* ret_typename;
+  ASTStatementNode*        stmts;
 };
 
 }

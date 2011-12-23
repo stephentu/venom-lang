@@ -53,20 +53,21 @@
 %error-verbose
 
 %union {
-    int64_t                   integerVal;
-    double                    doubleVal;
-    std::string*              stringVal;
+    int64_t                       integerVal;
+    double                        doubleVal;
+    std::string*                  stringVal;
 
-    std::vector<std::string>* stringVec;
+    ast::ASTStatementNode*        stmtNode;
+    ast::ASTExpressionNode*       expNode;
 
-    ast::ASTStatementNode*    stmtNode;
-    ast::ASTExpressionNode*   expNode;
+    ast::StmtNodeVec*             stmts;
+    ast::ExprNodeVec*             exprs;
 
-    ast::StmtNodeVec*         stmts;
-    ast::ExprNodeVec*         exprs;
+    ast::DictPairVec*             pairs;
+    ast::DictPair*                pair;
 
-    ast::DictPairVec*         pairs;
-    ast::DictPair*            pair;
+    ast::ParameterizedTypeString* typeString;
+    ast::TypeStringVec*           typeStrVec;
 }
 
 %token   END            0
@@ -106,23 +107,25 @@
 %token   <stringVal>    IDENTIFIER
 %token   <stringVal>    SELF          "self"
 
-%type <stmtNode>  start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
-                  whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
-                  classbodystmt classbodystmtlist attrdeclstmt
+%type <stmtNode>   start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
+                   whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
+                   classbodystmt classbodystmtlist attrdeclstmt
 
-%type <expNode>   intlit doublelit strlit arraylit dictlit
-                  pairkey pairvalue variable typedvariable expr literal atom
-                  self primary unop_pm unop_bool binop_mult binop_add
-                  binop_shift binop_cmp binop_eq binop_bit_and binop_xor
-                  binop_bit_or binop_and binop_or attropteq
+%type <expNode>    intlit doublelit strlit arraylit dictlit
+                   pairkey pairvalue variable typedvariable expr literal atom
+                   self primary unop_pm unop_bool binop_mult binop_add
+                   binop_shift binop_cmp binop_eq binop_bit_and binop_xor
+                   binop_bit_or binop_and binop_or attropteq
 
-%type <stmts>     stmtlist_buffer classbodystmtlist_buffer
-%type <exprs>     exprlist paramlist paramlist0
-%type <pairs>     pairlist
-%type <pair>      pair
+%type <stmts>      stmtlist_buffer classbodystmtlist_buffer
+%type <exprs>      exprlist paramlist paramlist0
+%type <pairs>      pairlist
+%type <pair>       pair
 
-%type <stringVal> rettype typename typename0
-%type <stringVec> inheritance typenames typenames0
+%type <stringVal>  typename typename0
+
+%type <typeString> paramtypename rettype
+%type <typeStrVec> paramtypenames paramtypenames0 optparamtypenames inheritance
 
 %{
 
@@ -183,8 +186,8 @@ returnstmt : "return" expr exprend
 
 funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' rettype stmtlist "end"
                {
-                 $$ = new ast::FuncDeclNode(*$2, *$4, $6 ? *$6 : "", $7);
-                 delete $2; delete $4; if ($6) delete $6;
+                 $$ = new ast::FuncDeclNode(*$2, *$4, $6, $7);
+                 delete $2; delete $4;
                }
 
 classdeclstmt : "class" IDENTIFIER inheritance classbodystmtlist "end"
@@ -213,19 +216,12 @@ classbodystmtlist_buffer : /* empty */
                          | classbodystmtlist_buffer classbodystmt
                            { $1->push_back($2); $$ = $1; }
 
-inheritance : /* empty */    { $$ = new std::vector<std::string>; }
-            | "<-" typenames { $$ = $2; }
+inheritance : /* empty */         { $$ = new ast::TypeStringVec; }
+            | "<-" paramtypenames { $$ = $2; }
 
-typenames : typenames0 typename
-            { $1->push_back(*$2); delete $2; $$ = $1; }
 
-typenames0 : /* empty */
-             { $$ = new std::vector<std::string>;      }
-           | typenames0 typename ','
-             { $1->push_back(*$2); delete $2; $$ = $1; }
-
-rettype : /* empty */   { $$ = NULL; }
-        | "->" typename { $$ = $2;   }
+rettype : /* empty */        { $$ = NULL; }
+        | "->" paramtypename { $$ = $2;   }
 
 paramlist : /* empty */
             { $$ = new ast::ExprNodeVec;  }
@@ -345,14 +341,30 @@ pairlist : /* empty */       { $$ = new ast::DictPairVec;      }
          | pair              { $$ = ast::MakeDictPairVec1($1); }
          | pairlist ',' pair { $1->push_back($3); $$ = $1;     }
 
-variable : IDENTIFIER { $$ = new ast::VariableNode(*$1); delete $1; }
+variable : IDENTIFIER { $$ = new ast::VariableNode(*$1, NULL); delete $1; }
 
-typedvariable : IDENTIFIER "::" typename
-                { $$ = new ast::VariableNode(*$1, *$3); delete $1; delete $3; }
+typedvariable : IDENTIFIER "::" paramtypename
+                { $$ = new ast::VariableNode(*$1, $3); delete $1; }
+
+paramtypename : typename optparamtypenames
+                {
+                  $$ = new ast::ParameterizedTypeString(*$1, *$2);
+                  delete $1; delete $2;
+                }
+
+optparamtypenames : /* empty */            { $$ = new ast::TypeStringVec; }
+                  | '<' paramtypenames '>' { $$ = $2;                     }
+
+paramtypenames : paramtypenames0 paramtypename { $1->push_back($2); $$ = $1; }
+
+paramtypenames0 : /* empty */
+                  { $$ = new ast::TypeStringVec; }
+                | paramtypenames0 paramtypename ','
+                  { $1->push_back($2); $$ = $1;  }
 
 typename : IDENTIFIER typename0
            {
-              $$ = util::MakeString2(*$1, *$2);
+              $$ = new std::string(util::MakeString2(*$1, *$2));
               delete $1; delete $2;
            }
 
@@ -360,7 +372,7 @@ typename0 : /* empty */
            { $$ = new std::string; }
           | '.' IDENTIFIER typename0
            {
-              $$ = util::MakeString3(".", *$2, *$3);
+              $$ = new std::string(util::MakeString3(".", *$2, *$3));
               delete $2; delete $3;
            }
 

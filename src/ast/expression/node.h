@@ -2,12 +2,37 @@
 #define VENOM_AST_EXPRESSION_NODE_H
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <ast/node.h>
+#include <util/stl.h>
 
 namespace venom {
 namespace ast {
+
+/** This contains the structure of an un-resolved type,
+ * which we get from the parser. The reason we don't use
+ * Type objects right away is because Type objects represent
+ * properly resolved types, which we cannot get right away
+ * from the parser */
+struct ParameterizedTypeString {
+  ParameterizedTypeString(const std::string& name)
+    : name(name) {}
+  ParameterizedTypeString(const std::string& name,
+                          const std::vector<ParameterizedTypeString*>& params)
+    : name(name), params(params) {}
+  ~ParameterizedTypeString() {
+    util::delete_pointers(params.begin(), params.end());
+  }
+
+  std::string stringify() const;
+
+  const std::string                           name;
+  const std::vector<ParameterizedTypeString*> params;
+};
+
+typedef std::vector<ParameterizedTypeString*> TypeStringVec;
 
 class ASTExpressionNode : public ASTNode {
 public:
@@ -35,6 +60,12 @@ inline void PrintExprNodeVec(std::ostream& o,
 }
 
 }
+}
+
+inline std::ostream& operator<<(std::ostream& o,
+                                const venom::ast::ParameterizedTypeString& t) {
+  o << t.stringify();
+  return o;
 }
 
 #endif /* VENOM_AST_EXPRESSION_NODE_H */

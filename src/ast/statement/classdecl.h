@@ -16,13 +16,14 @@ namespace ast {
 
 class ClassDeclNode : public ASTStatementNode {
 public:
-  /** Takes ownership of stmts */
-  ClassDeclNode(const std::string&              name,
-                const std::vector<std::string>& parents,
-                ASTStatementNode*               stmts)
+  /** Takes ownership of parents and stmts */
+  ClassDeclNode(const std::string&   name,
+                const TypeStringVec& parents,
+                ASTStatementNode*    stmts)
     : name(name), parents(parents), stmts(stmts) {}
 
   ~ClassDeclNode() {
+    util::delete_pointers(parents.begin(), parents.end());
     delete stmts;
   }
 
@@ -42,9 +43,9 @@ public:
   }
 
 private:
-  std::string              name;
-  std::vector<std::string> parents;
-  ASTStatementNode*        stmts;
+  std::string       name;
+  TypeStringVec     parents;
+  ASTStatementNode* stmts;
 };
 
 }

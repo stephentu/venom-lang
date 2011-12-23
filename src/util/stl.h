@@ -2,6 +2,7 @@
 #define VENOM_UTIL_STL_H
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 namespace venom {
@@ -47,23 +48,23 @@ inline std::ostream& operator<<(std::ostream& o, const indent& i) {
   return o;
 }
 
-inline std::string* MakeString2(const std::string& a0,
+inline std::string MakeString2(const std::string& a0,
                                 const std::string& a1) {
-  std::string *s = new std::string;
-  s->reserve(a0.size() + a1.size());
-  s->append(a0);
-  s->append(a1);
+  std::string s;
+  s.reserve(a0.size() + a1.size());
+  s.append(a0);
+  s.append(a1);
   return s;
 }
 
-inline std::string* MakeString3(const std::string& a0,
+inline std::string MakeString3(const std::string& a0,
                                 const std::string& a1,
                                 const std::string& a2) {
-  std::string *s = new std::string;
-  s->reserve(a0.size() + a1.size() + a2.size());
-  s->append(a0);
-  s->append(a1);
-  s->append(a2);
+  std::string s;
+  s.reserve(a0.size() + a1.size() + a2.size());
+  s.append(a0);
+  s.append(a1);
+  s.append(a2);
   return s;
 }
 
@@ -92,6 +93,17 @@ inline std::vector<T> vec3(const T& a0, const T& a1, const T& a2) {
   v.push_back(a1);
   v.push_back(a2);
   return v;
+}
+
+template <typename Iter>
+inline std::string join(Iter begin, Iter end, const std::string& sep) {
+  std::stringstream buf;
+  while (begin != end) {
+    buf << *begin;
+    if (begin + 1 != end) buf << sep;
+    ++begin;
+  }
+  return buf.str();
 }
 
 }
