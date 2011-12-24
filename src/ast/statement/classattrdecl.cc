@@ -19,8 +19,7 @@ ClassAttrDeclNode::registerSymbol(analysis::SemanticContext* ctx) {
   assert(var);
 
   // check for duplicate definition
-  Symbol *sym = symbols->findSymbol(var->getName(), false);
-  if (sym) {
+  if (symbols->isDefined(var->getName(), SymbolTable::Any, false)) {
     throw SemanticViolationException(
         "Field " + var->getName() + " already defined");
   }

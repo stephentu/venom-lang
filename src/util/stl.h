@@ -1,7 +1,10 @@
 #ifndef VENOM_UTIL_STL_H
 #define VENOM_UTIL_STL_H
 
+#include <cassert>
+
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -104,6 +107,18 @@ inline std::string join(Iter begin, Iter end, const std::string& sep) {
     ++begin;
   }
   return buf.str();
+}
+
+template <typename Iter>
+inline bool is_unique(Iter begin, Iter end) {
+  std::set<typename Iter::value_type> seen;
+  size_t count = 0;
+  while (begin != end) {
+    seen.insert(*begin);
+    ++begin; ++count;
+  }
+  assert(seen.size() <= count);
+  return seen.size() == count;
 }
 
 }

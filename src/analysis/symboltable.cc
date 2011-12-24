@@ -11,6 +11,16 @@ using namespace venom::ast;
 namespace venom {
 namespace analysis {
 
+bool
+SymbolTable::isDefined(const string& name, SymType type, bool recurse) {
+  assert(type & (Location | Function | Class));
+
+  if ((type & Location) && findSymbol(name, recurse)) return true;
+  if ((type & Function) && findFuncSymbol(name, recurse)) return true;
+  if ((type & Class) && findClassSymbol(name, recurse)) return true;
+  return false;
+}
+
 Symbol*
 SymbolTable::createSymbol(const string&     name,
                           InstantiatedType* type) {
@@ -27,9 +37,9 @@ SymbolTable::findSymbol(const string& name, bool recurse) {
 }
 
 FuncSymbol*
-SymbolTable::createFuncSymbol(const string&        name,
-                              const vector<Type*>& params,
-                              Type*                returnType) {
+SymbolTable::createFuncSymbol(const string&                    name,
+                              const vector<InstantiatedType*>& params,
+                              InstantiatedType*                returnType) {
   FuncSymbol *sym = new FuncSymbol(name, params, returnType);
   funcContainer.insert(name, sym);
   return sym;

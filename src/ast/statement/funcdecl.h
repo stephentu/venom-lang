@@ -38,6 +38,8 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return true; }
 
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(func " << name << " -> ";
     if (ret_typename) o << *ret_typename;

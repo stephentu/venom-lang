@@ -26,6 +26,8 @@ public:
 
   /** Semantic checks **/
 
+  inline analysis::SymbolTable* getSymbolTable() { return symbols; }
+
   /**
    * Returns true if the k-th child of this AST node represents
    * a new scope, false otherwise.

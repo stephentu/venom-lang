@@ -45,6 +45,14 @@ public:
     return child;
   }
 
+  enum SymType {
+    Location = 0x1,
+    Function = 0x1 << 1,
+    Class    = 0x1 << 2,
+    Any      = (unsigned)-1,
+  };
+  bool isDefined(const std::string& name, SymType type, bool recurse);
+
   Symbol*
   createSymbol(const std::string& name,
                InstantiatedType*  type);
@@ -53,9 +61,9 @@ public:
   findSymbol(const std::string& name, bool recurse);
 
   FuncSymbol*
-  createFuncSymbol(const std::string&        name,
-                   const std::vector<Type*>& params,
-                   Type*                     returnType);
+  createFuncSymbol(const std::string&                    name,
+                   const std::vector<InstantiatedType*>& params,
+                   InstantiatedType*                     returnType);
 
   FuncSymbol*
   findFuncSymbol(const std::string& name, bool recurse);

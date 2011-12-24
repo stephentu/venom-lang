@@ -3,6 +3,7 @@
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
+
 #include <ast/statement/classdecl.h>
 
 using namespace std;
@@ -11,10 +12,9 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
-void ClassDeclNode::registerSymbol(analysis::SemanticContext* ctx) {
+void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
-  ClassSymbol *sym = symbols->findClassSymbol(name, false);
-  if (sym) {
+  if (symbols->isDefined(name, SymbolTable::Any, false)) {
     throw SemanticViolationException(
         "Class " + name + " already defined");
   }

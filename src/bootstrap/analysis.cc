@@ -31,7 +31,9 @@ NewBootstrapSymbolTable(analysis::SemanticContext* ctx) {
   root->createClassSymbol("object", objType);
 
   // func symbols
-  root->createFuncSymbol("print", util::vec1(any), voidType);
+  root->createFuncSymbol("print",
+                         util::vec1(any->instantiate(ctx)),
+                         voidType->instantiate(ctx));
 
   return root;
 }

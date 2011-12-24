@@ -32,7 +32,6 @@ protected:
     : BaseSymbol(name), type(type) {}
 
 public:
-
   inline InstantiatedType* getInstantiatedType() { return type; }
   inline const InstantiatedType* getInstantiatedType() const { return type; }
 
@@ -46,20 +45,25 @@ private:
 class FuncSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
-  FuncSymbol(const std::string&        name,
-             const std::vector<Type*>& params,
-             Type*                     returnType)
+  FuncSymbol(const std::string&                    name,
+             const std::vector<InstantiatedType*>& params,
+             InstantiatedType*                     returnType)
     : BaseSymbol(name), params(params), returnType(returnType) {}
 
 public:
-  inline std::vector<Type*> getParams() { return params; }
-  inline const std::vector<Type*> getParams() const { return params; }
+  inline std::vector<InstantiatedType*>
+    getParams() { return params; }
+  inline const std::vector<InstantiatedType*>
+    getParams() const { return params; }
 
-  inline Type* getReturnType() { return returnType; }
-  inline const Type* getReturnType() const { return returnType; }
+  inline InstantiatedType*
+    getReturnType() { return returnType; }
+  inline const InstantiatedType*
+    getReturnType() const { return returnType; }
+
 private:
-  std::vector<Type*> params;
-  Type*              returnType;
+  std::vector<InstantiatedType*> params;
+  InstantiatedType*              returnType;
 };
 
 /**
@@ -75,6 +79,7 @@ protected:
 public:
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
+
 private:
   Type* type;
 };
