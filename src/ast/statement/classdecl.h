@@ -20,12 +20,17 @@ public:
   ClassDeclNode(const std::string&   name,
                 const TypeStringVec& parents,
                 ASTStatementNode*    stmts)
-    : name(name), parents(parents), stmts(stmts) {}
+    : name(name), parents(parents), stmts(stmts) {
+    stmts->setLocationContext(ASTNode::TopLevelClassBody);
+  }
 
   ~ClassDeclNode() {
     util::delete_pointers(parents.begin(), parents.end());
     delete stmts;
   }
+
+  inline std::string& getName() { return name; }
+  inline const std::string& getName() const { return name; }
 
   virtual size_t getNumKids() const { return 1; }
 

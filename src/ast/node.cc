@@ -18,7 +18,7 @@ void ASTNode::initSymbolTable(analysis::SymbolTable* symbols) {
   forchild (kid) {
     if (!kid) continue;
     if (needsNewScope(i)) {
-      kid->initSymbolTable(symbols->newChildScope());
+      kid->initSymbolTable(symbols->newChildScope(this));
     } else {
       kid->initSymbolTable(symbols);
     }

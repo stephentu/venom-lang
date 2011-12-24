@@ -32,6 +32,9 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
+                                 bool doRegister);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(attr ";
     variable->print(o, indent);

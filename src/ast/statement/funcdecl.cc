@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/expression/variable.h>
 
@@ -75,6 +76,17 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     VariableNode *vn = dynamic_cast<VariableNode*>(params[i]);
     stmts->getSymbolTable()->createSymbol(
         vn->getName(), itypes[i]);
+  }
+
+  // check that ctors dont have non-void return types
+  if (locCtx & ASTNode::TopLevelClassBody) {
+    ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
+    assert(cdn);
+    if (cdn->getName() == name && retType->getType()->getName() != "void") {
+      // TODO: don't use string-based comparison
+      throw SemanticViolationException(
+          "Constructor cannot have non void return type");
+    }
   }
 }
 

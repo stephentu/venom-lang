@@ -14,7 +14,9 @@ public:
 
   /** Takes ownership of the nodes in primary and args */
   FunctionCallNode(ASTExpressionNode* primary, const ExprNodeVec& args)
-    : primary(primary), args(args) {}
+    : primary(primary), args(args) {
+    primary->setLocationContext(ASTNode::FunctionCall);
+  }
 
   ~FunctionCallNode() {
     delete primary;

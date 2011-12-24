@@ -5,6 +5,7 @@
 #include <analysis/symboltable.h>
 
 #include <ast/expression/variable.h>
+#include <ast/statement/assign.h>
 #include <ast/statement/classattrdecl.h>
 
 using namespace std;
@@ -14,32 +15,21 @@ namespace venom {
 namespace ast {
 
 void
-ClassAttrDeclNode::registerSymbol(analysis::SemanticContext* ctx) {
-  VariableNode *var = dynamic_cast<VariableNode*>(variable);
-  assert(var);
+ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
+  VariableNode *vn = dynamic_cast<VariableNode*>(variable);
+  assert(vn);
+  AssignNode::RegisterSymbolForAssignment(ctx, symbols, vn);
+}
 
-  // check for duplicate definition
-  if (symbols->isDefined(var->getName(), SymbolTable::Any, false)) {
-    throw SemanticViolationException(
-        "Field " + var->getName() + " already defined");
+void
+ClassAttrDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
+  // Do the right child first (this prevents recursive assignment, ie x = x)
+  if (value) value->semanticCheckImpl(ctx, true);
+  if (doRegister) {
+    registerSymbol(ctx);
   }
-
-  InstantiatedType *itype;
-  if (var->getExplicitParameterizedTypeString()) {
-    itype = ctx->instantiateOrThrow(
-        symbols, var->getExplicitParameterizedTypeString());
-  } else {
-    itype =
-      ctx
-        ->getRootSymbolTable()
-        ->findClassSymbol("any", false)
-        ->getType()
-        ->instantiate(ctx);
-  }
-
-  symbols->createSymbol(var->getName(), itype);
+  // dont recurse on variable...
 }
 
 }
 }
-

@@ -11,7 +11,11 @@
 namespace venom {
 namespace ast {
 
+/** Forward decl for RegisterSymbolForAssignment */
+class VariableNode;
+
 class AssignNode : public ASTStatementNode {
+  friend class ClassAttrDeclNode;
 public:
   /** Takes ownership of variable, value */
   AssignNode(ASTExpressionNode* variable, ASTExpressionNode* value)
@@ -31,6 +35,11 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
+                                 bool doRegister);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign ";
     variable->print(o, indent);
@@ -38,6 +47,12 @@ public:
     value->print(o, indent);
     o << ")";
   }
+
+protected:
+  static void
+  RegisterSymbolForAssignment(analysis::SemanticContext* ctx,
+                              analysis::SymbolTable*     symbols,
+                              VariableNode*              variable);
 
 private:
   ASTExpressionNode* variable;

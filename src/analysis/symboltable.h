@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <ast/node.h>
 #include <analysis/symbol.h>
 #include <util/macros.h>
 #include <util/stl.h>
@@ -21,8 +22,9 @@ namespace analysis {
 class SymbolTable {
 private:
   /** Create a child symbol table */
-  SymbolTable(SymbolTable* parent)
+  SymbolTable(SymbolTable* parent, ast::ASTNode* owner)
     : parent(parent),
+      owner(owner),
       symbolContainer(SAFE_ADDR(parent, symbolContainer)),
       funcContainer(SAFE_ADDR(parent, funcContainer)),
       classContainer(SAFE_ADDR(parent, classContainer)) {}
@@ -30,6 +32,7 @@ public:
   /** Create the root symbol table */
   SymbolTable()
     : parent(NULL),
+      owner(NULL),
       symbolContainer(NULL),
       funcContainer(NULL),
       classContainer(NULL) {}
@@ -39,8 +42,14 @@ public:
     util::delete_pointers(children.begin(), children.end());
   }
 
-  inline SymbolTable* newChildScope() {
-    SymbolTable *child = new SymbolTable(this);
+  inline SymbolTable* getParent() { return parent; }
+  inline const SymbolTable* getParent() const { return parent; }
+
+  inline ast::ASTNode* getOwner() { return owner; }
+  inline const ast::ASTNode* getOwner() const { return owner; }
+
+  inline SymbolTable* newChildScope(ast::ASTNode* owner) {
+    SymbolTable *child = new SymbolTable(this, owner);
     children.push_back(child);
     return child;
   }
@@ -93,6 +102,7 @@ public:
 
 private:
   SymbolTable*              parent;
+  ast::ASTNode*             owner;
   std::vector<SymbolTable*> children;
 
   template <typename S>

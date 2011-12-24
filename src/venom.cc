@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 
         // bootstrap
         analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
-        pctx.stmts->initSymbolTable(root->newChildScope());
+        pctx.stmts->initSymbolTable(root->newChildScope(pctx.stmts));
 
         // semantic check
         pctx.stmts->semanticCheck(&ctx);

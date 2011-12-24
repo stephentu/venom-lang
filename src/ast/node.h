@@ -15,7 +15,7 @@ namespace ast {
 
 class ASTNode {
 public:
-  ASTNode() : symbols(NULL) {}
+  ASTNode() : symbols(NULL), locCtx((LocationCtx)0) {}
 
   virtual ~ASTNode();
 
@@ -23,6 +23,16 @@ public:
 
   virtual size_t getNumKids() const      = 0;
   virtual ASTNode* getNthKid(size_t kid) = 0;
+
+  /** AST Context **/
+  enum LocationCtx {
+    FunctionCall      = 0x1, /* In expr(), expr has FunctionCall ctx */
+    TopLevelClassBody = 0x1 << 1, /* In class Foo stmts end, all top level
+                                   * stmts have TopLevelClassBody ctx */
+  };
+
+  inline LocationCtx getLocationContext() const    { return locCtx; }
+  virtual void setLocationContext(LocationCtx ctx) { locCtx = ctx;  }
 
   /** Semantic checks **/
 
@@ -73,6 +83,7 @@ public:
 
 protected:
   analysis::SymbolTable* symbols;
+  LocationCtx            locCtx;
 };
 
 }
