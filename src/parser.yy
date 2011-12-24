@@ -86,6 +86,9 @@
 %token   ATTR           "attr"
 %token   RETURN         "return"
 %token   IMPORT         "import"
+%token   TRUE           "True"
+%token   FALSE          "False"
+%token   NIL            "Nil"
 
 %token   LSHIFT         "<<"
 %token   RSHIFT         ">>"
@@ -111,7 +114,7 @@
                    whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
                    classbodystmt classbodystmtlist attrdeclstmt
 
-%type <expNode>    intlit doublelit strlit arraylit dictlit
+%type <expNode>    intlit boollit nillit doublelit strlit arraylit dictlit
                    pairkey pairvalue variable typedvariable expr literal atom
                    self primary unop_pm unop_bool binop_mult binop_add
                    binop_shift binop_cmp binop_eq binop_bit_and binop_xor
@@ -236,6 +239,8 @@ paramlist0 : /* empty */
 expr   : binop_or
 
 literal : intlit
+        | boollit
+        | nillit
         | doublelit
         | strlit
         | arraylit
@@ -319,6 +324,11 @@ binop_or : binop_and
            { $$ = new ast::BinopNode($1, $3, ast::BinopNode::CMP_OR); }
 
 intlit : INTEGER { $$ = new ast::IntLiteralNode($1); }
+
+boollit : TRUE  { $$ = new ast::BoolLiteralNode(true);  }
+        | FALSE { $$ = new ast::BoolLiteralNode(false); }
+
+nillit: NIL { $$ = new ast::NilLiteralNode; }
 
 doublelit : DOUBLE { $$ = new ast::DoubleLiteralNode($1); }
 

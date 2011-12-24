@@ -60,12 +60,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     retType = ctx->instantiateOrThrow(symbols, ret_typename);
   } else {
     // treat no ret type as void type
-    retType =
-      ctx
-        ->getRootSymbolTable()
-        ->findClassSymbol("void", false)
-        ->getType()
-        ->instantiate(ctx);
+    retType = InstantiatedType::VoidType;
   }
 
   // add symbol to current symtab
@@ -82,8 +77,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
-    if (cdn->getName() == name && retType->getType()->getName() != "void") {
-      // TODO: don't use string-based comparison
+    if (cdn->getName() == name && !retType->getType()->equals(*Type::VoidType)) {
       throw SemanticViolationException(
           "Constructor cannot have non void return type");
     }

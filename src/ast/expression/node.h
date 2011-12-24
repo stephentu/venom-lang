@@ -9,6 +9,12 @@
 #include <util/stl.h>
 
 namespace venom {
+
+namespace analysis {
+  /** Forward decl for typeCheck */
+  class InstantiatedType;
+}
+
 namespace ast {
 
 /** This contains the structure of an un-resolved type,
@@ -37,6 +43,9 @@ typedef std::vector<ParameterizedTypeString*> TypeStringVec;
 class ASTExpressionNode : public ASTNode {
 public:
   ASTExpressionNode() {}
+
+  //virtual analysis::InstantiatedType*
+  //typeCheck(analysis::SemanticContext* ctx) = 0;
 };
 
 typedef std::vector<ASTExpressionNode *> ExprNodeVec;

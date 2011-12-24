@@ -20,7 +20,7 @@ AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
   // check for duplicate definition
   if (symbols->isDefined(var->getName(), SymbolTable::Any, false)) {
     throw SemanticViolationException(
-        "Field " + var->getName() + " already defined");
+        "Symbol " + var->getName() + " already defined");
   }
 
   InstantiatedType *itype;
@@ -28,12 +28,7 @@ AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
     itype = ctx->instantiateOrThrow(
         symbols, var->getExplicitParameterizedTypeString());
   } else {
-    itype =
-      ctx
-        ->getRootSymbolTable()
-        ->findClassSymbol("any", false)
-        ->getType()
-        ->instantiate(ctx);
+    itype = InstantiatedType::AnyType;
   }
 
   symbols->createSymbol(var->getName(), itype);

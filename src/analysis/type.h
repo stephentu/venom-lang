@@ -18,6 +18,7 @@ class InstantiatedType;
  */
 class Type {
   friend class SemanticContext;
+  friend class InstantiatedType;
 protected:
   /** Does NOT take ownership of ctx nor parent **/
   Type(const std::string& name,
@@ -29,6 +30,22 @@ protected:
 
 public:
   ~Type();
+
+  /** Built-in types **/
+  static Type* AnyType;
+  static Type* IntType;
+  static Type* BoolType;
+  static Type* FloatType;
+  static Type* StringType;
+  static Type* VoidType;
+  static Type* ObjectType;
+
+  /** Special types which have syntactic sugar constructs
+   * built into the grammar */
+  static Type* ListType;
+  static Type* MapType;
+
+  /** Accessors **/
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
@@ -57,6 +74,11 @@ public:
    */
   inline bool isAnyType() const { return parent == NULL; }
 
+  /**
+   * The input SemanticContext is the current context, which
+   * is possibly different from the context that this type
+   * was created in.
+   */
   InstantiatedType* instantiate(SemanticContext* ctx);
 
   InstantiatedType*
@@ -64,6 +86,9 @@ public:
               const std::vector<InstantiatedType*>& params);
 
 private:
+
+  InstantiatedType* instantiate();
+
   /** Regular (not fully qualified) */
   std::string      name;
 
@@ -120,6 +145,16 @@ protected:
   }
 
 public:
+
+  /** Instantiations of built-in types **/
+  static InstantiatedType* AnyType;
+  static InstantiatedType* IntType;
+  static InstantiatedType* BoolType;
+  static InstantiatedType* FloatType;
+  static InstantiatedType* StringType;
+  static InstantiatedType* VoidType;
+  static InstantiatedType* ObjectType;
+
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 

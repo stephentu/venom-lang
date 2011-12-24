@@ -2,38 +2,32 @@
 #include <bootstrap/analysis.h>
 #include <util/stl.h>
 
+using namespace venom::analysis;
+
 namespace venom {
 namespace bootstrap {
 
-analysis::SymbolTable*
-NewBootstrapSymbolTable(analysis::SemanticContext* ctx) {
-  analysis::SymbolTable* root = new analysis::SymbolTable;
+SymbolTable*
+NewBootstrapSymbolTable(SemanticContext* ctx) {
+  SymbolTable* root = new SymbolTable;
   ctx->setRootSymbolTable(root);
 
-  // types
-  analysis::Type *any        = ctx->createType("any", NULL);
-  analysis::Type *intType    = ctx->createType("int", any);
-  analysis::Type *floatType  = ctx->createType("float", any);
-  analysis::Type *stringType = ctx->createType("string", any);
-  analysis::Type *voidType   = ctx->createType("void", any);
-  analysis::Type *listType   = ctx->createType("list", any, 1);
-  analysis::Type *mapType    = ctx->createType("map", any, 2);
-  analysis::Type *objType    = ctx->createType("object", any);
-
   // class symbols
-  root->createClassSymbol("any", any);
-  root->createClassSymbol("int", intType);
-  root->createClassSymbol("float", floatType);
-  root->createClassSymbol("string", stringType);
-  root->createClassSymbol("void", voidType);
-  root->createClassSymbol("list", listType);
-  root->createClassSymbol("map", mapType);
-  root->createClassSymbol("object", objType);
+  root->createClassSymbol("any", Type::AnyType);
+  root->createClassSymbol("int", Type::IntType);
+  root->createClassSymbol("bool", Type::BoolType);
+  root->createClassSymbol("float", Type::FloatType);
+  root->createClassSymbol("string", Type::StringType);
+  root->createClassSymbol("void", Type::VoidType);
+  root->createClassSymbol("object", Type::ObjectType);
+
+  root->createClassSymbol("list", Type::ListType);
+  root->createClassSymbol("map", Type::MapType);
 
   // func symbols
   root->createFuncSymbol("print",
-                         util::vec1(any->instantiate(ctx)),
-                         voidType->instantiate(ctx));
+                         util::vec1(InstantiatedType::AnyType),
+                         InstantiatedType::VoidType);
 
   return root;
 }
