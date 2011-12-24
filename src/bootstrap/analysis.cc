@@ -8,6 +8,7 @@ namespace bootstrap {
 analysis::SymbolTable*
 NewBootstrapSymbolTable(analysis::SemanticContext* ctx) {
   analysis::SymbolTable* root = new analysis::SymbolTable;
+  ctx->setRootSymbolTable(root);
 
   // types
   analysis::Type *any        = ctx->createType("any", NULL);

@@ -25,10 +25,14 @@ void ASTNode::initSymbolTable(analysis::SymbolTable* symbols) {
   } endfor
 }
 
-void ASTNode::semanticCheck(analysis::SemanticContext* ctx) {
+void
+ASTNode::semanticCheckImpl(analysis::SemanticContext* ctx, bool doRegister) {
+  if (doRegister) {
+    registerSymbol(ctx);
+  }
   forchild (kid) {
     if (!kid) continue;
-    kid->semanticCheck(ctx);
+    kid->semanticCheckImpl(ctx, true);
   } endfor
 }
 

@@ -11,7 +11,7 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
-void ClassDeclNode::semanticCheck(SemanticContext* ctx) {
+void ClassDeclNode::registerSymbol(analysis::SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
   ClassSymbol *sym = symbols->findClassSymbol(name, false);
   if (sym) {
@@ -23,28 +23,15 @@ void ClassDeclNode::semanticCheck(SemanticContext* ctx) {
   vector<ClassSymbol*> parSymbols;
   for (TypeStringVec::iterator it = parents.begin();
        it != parents.end(); ++it) {
-    const ParameterizedTypeString* failed_type;
-    bool wrong_params;
-    ClassSymbol *parsym =
-      symbols->findClassSymbol(*it, true, failed_type, wrong_params);
-    if (!parsym) {
-      assert(failed_type);
-      if (wrong_params) {
-        throw SemanticViolationException(
-            "Wrong number of type parameters given to " + failed_type->name);
-      } else {
-        throw SemanticViolationException(
-            "Type " + failed_type->name + " not defined");
-      }
-    } else {
-      parSymbols.push_back(parsym);
-    }
+    ClassSymbol *parsym = symbols->findClassSymbolOrThrow(*it, true);
+    parSymbols.push_back(parsym);
   }
 
   if (parSymbols.empty()) {
-    // if no explicit parents declared, parent is object
+    // if no explicit parents declared, parent is object (from the root symbols)
     // TODO: instead of a lookup, we need to store this somewhere
-    ClassSymbol *objectType = symbols->findClassSymbol("object", true);
+    ClassSymbol *objectType =
+      ctx->getRootSymbolTable()->findClassSymbol("object", false);
     assert(objectType);
     parSymbols.push_back(objectType);
   }
@@ -54,8 +41,22 @@ void ClassDeclNode::semanticCheck(SemanticContext* ctx) {
   // TODO: support multiple inheritance
   Type *type = ctx->createType(name, parSymbols.front()->getType(), 0);
   symbols->createClassSymbol(name, type);
+}
 
-  ASTNode::semanticCheck(ctx);
+void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
+  if (doRegister) {
+    registerSymbol(ctx);
+  }
+
+  // register all the children first
+  forchild (kid) {
+    kid->registerSymbol(ctx);
+  } endfor
+
+  // now recurse on children w/o registration
+  forchild (kid) {
+    kid->semanticCheckImpl(ctx, false);
+  } endfor
 }
 
 }

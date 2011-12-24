@@ -10,6 +10,7 @@ namespace analysis {
 
 /** Forward decl */
 class SemanticContext;
+class InstantiatedType;
 
 /**
  * Represents a type in the language. Is not an instantiated type
@@ -23,9 +24,12 @@ protected:
        SemanticContext*   ctx,
        Type*              parent,
        size_t             params)
-    : name(name), ctx(ctx), parent(parent), params(params) {}
+    : name(name), ctx(ctx), parent(parent),
+      params(params), itype(NULL) {}
 
 public:
+  ~Type();
+
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
@@ -53,6 +57,12 @@ public:
    */
   inline bool isAnyType() const { return parent == NULL; }
 
+  InstantiatedType* instantiate(SemanticContext* ctx);
+
+  InstantiatedType*
+  instantiate(SemanticContext* ctx,
+              const std::vector<InstantiatedType*>& params);
+
 private:
   /** Regular (not fully qualified) */
   std::string      name;
@@ -70,6 +80,10 @@ private:
   /** Number of parameterized types,
    *  ie if this is T[K, V], then params = 2 */
   size_t           params;
+
+  /** InstantiatedType of this type, only created if params = 0.
+   * Takes ownership */
+  InstantiatedType* itype;
 };
 
 /**
@@ -79,7 +93,9 @@ private:
  * an instantiated type is something like map[int, string]
  */
 class InstantiatedType {
-public:
+  friend class SemanticContext;
+  friend class Type;
+protected:
   /**
    * Requires !type->hasParams()
    */
@@ -103,6 +119,7 @@ public:
     }
   }
 
+public:
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 

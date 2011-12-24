@@ -21,6 +21,9 @@ public:
     if (explicit_type) delete explicit_type;
   }
 
+  inline std::string& getName() { return name; }
+  inline const std::string& getName() const { return name; }
+
   /** Returns NULL if no explicit type */
   inline const ParameterizedTypeString*
   getExplicitParameterizedTypeString() const { return explicit_type; }

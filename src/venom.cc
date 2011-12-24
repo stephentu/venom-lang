@@ -42,17 +42,20 @@ int main(int argc, char **argv) {
 
   if (readfile) {
     if (pctx.stmts) {
-      analysis::SemanticContext ctx("main");
+      try {
+        analysis::SemanticContext ctx("main");
 
-      // bootstrap
-      analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
-      pctx.stmts->initSymbolTable(root->newChildScope());
+        // bootstrap
+        analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
+        pctx.stmts->initSymbolTable(root->newChildScope());
 
-      // semantic check
-      pctx.stmts->semanticCheck(&ctx);
+        // semantic check
+        pctx.stmts->semanticCheck(&ctx);
 
-      // type check
-
+        // type check
+      } catch (analysis::SemanticViolationException& e) {
+        cerr << "semantic violation: " << e.what() << endl;
+      }
     }
     return 0;
   }

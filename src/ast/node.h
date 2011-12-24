@@ -37,7 +37,27 @@ public:
    * NOTE: ASTNodes do NOT take ownership of symbols */
   void initSymbolTable(analysis::SymbolTable* symbols);
 
-  virtual void semanticCheck(analysis::SemanticContext* ctx);
+  /**
+   * Perform semantic checks on this node (recursively)
+   */
+  void semanticCheck(analysis::SemanticContext* ctx) {
+    semanticCheckImpl(ctx, true);
+  }
+
+  /** Main semanticCheck implementation. Should not be called
+   * outside the AST node hierarchy
+   * TODO: declare as protected, with appropriate friends
+   */
+  virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
+                                 bool doRegister);
+
+  /**
+   * Called when this node should register its symbol in its corresponding
+   * symbol table. Note this is not intending to be recursive, so a node should
+   * not worry about registering its children. Does nothing by default
+   * TODO: declare as protected, with appropriate friends
+   */
+  virtual void registerSymbol(analysis::SemanticContext* ctx) {}
 
   /** Debugging helpers **/
 

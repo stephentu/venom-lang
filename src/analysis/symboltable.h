@@ -79,6 +79,10 @@ public:
                   const ast::ParameterizedTypeString*& failed_type,
                   bool& wrong_params);
 
+  ClassSymbol*
+  findClassSymbolOrThrow(const ast::ParameterizedTypeString* name,
+                         bool recurse);
+
 private:
   SymbolTable*              parent;
   std::vector<SymbolTable*> children;

@@ -1,9 +1,12 @@
 #include <cassert>
 
+#include <analysis/semanticcontext.h>
 #include <analysis/symboltable.h>
+
 #include <ast/expression/node.h>
 
 using namespace std;
+using namespace venom::ast;
 
 namespace venom {
 namespace analysis {
@@ -55,9 +58,9 @@ SymbolTable::findClassSymbol(const string& name, bool recurse) {
 }
 
 ClassSymbol*
-SymbolTable::findClassSymbol(const ast::ParameterizedTypeString* name,
+SymbolTable::findClassSymbol(const ParameterizedTypeString* name,
                              bool recurse,
-                             const ast::ParameterizedTypeString*& failed_type,
+                             const ParameterizedTypeString*& failed_type,
                              bool& wrong_params) {
   failed_type = NULL; wrong_params = false;
 
@@ -70,7 +73,7 @@ SymbolTable::findClassSymbol(const ast::ParameterizedTypeString* name,
       return NULL;
     }
     bool fail = false;
-    for (ast::TypeStringVec::const_iterator it = name->params.begin();
+    for (TypeStringVec::const_iterator it = name->params.begin();
          it != name->params.end(); ++it) {
       ClassSymbol *cs = findClassSymbol(*it, true, failed_type, wrong_params);
       if (!cs) {
@@ -84,6 +87,25 @@ SymbolTable::findClassSymbol(const ast::ParameterizedTypeString* name,
     failed_type = name;
     return NULL;
   }
+}
+
+ClassSymbol*
+SymbolTable::findClassSymbolOrThrow(const ParameterizedTypeString* type,
+                                    bool recurse) {
+  const ParameterizedTypeString* failed_type;
+  bool wrong_params;
+  ClassSymbol *parsym = findClassSymbol(type, true, failed_type, wrong_params);
+  if (!parsym) {
+    assert(failed_type);
+    if (wrong_params) {
+      throw SemanticViolationException(
+          "Wrong number of type parameters given to " + failed_type->name);
+    } else {
+      throw SemanticViolationException(
+          "Type " + failed_type->name + " not defined");
+    }
+  }
+  return parsym;
 }
 
 }

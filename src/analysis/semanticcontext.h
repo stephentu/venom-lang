@@ -4,17 +4,37 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <analysis/type.h>
 #include <analysis/symboltable.h>
 #include <util/stl.h>
 
-/** Forward decl of main, for friend function */
-int main(int, char**);
-
 namespace venom {
+
+// TODO: clean up these forward declarations
+
+namespace analysis {
+  /** Forward decl for NewBootstrapSymbolTable forward decl */
+  class SemanticContext;
+}
+
+namespace ast {
+  /** Forward decl for SemanticContext::instantiateOrThrow */
+  struct ParameterizedTypeString;
+}
+
+namespace bootstrap {
+  /** Forward decl for SemanticContext friend */
+  analysis::SymbolTable* NewBootstrapSymbolTable(analysis::SemanticContext*);
+}
+
 namespace analysis {
 
+/**
+ * Indicates that a semantic error has occured during program
+ * semantic analysis.
+ */
 class SemanticViolationException : public std::runtime_error {
 public:
   explicit SemanticViolationException(const std::string& what)
@@ -29,7 +49,7 @@ public:
  * Use the symbol table to check scoping rules.
  */
 class SemanticContext {
-  friend int ::main(int, char**);
+  friend SymbolTable* bootstrap::NewBootstrapSymbolTable(SemanticContext*);
 public:
   SemanticContext(const std::string& moduleName)
     : moduleName(moduleName), rootSymbols(NULL) {}
@@ -43,11 +63,20 @@ public:
   inline std::string& getModuleName() { return moduleName; }
   inline const std::string& getModuleName() const { return moduleName; }
 
-  /** Type must not already exist */
-  Type* createType(const std::string& name, Type* parent, size_t params = 0);
-
   inline SymbolTable* getRootSymbolTable() { return rootSymbols; }
   inline const SymbolTable* getRootSymbolTable() const { return rootSymbols; }
+
+  /** Creation of types. Should only be called when NEW types are encountered **/
+  Type* createType(const std::string& name, Type* parent, size_t params = 0);
+
+  InstantiatedType*
+  createInstantiatedType(Type* type,
+                         const std::vector<InstantiatedType*>& params);
+
+  /** Instantiate a type, from the scope of the symbol table */
+  InstantiatedType*
+  instantiateOrThrow(SymbolTable *symbols,
+                     const ast::ParameterizedTypeString* type);
 
 protected:
   /** Takes ownership of rootSymbols */
@@ -60,6 +89,10 @@ private:
 
   /** All types created during semantic analysis, for memory management */
   std::vector<Type*> types;
+
+  /** All instantiated types created during semantic analysis,
+   * for memory management */
+  std::vector<InstantiatedType*> itypes;
 
   /** Root symbol table */
   SymbolTable* rootSymbols;

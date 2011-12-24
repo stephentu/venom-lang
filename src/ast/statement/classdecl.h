@@ -36,7 +36,9 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return true; }
 
-  virtual void semanticCheck(analysis::SemanticContext* ctx);
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+  virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
+                                 bool doRegister);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(class" << std::endl << util::indent(indent + 1);
