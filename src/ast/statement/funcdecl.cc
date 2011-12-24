@@ -63,16 +63,6 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     retType = InstantiatedType::VoidType;
   }
 
-  // add symbol to current symtab
-  symbols->createFuncSymbol(name, itypes, retType);
-
-  // add parameters to block (child) symtab
-  for (size_t i = 0; i < params.size(); i++) {
-    VariableNode *vn = dynamic_cast<VariableNode*>(params[i]);
-    stmts->getSymbolTable()->createSymbol(
-        vn->getName(), itypes[i]);
-  }
-
   // check that ctors dont have non-void return types
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
@@ -81,6 +71,16 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
       throw SemanticViolationException(
           "Constructor cannot have non void return type");
     }
+  }
+
+  // add symbol to current symtab
+  symbols->createFuncSymbol(name, itypes, retType);
+
+  // add parameters to block (child) symtab
+  for (size_t i = 0; i < params.size(); i++) {
+    VariableNode *vn = dynamic_cast<VariableNode*>(params[i]);
+    stmts->getSymbolTable()->createSymbol(
+        vn->getName(), itypes[i]);
   }
 }
 

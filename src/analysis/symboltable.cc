@@ -24,7 +24,7 @@ SymbolTable::isDefined(const string& name, SymType type, bool recurse) {
 Symbol*
 SymbolTable::createSymbol(const string&     name,
                           InstantiatedType* type) {
-  Symbol *sym = new Symbol(name, type);
+  Symbol *sym = new Symbol(name, this, type);
   symbolContainer.insert(name, sym);
   return sym;
 }
@@ -40,7 +40,7 @@ FuncSymbol*
 SymbolTable::createFuncSymbol(const string&                    name,
                               const vector<InstantiatedType*>& params,
                               InstantiatedType*                returnType) {
-  FuncSymbol *sym = new FuncSymbol(name, params, returnType);
+  FuncSymbol *sym = new FuncSymbol(name, this, params, returnType);
   funcContainer.insert(name, sym);
   return sym;
 }
@@ -55,7 +55,7 @@ SymbolTable::findFuncSymbol(const string& name, bool recurse) {
 ClassSymbol*
 SymbolTable::createClassSymbol(const string& name,
                                Type*         type) {
-  ClassSymbol *sym = new ClassSymbol(name, type);
+  ClassSymbol *sym = new ClassSymbol(name, this, type);
   classContainer.insert(name, sym);
   return sym;
 }

@@ -16,9 +16,15 @@ class BaseSymbol {
 public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
+
+  inline SymbolTable* getSymbolTable() { return table; }
+  inline const SymbolTable* getSymbolTable() const { return table; }
 protected:
-  BaseSymbol(const std::string& name) : name(name) {}
-  std::string name;
+  BaseSymbol(const std::string& name,
+             SymbolTable*       table)
+    : name(name), table(table) {}
+  std::string  name;
+  SymbolTable* table;
 };
 
 /**
@@ -28,8 +34,10 @@ protected:
 class Symbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
-  Symbol(const std::string& name, InstantiatedType* type)
-    : BaseSymbol(name), type(type) {}
+  Symbol(const std::string& name,
+         SymbolTable*       table,
+         InstantiatedType*  type)
+    : BaseSymbol(name, table), type(type) {}
 
 public:
   inline InstantiatedType* getInstantiatedType() { return type; }
@@ -46,9 +54,10 @@ class FuncSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
   FuncSymbol(const std::string&                    name,
+             SymbolTable*                          table,
              const std::vector<InstantiatedType*>& params,
              InstantiatedType*                     returnType)
-    : BaseSymbol(name), params(params), returnType(returnType) {}
+    : BaseSymbol(name, table), params(params), returnType(returnType) {}
 
 public:
   inline std::vector<InstantiatedType*>
@@ -60,6 +69,10 @@ public:
     getReturnType() { return returnType; }
   inline const InstantiatedType*
     getReturnType() const { return returnType; }
+
+  bool isConstructor() const;
+
+  bool isMethod() const;
 
 private:
   std::vector<InstantiatedType*> params;
@@ -73,8 +86,9 @@ class ClassSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
   ClassSymbol(const std::string& name,
+              SymbolTable*       table,
               Type*              type)
-    : BaseSymbol(name), type(type) {}
+    : BaseSymbol(name, table), type(type) {}
 
 public:
   inline Type* getType() { return type; }
