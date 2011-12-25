@@ -1,4 +1,6 @@
 *.o
+*.swp
+tags
 location.hh
 parser.cc
 parser.h
