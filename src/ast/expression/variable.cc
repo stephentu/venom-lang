@@ -18,5 +18,12 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
   }
 }
 
+InstantiatedType*
+VariableNode::typeCheck(SemanticContext* ctx) {
+  Symbol *s = symbols->findSymbol(name, true);
+  assert(s);
+  return s->getInstantiatedType();
+}
+
 }
 }

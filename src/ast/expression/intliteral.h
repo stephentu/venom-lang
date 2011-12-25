@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include <ast/node.h>
+#include <ast/expression/node.h>
 
 namespace venom {
 namespace ast {
@@ -23,6 +23,9 @@ public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(intlit " << value << ")";
   }
+
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext* ctx);
 
 private:
   int64_t value;

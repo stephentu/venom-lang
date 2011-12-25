@@ -67,7 +67,8 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
-    if (cdn->getName() == name && !retType->getType()->equals(*Type::VoidType)) {
+    if (cdn->getName() == name &&
+        !retType->equals(*InstantiatedType::VoidType)) {
       throw SemanticViolationException(
           "Constructor cannot have non void return type");
     }

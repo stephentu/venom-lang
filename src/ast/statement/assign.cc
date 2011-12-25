@@ -16,28 +16,62 @@ namespace ast {
 void
 AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
                                         SymbolTable*     symbols,
-                                        VariableNode*    var) {
+                                        VariableNode*    var,
+                                        bool             allowLocDups) {
   // check for duplicate definition
-  if (symbols->isDefined(var->getName(), SymbolTable::Any, false)) {
+  if (symbols->isDefined(
+        var->getName(), SymbolTable::Function | SymbolTable::Class, false)) {
     throw SemanticViolationException(
         "Symbol " + var->getName() + " already defined");
   }
 
-  InstantiatedType *itype;
-  if (var->getExplicitParameterizedTypeString()) {
-    itype = ctx->instantiateOrThrow(
-        symbols, var->getExplicitParameterizedTypeString());
+  if (symbols->isDefined(
+        var->getName(), SymbolTable::Location, false)) {
+    if (allowLocDups) {
+      if (var->getExplicitParameterizedTypeString()) {
+        throw SemanticViolationException(
+            "Cannot redeclare type of symbol " + var->getName());
+      }
+    } else {
+      throw SemanticViolationException(
+        "Symbol " + var->getName() + " already defined");
+    }
   } else {
-    itype = InstantiatedType::AnyType;
-  }
+    InstantiatedType *itype = NULL;
+    if (var->getExplicitParameterizedTypeString()) {
+      itype = ctx->instantiateOrThrow(
+          symbols, var->getExplicitParameterizedTypeString());
+    }
 
-  symbols->createSymbol(var->getName(), itype);
+    symbols->createSymbol(var->getName(), itype);
+  }
+}
+
+void
+AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
+                                SymbolTable*       symbols,
+                                ASTExpressionNode* variable,
+                                ASTExpressionNode* value) {
+  InstantiatedType *lhs = variable->typeCheck(ctx);
+  InstantiatedType *rhs = value->typeCheck(ctx);
+  assert(rhs);
+  if (lhs) {
+    // require rhs <: lhs
+    if (!rhs->isSubtypeOf(*lhs)) {
+      throw TypeViolationException(
+          "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
+    }
+  } else {
+    VariableNode *vn = dynamic_cast<VariableNode*>(variable);
+    assert(vn && !vn->getExplicitParameterizedTypeString());
+    symbols->createSymbol(vn->getName(), rhs);
+  }
 }
 
 void
 AssignNode::registerSymbol(SemanticContext* ctx) {
   VariableNode *vn = dynamic_cast<VariableNode*>(variable);
-  if (vn) RegisterSymbolForAssignment(ctx, symbols, vn);
+  if (vn) RegisterSymbolForAssignment(ctx, symbols, vn, true);
 }
 
 void
@@ -48,6 +82,11 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
     registerSymbol(ctx);
   }
   // dont recurse on variable...
+}
+
+void
+AssignNode::typeCheck(SemanticContext* ctx) {
+  TypeCheckAssignment(ctx, symbols, variable, value);
 }
 
 }

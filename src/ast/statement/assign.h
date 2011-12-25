@@ -40,6 +40,8 @@ public:
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
+  virtual void typeCheck(analysis::SemanticContext* ctx);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign ";
     variable->print(o, indent);
@@ -52,7 +54,14 @@ protected:
   static void
   RegisterSymbolForAssignment(analysis::SemanticContext* ctx,
                               analysis::SymbolTable*     symbols,
-                              VariableNode*              variable);
+                              VariableNode*              variable,
+                              bool                       allowLocDups);
+
+  static void
+  TypeCheckAssignment(analysis::SemanticContext* ctx,
+                      analysis::SymbolTable*     symbols,
+                      ASTExpressionNode*         variable,
+                      ASTExpressionNode*         value);
 
 private:
   ASTExpressionNode* variable;

@@ -60,7 +60,11 @@ public:
     Class    = 0x1 << 2,
     Any      = (unsigned)-1,
   };
-  bool isDefined(const std::string& name, SymType type, bool recurse);
+
+  bool isDefined(const std::string& name, unsigned int type, bool recurse);
+
+  BaseSymbol*
+  findBaseSymbol(const std::string& name, unsigned int type, bool recurse);
 
   Symbol*
   createSymbol(const std::string& name,
@@ -79,6 +83,7 @@ public:
 
   ClassSymbol*
   createClassSymbol(const std::string& name,
+                    SymbolTable*       classTable,
                     Type*              type);
 
   ClassSymbol*
@@ -120,7 +125,10 @@ private:
     }
     void find(S& elem, const std::string& name, bool recurse) {
       typename map_type::iterator it = map.find(name);
-      if (it != map.end()) elem = it->second;
+      if (it != map.end()) {
+        elem = it->second;
+        return;
+      }
       if (recurse && parent) {
         parent->find(elem, name, recurse);
       }

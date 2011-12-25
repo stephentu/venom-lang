@@ -1,4 +1,5 @@
 #include <cassert>
+#include <algorithm>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -12,6 +13,17 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+struct functor {
+  functor(SemanticContext* ctx, SymbolTable* st)
+    : ctx(ctx), st(st) {}
+  inline
+  InstantiatedType* operator()(const ParameterizedTypeString* t) const {
+    return ctx->instantiateOrThrow(st, t);
+  }
+  SemanticContext* ctx;
+  SymbolTable*     st;
+};
+
 void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
   if (symbols->isDefined(name, SymbolTable::Any, false)) {
@@ -19,28 +31,27 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
         "Class " + name + " already defined");
   }
 
-  // check to see if all parents are defined
-  vector<ClassSymbol*> parSymbols;
-  for (TypeStringVec::iterator it = parents.begin();
-       it != parents.end(); ++it) {
-    ClassSymbol *parsym = symbols->findClassSymbolOrThrow(*it, true);
-    parSymbols.push_back(parsym);
+  if (parents.size() > 1) {
+    throw SemanticViolationException(
+        "Multiple inheritance currently not supported");
   }
 
-  if (parSymbols.empty()) {
+  // check to see if all parents are defined
+  vector<InstantiatedType*> parentTypes(parents.size());
+  transform(parents.begin(), parents.end(),
+            parentTypes.begin(), functor(ctx, symbols));
+
+  if (parents.empty()) {
     // if no explicit parents declared, parent is object (from the root symbols)
-    // TODO: instead of a lookup, we need to store this somewhere
-    ClassSymbol *objectType =
-      ctx->getRootSymbolTable()->findClassSymbol("object", false);
-    assert(objectType);
-    parSymbols.push_back(objectType);
+    parentTypes.push_back(InstantiatedType::ObjectType);
   }
 
   // Define this class's symbol. This MUST happen before semantic checks
   // on the children (to support self-references)
   // TODO: support multiple inheritance
-  Type *type = ctx->createType(name, parSymbols.front()->getType(), 0);
-  symbols->createClassSymbol(name, type);
+  // TODO: support type parameters
+  Type *type = ctx->createType(name, parentTypes.front(), 0);
+  symbols->createClassSymbol(name, stmts->getSymbolTable(), type);
 }
 
 void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {

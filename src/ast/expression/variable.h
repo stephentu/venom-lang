@@ -38,6 +38,9 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext* ctx);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;
     if (explicit_type) o << " " << *explicit_type;

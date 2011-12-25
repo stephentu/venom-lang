@@ -6,6 +6,7 @@
 
 #include <ast/node.h>
 
+#include <util/macros.h>
 #include <util/stl.h>
 
 namespace venom {
@@ -14,6 +15,16 @@ namespace ast {
 class ASTStatementNode : public ASTNode {
 public:
   ASTStatementNode() {}
+
+  virtual void typeCheck(analysis::SemanticContext* ctx) {
+    forchild (kid) {
+      if (kid) {
+        if (ASTStatementNode *stmt = dynamic_cast<ASTStatementNode*>(kid)) {
+          stmt->typeCheck(ctx);
+        }
+      }
+    } endfor
+  }
 };
 
 typedef std::vector<ASTStatementNode *> StmtNodeVec;

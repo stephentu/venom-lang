@@ -1,6 +1,7 @@
 #ifndef VENOM_ANALYSIS_TYPE_H
 #define VENOM_ANALYSIS_TYPE_H
 
+#include <cassert>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -9,24 +10,29 @@ namespace venom {
 namespace analysis {
 
 /** Forward decl */
-class SemanticContext;
+class ClassSymbol;
 class InstantiatedType;
+class SemanticContext;
+class SymbolTable;
 
 /**
  * Represents a type in the language. Is not an instantiated type
  * (see InstantiatedType for instantiations of Type)
  */
 class Type {
-  friend class SemanticContext;
   friend class InstantiatedType;
+  friend class SemanticContext;
+  friend class SymbolTable;
 protected:
-  /** Does NOT take ownership of ctx nor parent **/
+  /** Does NOT take ownership of symbol nor parent **/
   Type(const std::string& name,
-       SemanticContext*   ctx,
-       Type*              parent,
+       ClassSymbol*       symbol,
+       InstantiatedType*  parent,
        size_t             params)
-    : name(name), ctx(ctx), parent(parent),
+    : name(name), symbol(symbol), parent(parent),
       params(params), itype(NULL) {}
+
+  void setClassSymbol(ClassSymbol* symbol);
 
 public:
   ~Type();
@@ -38,7 +44,33 @@ public:
   static Type* FloatType;
   static Type* StringType;
   static Type* VoidType;
+
+  static Type* Func0Type;
+  static Type* Func1Type;
+  static Type* Func2Type;
+  static Type* Func3Type;
+  static Type* Func4Type;
+  static Type* Func5Type;
+  static Type* Func6Type;
+  static Type* Func7Type;
+  static Type* Func8Type;
+  static Type* Func9Type;
+
+  static Type* Func10Type;
+  static Type* Func11Type;
+  static Type* Func12Type;
+  static Type* Func13Type;
+  static Type* Func14Type;
+  static Type* Func15Type;
+  static Type* Func16Type;
+  static Type* Func17Type;
+  static Type* Func18Type;
+  static Type* Func19Type;
+
   static Type* ObjectType;
+
+  /** Special type which is the subtype of EVERY type */
+  static Type* BoundlessType;
 
   /** Special types which have syntactic sugar constructs
    * built into the grammar */
@@ -50,29 +82,43 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
-  inline Type* getParent() { return parent; }
-  inline const Type* getParent() const { return parent; }
+  inline ClassSymbol* getClassSymbol() { return symbol; }
+  inline const ClassSymbol* getClassSymbol() const { return symbol; }
+
+  inline InstantiatedType* getParent() { return parent; }
+  inline const InstantiatedType* getParent() const { return parent; }
 
   inline size_t getParams() const { return params; }
   inline bool hasParams() const { return params > 0; }
 
+  // TODO: stringify parameterized types
+  inline std::string stringify() const { return name; }
+
   /**
-   * Two types are equal iff their fully-qualified names are equal
+   * this =:= other?
    *
-   * Equivalent, this happens if their regular names are the same and
-   * their semantic contexts are the same
+   * Note that this <: other is NOT well-defined on a Type
+   * (see InstantiatedType) for subtype relations.
    */
   inline bool equals(const Type& other) const {
-    // TODO: context equality is implemented as pointer equality
+    // TODO: symbol equality is implemented as pointer equality
     // for now, fix later. Also will need to move this into
     // type.cc if we don't use pointer equality (and remove the inline)
-    return name == other.name && ctx == other.ctx;
+    return name == other.name && symbol == other.symbol;
   }
 
   /**
    * Any is the root of the type hierarchy (including primitives)
    */
-  inline bool isAnyType() const { return parent == NULL; }
+  inline bool isAnyType() const {
+    assert(parent || name == "any" || name == "boundless");
+    return (parent == NULL) ? name == "any" : false;
+  }
+
+  inline bool isBoundlessType() const {
+    assert(parent || name == "any" || name == "boundless");
+    return (parent == NULL) ? name == "boundless" : false;
+  }
 
   /**
    * The input SemanticContext is the current context, which
@@ -90,21 +136,20 @@ private:
   InstantiatedType* instantiate();
 
   /** Regular (not fully qualified) */
-  std::string      name;
+  std::string       name;
 
-  /** The semantic context (ie module) of this type.
-   * The fully qualified name of this type is constructed
-   * from the context's name + this type's name */
-  SemanticContext* ctx;
+  ClassSymbol*      symbol;
 
-  /** Parent type of this type. Null iff the root type (Any).
+  /** Parent type of this type. Null if the root type (Any), or the lower type
+   * (Boundless).
+   *
    *  TODO: When we support multiple inheritance, will need to
    *  change this to a vector of types */
-  Type*            parent;
+  InstantiatedType* parent;
 
   /** Number of parameterized types,
-   *  ie if this is T[K, V], then params = 2 */
-  size_t           params;
+   *  ie if this is T<K, V>, then params = 2 */
+  size_t            params;
 
   /** InstantiatedType of this type, only created if params = 0.
    * Takes ownership */
@@ -114,8 +159,8 @@ private:
 /**
  * Represents an instantiation of a Type
  *
- * For example, if we have some type map[k, v], then
- * an instantiated type is something like map[int, string]
+ * For example, if we have some type map<k, v>, then
+ * an instantiated type is something like map<int, string>
  */
 class InstantiatedType {
   friend class SemanticContext;
@@ -154,9 +199,24 @@ public:
   static InstantiatedType* StringType;
   static InstantiatedType* VoidType;
   static InstantiatedType* ObjectType;
+  static InstantiatedType* BoundlessType;
 
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
+
+  inline std::vector<InstantiatedType*>& getParams() { return params; }
+  inline const std::vector<InstantiatedType*>&
+    getParams() const { return params; }
+
+  /** this =:= other? */
+  bool equals(const InstantiatedType& other) const;
+  /** this <: other ? */
+  bool isSubtypeOf(const InstantiatedType& other) const;
+
+  /** Find the most common type between this type and other */
+  InstantiatedType* mostCommonType(InstantiatedType* other);
+
+  std::string stringify() const;
 
 private:
   /** The pure type being instantiated */
@@ -166,6 +226,8 @@ private:
   std::vector<InstantiatedType*> params;
 
 };
+
+typedef std::vector<InstantiatedType*> InstantiatedTypeVec;
 
 }
 }

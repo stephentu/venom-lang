@@ -29,6 +29,9 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext* ctx);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(arrayaccess ";
     primary->print(o, indent);

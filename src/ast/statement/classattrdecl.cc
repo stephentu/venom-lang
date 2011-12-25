@@ -18,7 +18,7 @@ void
 ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
   VariableNode *vn = dynamic_cast<VariableNode*>(variable);
   assert(vn);
-  AssignNode::RegisterSymbolForAssignment(ctx, symbols, vn);
+  AssignNode::RegisterSymbolForAssignment(ctx, symbols, vn, false);
 }
 
 void

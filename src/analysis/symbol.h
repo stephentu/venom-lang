@@ -10,15 +10,23 @@ namespace venom {
 namespace analysis {
 
 /** Forward decl */
+class SemanticContext;
 class SymbolTable;
 
 class BaseSymbol {
 public:
+  virtual ~BaseSymbol() {}
+
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
-  inline SymbolTable* getSymbolTable() { return table; }
-  inline const SymbolTable* getSymbolTable() const { return table; }
+  inline SymbolTable* getDefinedSymbolTable() { return table; }
+  inline const SymbolTable* getDefinedSymbolTable() const { return table; }
+
+  virtual InstantiatedType*
+    bind(SemanticContext* ctx,
+         const std::vector<InstantiatedType*>& params) = 0;
+
 protected:
   BaseSymbol(const std::string& name,
              SymbolTable*       table)
@@ -42,6 +50,13 @@ protected:
 public:
   inline InstantiatedType* getInstantiatedType() { return type; }
   inline const InstantiatedType* getInstantiatedType() const { return type; }
+
+  virtual InstantiatedType*
+    bind(SemanticContext* ctx,
+         const std::vector<InstantiatedType*>& params) {
+    // TODO: actually bind params
+    return type;
+  }
 
 private:
   InstantiatedType* type;
@@ -70,6 +85,10 @@ public:
   inline const InstantiatedType*
     getReturnType() const { return returnType; }
 
+  virtual InstantiatedType*
+    bind(SemanticContext* ctx,
+         const std::vector<InstantiatedType*>& params);
+
   bool isConstructor() const;
 
   bool isMethod() const;
@@ -86,16 +105,25 @@ class ClassSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
   ClassSymbol(const std::string& name,
-              SymbolTable*       table,
+              SymbolTable*       table,      /* defined */
+              SymbolTable*       classTable, /* class's table */
               Type*              type)
-    : BaseSymbol(name, table), type(type) {}
+    : BaseSymbol(name, table), classTable(classTable), type(type) {}
 
 public:
+  inline SymbolTable* getClassSymbolTable() { return classTable; }
+  inline const SymbolTable* getClassSymbolTable() const { return classTable; }
+
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 
+  virtual InstantiatedType*
+    bind(SemanticContext* ctx,
+         const std::vector<InstantiatedType*>& params);
+
 private:
-  Type* type;
+  SymbolTable* classTable;
+  Type*        type;
 };
 
 }

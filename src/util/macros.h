@@ -2,6 +2,7 @@
 #define VENOM_UTIL_MACROS_H
 
 #include <stdexcept>
+#include <string>
 
 #define VENOM_NELEMS(array) (sizeof((array))/sizeof((array)[0]))
 
@@ -12,6 +13,10 @@
     if (_i < _n) return (array)[_i]; \
     throw std::out_of_range(__func__); \
   } while (0)
+
+#define VENOM_UNIMPLEMENTED \
+  (throw std::runtime_error( \
+      std::string("Unimplemented: ") + std::string(__func__)))
 
 /**
  * Use forchild as such:

@@ -53,8 +53,12 @@ int main(int argc, char **argv) {
         pctx.stmts->semanticCheck(&ctx);
 
         // type check
+        pctx.stmts->typeCheck(&ctx);
+
       } catch (analysis::SemanticViolationException& e) {
-        cerr << "semantic violation: " << e.what() << endl;
+        cerr << "Semantic Violation: " << e.what() << endl;
+      } catch (analysis::TypeViolationException& e) {
+        cerr << "Typecheck Violation: " << e.what() << endl;
       }
     }
     return 0;

@@ -42,6 +42,15 @@ public:
 };
 
 /**
+ * Indicates that a type error occurred during type checking
+ */
+class TypeViolationException : public std::runtime_error {
+public:
+  explicit TypeViolationException(const std::string& what)
+    : std::runtime_error(what) {}
+};
+
+/**
  * This class represents a module. In a module, it manages
  * all types created. It does not managed scope, however.
  * So it will return a type with a certain name if it exists
@@ -67,7 +76,9 @@ public:
   inline const SymbolTable* getRootSymbolTable() const { return rootSymbols; }
 
   /** Creation of types. Should only be called when NEW types are encountered **/
-  Type* createType(const std::string& name, Type* parent, size_t params = 0);
+  Type* createType(const std::string& name,
+                   InstantiatedType*  parent,
+                   size_t             params = 0);
 
   InstantiatedType*
   createInstantiatedType(Type* type,

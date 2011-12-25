@@ -12,13 +12,18 @@ namespace venom {
 namespace analysis {
 
 bool
-SymbolTable::isDefined(const string& name, SymType type, bool recurse) {
-  assert(type & (Location | Function | Class));
+SymbolTable::isDefined(const string& name, unsigned int type, bool recurse) {
+  return findBaseSymbol(name, type, recurse);
+}
 
-  if ((type & Location) && findSymbol(name, recurse)) return true;
-  if ((type & Function) && findFuncSymbol(name, recurse)) return true;
-  if ((type & Class) && findClassSymbol(name, recurse)) return true;
-  return false;
+BaseSymbol*
+SymbolTable::findBaseSymbol(const string& name, unsigned int type, bool recurse) {
+  assert(type & (Location | Function | Class));
+  BaseSymbol *ret = NULL;
+  if ((type & Location) && (ret = findSymbol(name, recurse))) return ret;
+  if ((type & Function) && (ret = findFuncSymbol(name, recurse))) return ret;
+  if ((type & Class) && (ret = findClassSymbol(name, recurse))) return ret;
+  return NULL;
 }
 
 Symbol*
@@ -54,8 +59,10 @@ SymbolTable::findFuncSymbol(const string& name, bool recurse) {
 
 ClassSymbol*
 SymbolTable::createClassSymbol(const string& name,
+                               SymbolTable*  classTable,
                                Type*         type) {
-  ClassSymbol *sym = new ClassSymbol(name, this, type);
+  ClassSymbol *sym = new ClassSymbol(name, this, classTable, type);
+  type->setClassSymbol(sym);
   classContainer.insert(name, sym);
   return sym;
 }

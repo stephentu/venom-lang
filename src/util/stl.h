@@ -121,6 +121,35 @@ inline bool is_unique(Iter begin, Iter end) {
   return seen.size() == count;
 }
 
+template <typename Iter1, typename Iter2, typename BinaryPredicate>
+Iter1 binpred_find_if(Iter1 first1, Iter1 last1, Iter2 first2, BinaryPredicate pred) {
+  for (; first1 != last1; first1++, first2++) {
+    if (pred(*first1, *first2)) break;
+  }
+  return first1;
+}
+
+template <typename Iter, typename Accum, typename BinaryFunctor>
+Accum foldl(Iter begin, Iter end, Accum start, BinaryFunctor f) {
+  Accum cur = start;
+  while (begin != end) {
+    cur = f(cur, *begin);
+    ++begin;
+  }
+  return cur;
+}
+
+template <typename Iter, typename BinaryFunctor>
+typename Iter::value_type reducel(Iter begin, Iter end, BinaryFunctor f) {
+  typename Iter::value_type cur = *begin;
+  ++begin;
+  while (begin != end) {
+    cur = f(cur, *begin);
+    ++begin;
+  }
+  return cur;
+}
+
 }
 }
 

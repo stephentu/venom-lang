@@ -44,8 +44,8 @@ class ASTExpressionNode : public ASTNode {
 public:
   ASTExpressionNode() {}
 
-  //virtual analysis::InstantiatedType*
-  //typeCheck(analysis::SemanticContext* ctx) = 0;
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext* ctx) { return NULL; }
 };
 
 typedef std::vector<ASTExpressionNode *> ExprNodeVec;
