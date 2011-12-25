@@ -1,6 +1,7 @@
 #ifndef VENOM_AST_STRINGLITERAL_H
 #define VENOM_AST_STRINGLITERAL_H
 
+#include <stdexcept>
 #include <string>
 
 #include <ast/expression/node.h>
@@ -19,6 +20,10 @@ public:
   }
 
   virtual bool needsNewScope(size_t k) const { return false; }
+
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext*  ctx,
+              analysis::InstantiatedType* expected);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stringlit '" << value << "')";

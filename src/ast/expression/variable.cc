@@ -19,7 +19,8 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
 }
 
 InstantiatedType*
-VariableNode::typeCheck(SemanticContext* ctx) {
+VariableNode::typeCheck(SemanticContext*  ctx,
+                        InstantiatedType* expected) {
   Symbol *s = symbols->findSymbol(name, true);
   assert(s);
   return s->getInstantiatedType();

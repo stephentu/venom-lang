@@ -11,8 +11,9 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-AttrAccessNode::typeCheck(SemanticContext* ctx) {
-  InstantiatedType *obj = primary->typeCheck(ctx);
+AttrAccessNode::typeCheck(SemanticContext*  ctx,
+                          InstantiatedType* expected) {
+  InstantiatedType *obj = primary->typeCheck(ctx, NULL);
   BaseSymbol *attrSym =
     obj
       ->getType()

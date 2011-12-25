@@ -52,8 +52,8 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
                                 SymbolTable*       symbols,
                                 ASTExpressionNode* variable,
                                 ASTExpressionNode* value) {
-  InstantiatedType *lhs = variable->typeCheck(ctx);
-  InstantiatedType *rhs = value->typeCheck(ctx);
+  InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
+  InstantiatedType *rhs = value->typeCheck(ctx, lhs);
   assert(rhs);
   if (lhs) {
     // require rhs <: lhs
