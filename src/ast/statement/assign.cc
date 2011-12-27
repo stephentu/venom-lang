@@ -44,6 +44,7 @@ AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
     }
 
     symbols->createSymbol(var->getName(), itype);
+    assert(symbols->isDefined(var->getName(), SymbolTable::Location, true));
   }
 }
 

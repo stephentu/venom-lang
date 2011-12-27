@@ -19,10 +19,7 @@ AttrAccessNode::typeCheck(SemanticContext*  ctx,
       ->getType()
       ->getClassSymbol()
       ->getClassSymbolTable()
-      ->findBaseSymbol(
-        name,
-        SymbolTable::Function | SymbolTable::Class,
-        true);
+      ->findBaseSymbol(name, SymbolTable::Any, true);
   if (!attrSym) {
     throw TypeViolationException(
         "Type " + obj->stringify() + " has no member " + name);

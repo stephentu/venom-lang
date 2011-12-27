@@ -77,6 +77,8 @@ public:
   static Type* ListType;
   static Type* MapType;
 
+  static const std::vector<Type*> FuncTypes;
+
   /** Accessors **/
 
   inline std::string& getName() { return name; }
@@ -95,6 +97,7 @@ public:
   inline std::string stringify() const { return name; }
 
   bool isNumeric() const;
+  bool isFunction() const;
 
   /**
    * this =:= other?
@@ -211,6 +214,7 @@ public:
     getParams() const { return params; }
 
   inline bool isNumeric() const { return getType()->isNumeric(); }
+  inline bool isFunction() const { return getType()->isFunction(); }
 
   /** this =:= other? */
   bool equals(const InstantiatedType& other) const;

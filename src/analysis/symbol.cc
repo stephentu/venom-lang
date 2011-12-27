@@ -31,37 +31,16 @@ FuncSymbol::bind(SemanticContext* ctx,
                  const vector<InstantiatedType*>& params) {
   // TODO: actually bind params
 
-  Type *ftypes[] = {
-    Type::Func0Type,
-    Type::Func1Type,
-    Type::Func2Type,
-    Type::Func3Type,
-    Type::Func4Type,
-    Type::Func5Type,
-    Type::Func6Type,
-    Type::Func7Type,
-    Type::Func8Type,
-    Type::Func9Type,
-    Type::Func10Type,
-    Type::Func11Type,
-    Type::Func12Type,
-    Type::Func13Type,
-    Type::Func14Type,
-    Type::Func15Type,
-    Type::Func16Type,
-    Type::Func17Type,
-    Type::Func18Type,
-    Type::Func19Type,
-  };
-
-  if (this->params.size() >= VENOM_NELEMS(ftypes)) {
+  if (this->params.size() >= Type::FuncTypes.size()) {
     // TODO: better error message
     throw runtime_error("Too many parameters");
   }
 
   vector<InstantiatedType*> fparams(this->params);
   fparams.push_back(returnType);
-  return ftypes[params.size()]->instantiate(ctx, fparams);
+  InstantiatedType *ret = Type::FuncTypes.at(this->params.size())->instantiate(ctx, fparams);
+  assert(ret);
+  return ret;
 }
 
 InstantiatedType*

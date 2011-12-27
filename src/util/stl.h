@@ -150,6 +150,13 @@ typename Iter::value_type reducel(Iter begin, Iter end, BinaryFunctor f) {
   return cur;
 }
 
+template <typename T>
+inline std::string stringify(const T& t) {
+  std::stringstream buf;
+  buf << t;
+  return buf.str();
+}
+
 }
 }
 

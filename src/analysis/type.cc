@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <stdexcept>
 #include <sstream>
 #include <stack>
 
@@ -6,6 +7,7 @@
 #include <analysis/symbol.h>
 #include <analysis/type.h>
 
+#include <util/macros.h>
 #include <util/stl.h>
 
 using namespace std;
@@ -52,6 +54,31 @@ Type* Type::BoundlessType(new Type("boundless", NULL, NULL, 0));
 Type* Type::ListType(new Type("list", NULL, InstantiatedType::ObjectType, 1));
 Type* Type::MapType(new Type("map", NULL, InstantiatedType::ObjectType, 2));
 
+static Type* ftypes[] = {
+  Type::Func0Type,
+  Type::Func1Type,
+  Type::Func2Type,
+  Type::Func3Type,
+  Type::Func4Type,
+  Type::Func5Type,
+  Type::Func6Type,
+  Type::Func7Type,
+  Type::Func8Type,
+  Type::Func9Type,
+  Type::Func10Type,
+  Type::Func11Type,
+  Type::Func12Type,
+  Type::Func13Type,
+  Type::Func14Type,
+  Type::Func15Type,
+  Type::Func16Type,
+  Type::Func17Type,
+  Type::Func18Type,
+  Type::Func19Type,
+};
+
+const vector<Type*> Type::FuncTypes(ftypes, ftypes + VENOM_NELEMS(ftypes));
+
 void Type::setClassSymbol(ClassSymbol* symbol) {
   assert(!this->symbol);
   assert(name == symbol->getName());
@@ -65,6 +92,14 @@ Type::~Type() {
 
 bool Type::isNumeric() const {
   return equals(*IntType) || equals(*FloatType);
+}
+
+bool Type::isFunction() const {
+  for (vector<Type*>::const_iterator it = FuncTypes.begin();
+       it != FuncTypes.end(); ++it) {
+    if (equals(**it)) return true;
+  }
+  return false;
 }
 
 InstantiatedType* Type::instantiate() {
@@ -87,7 +122,11 @@ Type::instantiate(SemanticContext* ctx) {
 InstantiatedType*
 Type::instantiate(SemanticContext* ctx,
                   const vector<InstantiatedType*>& params) {
-  if (this->params != params.size()) return NULL;
+  if (this->params != params.size()) {
+    throw invalid_argument(
+        "Expected " + util::stringify(this->params) + " params, got " +
+        util::stringify(params.size()) + " params");
+  }
   if (this->params == 0) {
     return itype ? itype : (itype = new InstantiatedType(this));
   } else {

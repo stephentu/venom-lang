@@ -59,6 +59,8 @@ int main(int argc, char **argv) {
         cerr << "Semantic Violation: " << e.what() << endl;
       } catch (analysis::TypeViolationException& e) {
         cerr << "Typecheck Violation: " << e.what() << endl;
+      } catch (exception& e) {
+        cerr << "Uncaught Exception: " << e.what() << endl;
       }
     }
     return 0;
