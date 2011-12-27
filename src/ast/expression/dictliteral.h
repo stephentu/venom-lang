@@ -23,6 +23,9 @@ public:
     delete second;
   }
 
+  inline ASTExpressionNode* key()   { return first;  }
+  inline ASTExpressionNode* value() { return second; }
+
   virtual size_t getNumKids() const { return 2; }
 
   virtual ASTNode* getNthKid(size_t kid) {
@@ -32,8 +35,9 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
-  inline ASTExpressionNode* key()   { return first;  }
-  inline ASTExpressionNode* value() { return second; }
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext*  ctx,
+              analysis::InstantiatedType* expected) { VENOM_UNIMPLEMENTED; }
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(pair ";
