@@ -12,11 +12,18 @@ namespace ast {
 
 class StmtListNode : public ASTStatementNode {
 public:
+  StmtListNode() {}
   StmtListNode(const StmtNodeVec& stmts)
     : stmts(stmts) {}
 
   ~StmtListNode() {
     util::delete_pointers(stmts.begin(), stmts.end());
+  }
+
+  /** Takes ownership of stmt. Returns self for chaining */
+  inline StmtListNode* appendStatement(ASTStatementNode* stmt) {
+    stmts.push_back(stmt);
+    return this;
   }
 
   virtual size_t getNumKids() const { return stmts.size(); }

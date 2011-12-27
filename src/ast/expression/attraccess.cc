@@ -16,8 +16,6 @@ AttrAccessNode::typeCheck(SemanticContext*  ctx,
   InstantiatedType *obj = primary->typeCheck(ctx, NULL);
   BaseSymbol *attrSym =
     obj
-      ->getType()
-      ->getClassSymbol()
       ->getClassSymbolTable()
       ->findBaseSymbol(name, SymbolTable::Any, true);
   if (!attrSym) {

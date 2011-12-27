@@ -6,6 +6,8 @@
 #include <analysis/symboltable.h>
 
 #include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
+#include <ast/statement/stmtlist.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -68,6 +70,25 @@ void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   forchild (kid) {
     kid->semanticCheckImpl(ctx, false);
   } endfor
+
+  // now look for a ctor definition
+  if (!stmts->getSymbolTable()->findFuncSymbol(name, false)) {
+    // no ctor defined, insert a default one
+    ASTStatementNode *ctor =
+      new FuncDeclNode(
+          name,
+          ExprNodeVec(),
+          new ParameterizedTypeString("void"),
+          new StmtListNode);
+
+    ctor->initSymbolTable(stmts->getSymbolTable());
+    ctor->registerSymbol(ctx);
+    ctor->semanticCheckImpl(ctx, false); // technically not needed,
+                                         // since empty body
+
+    dynamic_cast<StmtListNode*>(stmts)->appendStatement(ctor);
+  }
+  assert(stmts->getSymbolTable()->findFuncSymbol(name, false));
 }
 
 }

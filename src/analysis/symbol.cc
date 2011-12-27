@@ -46,7 +46,7 @@ FuncSymbol::bind(SemanticContext* ctx,
 InstantiatedType*
 ClassSymbol::bind(SemanticContext* ctx,
                   const vector<InstantiatedType*>& params) {
-  VENOM_UNIMPLEMENTED;
+  return type->instantiate(ctx);
 }
 
 }

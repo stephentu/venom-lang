@@ -34,10 +34,20 @@ InstantiatedType*
 FunctionCallNode::typeCheck(SemanticContext*  ctx,
                             InstantiatedType* expected) {
   InstantiatedType *funcType = primary->typeCheck(ctx, NULL);
+  InstantiatedType *origType = funcType;
+
+  bool isCtor = false;
   if (!funcType->isFunction()) {
-    throw TypeViolationException(
-        "Expected callable type for function call, got " +
-        funcType->stringify());
+    // try to find the constructor
+    BaseSymbol *ctorSym = funcType
+      ->getClassSymbolTable()
+      ->findBaseSymbol(funcType->getType()->getName(),
+                       SymbolTable::Function,
+                       false);
+    assert(ctorSym);
+    funcType = ctorSym->bind(ctx, funcType->getParams());
+    assert(funcType->isFunction());
+    isCtor = true;
   }
   assert(funcType->getType()->getParams() > 0); // return type is last param
   if ((funcType->getType()->getParams() - 1) != args.size()) {
@@ -52,16 +62,16 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
 
   vector<InstantiatedType*>::iterator it =
     binpred_find_if(funcType->getParams().begin(),
-                          funcType->getParams().end() - 1,
-                          paramTypes.begin(),
-                          param_functor);
+                    funcType->getParams().end() - 1,
+                    paramTypes.begin(),
+                    param_functor);
   if (it != (funcType->getParams().end() - 1)) {
     throw TypeViolationException(
         "Expected type " + (*it)->stringify() + ", got type " +
         paramTypes[it - funcType->getParams().begin()]->stringify());
   }
 
-  return funcType->getParams().back();
+  return isCtor ? origType : funcType->getParams().back();
 
 }
 

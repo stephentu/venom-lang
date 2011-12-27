@@ -141,6 +141,16 @@ struct equals_functor_t {
   }
 } equals_functor;
 
+SymbolTable*
+InstantiatedType::getClassSymbolTable() {
+  return getType()->getClassSymbol()->getClassSymbolTable();
+}
+
+const SymbolTable*
+InstantiatedType::getClassSymbolTable() const {
+  return getType()->getClassSymbol()->getClassSymbolTable();
+}
+
 bool InstantiatedType::equals(const InstantiatedType& other) const {
   // equal if the types are equal and all params are equal
   if (!type->equals(*other.getType())) return false;

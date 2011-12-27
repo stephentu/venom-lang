@@ -216,6 +216,9 @@ public:
   inline bool isNumeric() const { return getType()->isNumeric(); }
   inline bool isFunction() const { return getType()->isFunction(); }
 
+  SymbolTable* getClassSymbolTable();
+  const SymbolTable* getClassSymbolTable() const;
+
   /** this =:= other? */
   bool equals(const InstantiatedType& other) const;
   /** this <: other ? */
