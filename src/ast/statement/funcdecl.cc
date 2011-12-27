@@ -63,14 +63,35 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     retType = InstantiatedType::VoidType;
   }
 
-  // check that ctors dont have non-void return types
+
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
+
+    // check that ctors dont have non-void return types
     if (cdn->getName() == name &&
         !retType->equals(*InstantiatedType::VoidType)) {
       throw SemanticViolationException(
           "Constructor cannot have non void return type");
+    }
+
+    // check that type-signature matches for overrides
+    FuncSymbol *fs = symbols->findFuncSymbol(name, true);
+    if (fs && fs->isMethod()) {
+      InstantiatedType *overrideType =
+        fs->bind(ctx, vector<InstantiatedType*>());
+
+      vector<InstantiatedType*> fparams(itypes);
+      fparams.push_back(retType);
+      InstantiatedType *myType =
+        Type::FuncTypes.at(itypes.size())->instantiate(ctx, fparams);
+
+      if (!overrideType->equals(*myType)) {
+        throw SemanticViolationException(
+            "Overriding type signatures do not match: Cannot override method " +
+            name + " of type " + overrideType->stringify() +
+            " with type " + myType->stringify());
+      }
     }
   }
 
