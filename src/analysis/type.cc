@@ -63,6 +63,10 @@ Type::~Type() {
   if (itype) delete itype;
 }
 
+bool Type::isNumeric() const {
+  return equals(*IntType) || equals(*FloatType);
+}
+
 InstantiatedType* Type::instantiate() {
   assert(params == 0);
   return itype ? itype : (itype = new InstantiatedType(this));

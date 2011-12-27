@@ -4,6 +4,7 @@
 #include <string>
 
 #include <ast/expression/node.h>
+#include <util/macros.h>
 
 namespace venom {
 namespace ast {
@@ -37,6 +38,8 @@ public:
     BIT_RSHIFT,
   };
 
+  static std::string StringifyType(Type type);
+
   BinopNode(ASTExpressionNode* left, ASTExpressionNode* right, Type type)
     : left(left), right(right), type(type) {}
 
@@ -53,6 +56,10 @@ public:
   }
 
   virtual bool needsNewScope(size_t k) const { return false; }
+
+  virtual analysis::InstantiatedType*
+    typeCheck(analysis::SemanticContext*  ctx,
+              analysis::InstantiatedType* expected);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     // TODO: stringify the type

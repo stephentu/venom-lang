@@ -94,6 +94,8 @@ public:
   // TODO: stringify parameterized types
   inline std::string stringify() const { return name; }
 
+  bool isNumeric() const;
+
   /**
    * this =:= other?
    *
@@ -207,6 +209,8 @@ public:
   inline std::vector<InstantiatedType*>& getParams() { return params; }
   inline const std::vector<InstantiatedType*>&
     getParams() const { return params; }
+
+  inline bool isNumeric() const { return getType()->isNumeric(); }
 
   /** this =:= other? */
   bool equals(const InstantiatedType& other) const;
