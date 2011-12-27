@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 
 #include <analysis/semanticcontext.h>
@@ -10,6 +11,35 @@ using namespace venom::ast;
 
 namespace venom {
 namespace analysis {
+
+SymbolTable::SymbolTable(SymbolTable* parent, ASTNode* owner)
+  : parents(parent ? util::vec1(parent) : vector<SymbolTable*>()),
+    owner(owner),
+    symbolContainer(
+        parent ?
+          util::vec1(&parent->symbolContainer) :
+          CType<Symbol*>::vec_type()),
+    funcContainer(
+        parent ?
+          util::vec1(&parent->funcContainer) :
+          CType<FuncSymbol*>::vec_type()),
+    classContainer(
+        parent ?
+          util::vec1(&parent->classContainer) :
+          CType<ClassSymbol*>::vec_type()) {}
+
+SymbolTable::SymbolTable(const vector<SymbolTable*>& parents, ASTNode* owner)
+  : parents(parents),
+    owner(owner),
+    symbolContainer(
+        util::transform_vec(
+          parents.begin(), parents.end(), CType<Symbol*>())),
+    funcContainer(
+        util::transform_vec(
+          parents.begin(), parents.end(), CType<FuncSymbol*>())),
+    classContainer(
+        util::transform_vec(
+          parents.begin(), parents.end(), CType<ClassSymbol*>())) {}
 
 bool
 SymbolTable::isDefined(const string& name, unsigned int type, bool recurse) {

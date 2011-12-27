@@ -15,35 +15,35 @@ namespace venom {
 namespace ast {
   /** Forward decl */
   struct ParameterizedTypeString;
+  class ClassDeclNode;
 }
 
 namespace analysis {
 
 class SymbolTable {
+  friend class ast::ClassDeclNode;
 private:
   /** Create a child symbol table */
-  SymbolTable(SymbolTable* parent, ast::ASTNode* owner)
-    : parent(parent),
-      owner(owner),
-      symbolContainer(SAFE_ADDR(parent, symbolContainer)),
-      funcContainer(SAFE_ADDR(parent, funcContainer)),
-      classContainer(SAFE_ADDR(parent, classContainer)) {}
+  SymbolTable(SymbolTable* parent, ast::ASTNode* owner);
+  SymbolTable(const std::vector<SymbolTable*>& parents, ast::ASTNode* owner);
+
+protected:
+  inline void addParent(SymbolTable* parent) {
+    parents.push_back(parent);
+    symbolContainer.parents.push_back(&parent->symbolContainer);
+    funcContainer.parents.push_back(&parent->funcContainer);
+    classContainer.parents.push_back(&parent->classContainer);
+  }
+
 public:
   /** Create the root symbol table */
   SymbolTable()
-    : parent(NULL),
-      owner(NULL),
-      symbolContainer(NULL),
-      funcContainer(NULL),
-      classContainer(NULL) {}
+    : owner(NULL) {}
 
   ~SymbolTable() {
     // delete children
     util::delete_pointers(children.begin(), children.end());
   }
-
-  inline SymbolTable* getParent() { return parent; }
-  inline const SymbolTable* getParent() const { return parent; }
 
   inline ast::ASTNode* getOwner() { return owner; }
   inline const ast::ASTNode* getOwner() const { return owner; }
@@ -106,14 +106,19 @@ public:
                          bool recurse);
 
 private:
-  SymbolTable*              parent;
+  /** WARNING: while a SymbolTable can have multiple parents, only
+   * one of its parents can have it as a child. This allows us to
+   * prevent double-deletes when calling the destructor */
+  std::vector<SymbolTable*> parents;
   ast::ASTNode*             owner;
   std::vector<SymbolTable*> children;
 
   template <typename S>
   class container {
   public:
-    container(container<S>* parent) : parent(parent) {}
+    container() {}
+    container(const std::vector<container<S>*>& parents)
+      : parents(parents) {}
     typedef std::map<std::string, S> map_type;
     typedef std::vector<S>           vec_type;
     map_type map;
@@ -123,18 +128,31 @@ private:
       map[name] = elem;
       vec.push_back(elem);
     }
-    void find(S& elem, const std::string& name, bool recurse) {
+    bool find(S& elem, const std::string& name, bool recurse) {
       typename map_type::iterator it = map.find(name);
       if (it != map.end()) {
         elem = it->second;
-        return;
+        return true;
       }
-      if (recurse && parent) {
-        parent->find(elem, name, recurse);
+      if (recurse) {
+        typename std::vector<container<S>*>::iterator it = parents.begin();
+        for (; it != parents.end(); ++it) {
+          if ((*it)->find(elem, name, true)) return true;
+        }
       }
+      return false;
     }
-  private:
-    container<S>* parent;
+    std::vector<container<S>*> parents;
+  };
+
+  template <typename S>
+  struct CType {
+    typedef std::vector<container<S>*>       vec_type;
+    typedef const std::vector<container<S>*> const_vec_type;
+    typedef container<S>*                    result_type;
+    inline container<S>* operator()(SymbolTable* symtab) const {
+      VENOM_UNIMPLEMENTED;
+    }
   };
 
   /** Containers for each kind of symbol */
@@ -143,6 +161,21 @@ private:
   container<ClassSymbol*> classContainer;
 
 };
+
+template <> inline SymbolTable::container<Symbol*>*
+SymbolTable::CType<Symbol*>::operator()(SymbolTable* symtab) const {
+  return &symtab->symbolContainer;
+}
+
+template <> inline SymbolTable::container<FuncSymbol*>*
+SymbolTable::CType<FuncSymbol*>::operator()(SymbolTable* symtab) const {
+  return &symtab->funcContainer;
+}
+
+template <> inline SymbolTable::container<ClassSymbol*>*
+SymbolTable::CType<ClassSymbol*>::operator()(SymbolTable* symtab) const {
+  return &symtab->classContainer;
+}
 
 }
 }

@@ -178,7 +178,6 @@ static void FillStack(stack<InstantiatedType*>& st, InstantiatedType* type) {
   }
 }
 
-
 InstantiatedType*
 InstantiatedType::mostCommonType(InstantiatedType* other) {
   // check for boundless type first

@@ -44,7 +44,7 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
             parentTypes.begin(), functor(ctx, symbols));
 
   if (parents.empty()) {
-    // if no explicit parents declared, parent is object (from the root symbols)
+    // if no explicit parents declared, parent is object
     parentTypes.push_back(InstantiatedType::ObjectType);
   }
 
@@ -54,6 +54,12 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // TODO: support type parameters
   Type *type = ctx->createType(name, parentTypes.front(), 0);
   symbols->createClassSymbol(name, stmts->getSymbolTable(), type);
+
+  // link the stmts symbol table to the parents symbol tables
+  for (vector<InstantiatedType*>::iterator it = parentTypes.begin();
+       it != parentTypes.end(); ++it) {
+    stmts->getSymbolTable()->addParent((*it)->getClassSymbolTable());
+  }
 }
 
 void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {

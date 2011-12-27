@@ -3,10 +3,12 @@
 
 #include <cassert>
 
+#include <algorithm>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace venom {
 namespace util {
@@ -148,6 +150,17 @@ typename Iter::value_type reducel(Iter begin, Iter end, BinaryFunctor f) {
     ++begin;
   }
   return cur;
+}
+
+template <typename Iter, typename Functor>
+inline std::vector<typename Functor::result_type>
+transform_vec(Iter begin, Iter end, Functor f) {
+  std::vector<typename Functor::result_type> res(end - begin);
+  while (begin != end) {
+    res.push_back(f(*begin));
+    ++begin;
+  }
+  return res;
 }
 
 template <typename T>
