@@ -192,10 +192,10 @@ forstmt : "for" variable "<-" expr "do" stmtlist "end"
 returnstmt : "return" expr exprend
              { $$ = new ast::ReturnNode($2); }
 
-funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' rettype stmtlist "end"
+funcdeclstmt : "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end"
                {
-                 $$ = new ast::FuncDeclNode(*$2, *$4, $6, $7);
-                 delete $2; delete $4;
+                 $$ = new ast::FuncDeclNode(*$2, *$3, *$5, $7, $9);
+                 delete $2; delete $3; delete $5;
                }
 
 classdeclstmt : "class" IDENTIFIER typeparams inheritance classbodystmtlist "end"
@@ -225,7 +225,7 @@ classbodystmtlist_buffer : /* empty */
                            { $1->push_back($2); $$ = $1; }
 
 typeparams : /* empty */ { $$ = new util::StrVec; }
-           | '<' typeparams0 '>' { $$ = $2; }
+           | '{' typeparams0 '}' { $$ = $2; }
 
 typeparams0: typeparams0rest IDENTIFIER { $1->push_back(*$2); $$ = $1; delete $2; }
 
@@ -236,8 +236,8 @@ inheritance : /* empty */         { $$ = new ast::TypeStringVec; }
             | "<-" paramtypenames { $$ = $2; }
 
 
-rettype : /* empty */        { $$ = NULL; }
-        | "->" paramtypename { $$ = $2;   }
+rettype : /* empty */        { $$ = new ast::ParameterizedTypeString("void"); }
+        | "->" paramtypename { $$ = $2; }
 
 paramlist : /* empty */
             { $$ = new ast::ExprNodeVec;  }
@@ -269,8 +269,11 @@ primary : atom
           { $$ = new ast::AttrAccessNode($1, *$3); delete $3; }
         | primary '[' expr ']'
           { $$ = new ast::ArrayAccessNode($1, $3); }
-        | primary '(' exprlist ')'
-          { $$ = new ast::FunctionCallNode($1, *$3); delete $3; }
+        | primary optparamtypenames '(' exprlist ')'
+          {
+            $$ = new ast::FunctionCallNode($1, *$2, *$4);
+            delete $2; delete $4;
+          }
 
 unop_pm : primary
         | '-' unop_pm { $$ = new ast::UnopNode($2, ast::UnopNode::MINUS); }
@@ -376,7 +379,7 @@ paramtypename : typename optparamtypenames
                 }
 
 optparamtypenames : /* empty */            { $$ = new ast::TypeStringVec; }
-                  | '<' paramtypenames '>' { $$ = $2;                     }
+                  | '{' paramtypenames '}' { $$ = $2;                     }
 
 paramtypenames : paramtypenames0 paramtypename { $1->push_back($2); $$ = $1; }
 

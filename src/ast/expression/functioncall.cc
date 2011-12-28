@@ -16,9 +16,20 @@ namespace ast {
 struct functor {
   functor(SemanticContext* ctx) : ctx(ctx) {}
   inline InstantiatedType* operator()(ASTExpressionNode* node) const {
-    return node->typeCheck(ctx, NULL);
+    return node->typeCheck(ctx);
   }
   SemanticContext* ctx;
+};
+
+struct type_param_functor {
+  type_param_functor(SemanticContext* ctx, SymbolTable* st)
+    : ctx(ctx), st(st) {}
+  inline
+  InstantiatedType* operator()(const ParameterizedTypeString* t) const {
+    return ctx->instantiateOrThrow(st, t);
+  }
+  SemanticContext* ctx;
+  SymbolTable*     st;
 };
 
 struct param_functor_t {
@@ -32,8 +43,15 @@ struct param_functor_t {
 
 InstantiatedType*
 FunctionCallNode::typeCheck(SemanticContext*  ctx,
-                            InstantiatedType* expected) {
-  InstantiatedType *funcType = primary->typeCheck(ctx, NULL);
+                            InstantiatedType* expected,
+                            const InstantiatedTypeVec& typeParamArgs) {
+
+  // instantiate type parameters
+  InstantiatedTypeVec tparams(typeArgs.size());
+  transform(typeArgs.begin(), typeArgs.end(),
+            tparams.begin(), type_param_functor(ctx, symbols));
+
+  InstantiatedType *funcType = primary->typeCheck(ctx, NULL, tparams);
   InstantiatedType *origType = funcType;
 
   bool isCtor = false;
@@ -46,6 +64,7 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
                        SymbolTable::Function,
                        false, t);
     assert(ctorSym);
+    t.bind(funcType);
     funcType = ctorSym->bind(ctx, t, InstantiatedTypeVec());
     assert(funcType->isFunction());
     isCtor = true;

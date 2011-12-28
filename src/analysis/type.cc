@@ -143,8 +143,8 @@ Type::instantiate(SemanticContext* ctx,
                   const vector<InstantiatedType*>& params) {
   if (this->params != params.size()) {
     throw invalid_argument(
-        "Expected " + util::stringify(this->params) + " params, got " +
-        util::stringify(params.size()) + " params");
+        "Expected " + util::stringify(this->params) + " type params, got " +
+        util::stringify(params.size()) + " type params");
   }
   if (this->params == 0) {
     return itype ? itype : (itype = new InstantiatedType(this));

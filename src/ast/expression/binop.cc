@@ -36,10 +36,11 @@ string BinopNode::StringifyType(Type type) {
 }
 
 InstantiatedType*
-BinopNode::typeCheck(SemanticContext*  ctx,
-                     InstantiatedType* expected) {
-  InstantiatedType *lhs = left->typeCheck(ctx, NULL);
-  InstantiatedType *rhs = right->typeCheck(ctx, NULL);
+BinopNode::typeCheck(SemanticContext* ctx,
+                     InstantiatedType* expected,
+                     const InstantiatedTypeVec& typeParamArgs) {
+  InstantiatedType *lhs = left->typeCheck(ctx);
+  InstantiatedType *rhs = right->typeCheck(ctx);
 
   switch (type) {
   case ADD:

@@ -8,8 +8,9 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-StringLiteralNode::typeCheck(SemanticContext*  ctx,
-                             InstantiatedType* expected) {
+StringLiteralNode::typeCheck(SemanticContext* ctx,
+                             InstantiatedType* expected,
+                             const InstantiatedTypeVec& typeParamArgs) {
   return InstantiatedType::StringType;
 }
 

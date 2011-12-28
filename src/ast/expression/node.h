@@ -13,6 +13,7 @@ namespace venom {
 namespace analysis {
   /** Forward decl for typeCheck */
   class InstantiatedType;
+  typedef std::vector<InstantiatedType*> InstantiatedTypeVec;
 }
 
 namespace ast {
@@ -44,9 +45,17 @@ class ASTExpressionNode : public ASTNode {
 public:
   ASTExpressionNode() {}
 
+  /** Do type-checking on this node recursively.
+   *  expected is what you expect this node to type-check to, if it matters
+   *    (is NULL in most cases)
+   *  typeParamArgs is a list of type parameter arguments, if it matters
+   *    (is empty in most cases)
+   */
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext*  ctx,
-              analysis::InstantiatedType* expected) = 0;
+    typeCheck(analysis::SemanticContext* ctx,
+              analysis::InstantiatedType* expected = NULL,
+              const analysis::InstantiatedTypeVec& typeParamArgs
+                = analysis::InstantiatedTypeVec()) = 0;
 };
 
 typedef std::vector<ASTExpressionNode *> ExprNodeVec;

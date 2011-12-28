@@ -52,7 +52,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType);
 
   // func symbols
-  root->createFuncSymbol("print",
+  root->createFuncSymbol("print", InstantiatedTypeVec(),
                          util::vec1(InstantiatedType::AnyType),
                          InstantiatedType::VoidType);
 

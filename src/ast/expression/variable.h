@@ -39,8 +39,10 @@ public:
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext*  ctx,
-              analysis::InstantiatedType* expected);
+    typeCheck(analysis::SemanticContext* ctx,
+              analysis::InstantiatedType* expected = NULL,
+              const analysis::InstantiatedTypeVec& typeParamArgs
+                = analysis::InstantiatedTypeVec());
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;

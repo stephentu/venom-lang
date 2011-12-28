@@ -16,7 +16,7 @@ namespace analysis {
 InstantiatedType*
 Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
              const InstantiatedTypeVec& params) {
-  return t.translate(ctx, type);
+  return type ? t.translate(ctx, type) : NULL;
 }
 
 bool FuncSymbol::isConstructor() const {
@@ -35,6 +35,19 @@ bool FuncSymbol::isMethod() const {
 InstantiatedType*
 FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                  const InstantiatedTypeVec& params) {
+  if (typeParams.size() != params.size()) {
+    throw TypeViolationException(
+        "Expected " + util::stringify(typeParams.size()) +
+        " type arguments to function " + name + ", got " +
+        util::stringify(params.size()));
+  }
+
+  // add mapping to the type translator
+  TypeMap map(typeParams.size());
+  util::zip(typeParams.begin(), typeParams.end(),
+            params.begin(), map.begin());
+  t.map.insert(t.map.end(), map.begin(), map.end());
+
   // TODO: bind params to func type when we have parameterized
   // function types
   if (this->params.size() >= Type::FuncTypes.size()) {

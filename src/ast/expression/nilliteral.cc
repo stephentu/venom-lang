@@ -8,8 +8,9 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-NilLiteralNode::typeCheck(SemanticContext*  ctx,
-                          InstantiatedType* expected) {
+NilLiteralNode::typeCheck(SemanticContext* ctx,
+                          InstantiatedType* expected,
+                          const InstantiatedTypeVec& typeParamArgs) {
   if (expected && expected->isSubtypeOf(*InstantiatedType::ObjectType)) {
     return expected;
   }

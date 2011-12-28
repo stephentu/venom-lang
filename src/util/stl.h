@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace venom {
 namespace util {
@@ -161,6 +162,15 @@ transform_vec(Iter begin, Iter end, Functor f) {
     ++begin;
   }
   return res;
+}
+
+template <typename InputIter1, typename InputIter2, typename OutputIter>
+inline OutputIter zip(InputIter1 first1, InputIter1 last1,
+                      InputIter2 first2, OutputIter output) {
+  while (first1 != last1) {
+    *output++ = std::make_pair(*first1++, *first2++);
+  }
+  return output;
 }
 
 template <typename T>

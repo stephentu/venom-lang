@@ -31,5 +31,10 @@ ClassAttrDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   // dont recurse on variable...
 }
 
+void
+ClassAttrDeclNode::typeCheck(SemanticContext* ctx) {
+  if (value) AssignNode::TypeCheckAssignment(ctx, symbols, variable, value);
+}
+
 }
 }

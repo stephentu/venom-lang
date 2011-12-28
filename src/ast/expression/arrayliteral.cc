@@ -16,7 +16,7 @@ namespace ast {
 struct functor {
   functor(SemanticContext* ctx) : ctx(ctx) {}
   inline InstantiatedType* operator()(ASTExpressionNode* exp) const {
-    return exp->typeCheck(ctx, NULL);
+    return exp->typeCheck(ctx);
   }
   SemanticContext* ctx;
 };
@@ -29,8 +29,9 @@ struct reduce_functor_t {
 } reduce_functor;
 
 InstantiatedType*
-ArrayLiteralNode::typeCheck(SemanticContext*  ctx,
-                            InstantiatedType* expected) {
+ArrayLiteralNode::typeCheck(SemanticContext* ctx,
+                            InstantiatedType* expected,
+                            const InstantiatedTypeVec& typeParamArgs) {
   if (values.empty()) {
     if (expected && expected->getType()->equals(*Type::ListType)) {
       return expected;

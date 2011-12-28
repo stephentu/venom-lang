@@ -41,10 +41,12 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
 
   // type params
   assert(typeParamTypes.empty());
+  InstantiatedTypeVec typeParamITypes;
   for (size_t pos = 0; pos < typeParams.size(); pos++) {
     // add all the type params into the body's symtab
     Type *type = ctx->createTypeParam(typeParams[pos], pos);
     typeParamTypes.push_back(type);
+    typeParamITypes.push_back(type->instantiate(ctx));
     stmts->getSymbolTable()->createClassSymbol(
         typeParams[pos],
         ctx->getRootSymbolTable()->newChildScope(NULL),
@@ -66,7 +68,8 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // on the children (to support self-references)
   // TODO: support multiple inheritance
   Type *type = ctx->createType(name, parentTypes.front(), typeParams.size());
-  symbols->createClassSymbol(name, stmts->getSymbolTable(), type);
+  symbols->createClassSymbol(name, stmts->getSymbolTable(),
+                             type, typeParamITypes);
 
   // link the stmts symbol table to the parents symbol tables
   for (vector<InstantiatedType*>::iterator it = parentTypes.begin();
@@ -115,6 +118,7 @@ void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
     ASTStatementNode *ctor =
       new FuncDeclNode(
           name,
+          util::StrVec(),
           ExprNodeVec(),
           new ParameterizedTypeString("void"),
           new StmtListNode);

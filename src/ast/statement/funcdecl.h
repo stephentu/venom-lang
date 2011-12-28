@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <ast/expression/node.h>
 #include <ast/statement/node.h>
@@ -11,21 +12,28 @@
 #include <util/macros.h>
 
 namespace venom {
+
+namespace analysis {
+  /** Forward decl */
+  class Type;
+}
+
 namespace ast {
 
 class FuncDeclNode : public ASTStatementNode {
 public:
   /** Takes ownership of params, ret_typename, and stmts */
   FuncDeclNode(const std::string&       name,
+               const util::StrVec&      typeParams,
                const ExprNodeVec&       params,
                ParameterizedTypeString* ret_typename,
                ASTStatementNode*        stmts)
-    : name(name), params(params), ret_typename(ret_typename),
-      stmts(stmts) {}
+    : name(name), typeParams(typeParams), params(params),
+      ret_typename(ret_typename), stmts(stmts) {}
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
-    if (ret_typename) delete ret_typename;
+    delete ret_typename;
     delete stmts;
   }
 
@@ -41,9 +49,7 @@ public:
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
-    o << "(func " << name << " -> ";
-    if (ret_typename) o << *ret_typename;
-    else o << "void";
+    o << "(func " << name << " -> " << *ret_typename;
     o << std::endl << util::indent(indent + 1);
     o << "(params ";
     PrintExprNodeVec(o, params, indent + 1);
@@ -55,9 +61,12 @@ public:
 
 private:
   std::string              name;
+  util::StrVec             typeParams;
   ExprNodeVec              params;
   ParameterizedTypeString* ret_typename;
   ASTStatementNode*        stmts;
+
+  std::vector<analysis::Type*> typeParamTypes;
 };
 
 }

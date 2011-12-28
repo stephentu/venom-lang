@@ -22,9 +22,10 @@ string UnopNode::StringifyType(Type type) {
 }
 
 InstantiatedType*
-UnopNode::typeCheck(SemanticContext*  ctx,
-                    InstantiatedType* expected) {
-  InstantiatedType *kidType = kid->typeCheck(ctx, expected);
+UnopNode::typeCheck(SemanticContext* ctx,
+                    InstantiatedType* expected,
+                    const InstantiatedTypeVec& typeParamArgs) {
+  InstantiatedType *kidType = kid->typeCheck(ctx);
 
   switch (type) {
   case PLUS:

@@ -87,6 +87,7 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 
 void
 AssignNode::typeCheck(SemanticContext* ctx) {
+  assert(value);
   TypeCheckAssignment(ctx, symbols, variable, value);
 }
 

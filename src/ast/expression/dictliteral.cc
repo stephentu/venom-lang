@@ -20,21 +20,22 @@ struct fold_functor {
     if (!accum.first) {
       assert(!accum.second);
       return ITypePair(
-          cur->key()->typeCheck(ctx, NULL),
-          cur->value()->typeCheck(ctx, NULL));
+          cur->key()->typeCheck(ctx),
+          cur->value()->typeCheck(ctx));
     } else {
       assert(accum.second);
       return ITypePair(
-          accum.first->mostCommonType(cur->key()->typeCheck(ctx, NULL)),
-          accum.second->mostCommonType(cur->value()->typeCheck(ctx, NULL)));
+          accum.first->mostCommonType(cur->key()->typeCheck(ctx)),
+          accum.second->mostCommonType(cur->value()->typeCheck(ctx)));
     }
   }
   SemanticContext* ctx;
 };
 
 InstantiatedType*
-DictLiteralNode::typeCheck(SemanticContext*  ctx,
-                           InstantiatedType* expected) {
+DictLiteralNode::typeCheck(SemanticContext* ctx,
+                           InstantiatedType* expected,
+                           const InstantiatedTypeVec& typeParamArgs) {
   if (pairs.empty()) {
     if (expected && expected->getType()->equals(*Type::MapType)) {
       return expected;

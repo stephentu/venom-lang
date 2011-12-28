@@ -13,8 +13,10 @@ class FunctionCallNode : public ASTExpressionNode {
 public:
 
   /** Takes ownership of the nodes in primary and args */
-  FunctionCallNode(ASTExpressionNode* primary, const ExprNodeVec& args)
-    : primary(primary), args(args) {
+  FunctionCallNode(ASTExpressionNode*   primary,
+                   const TypeStringVec& typeArgs,
+                   const ExprNodeVec&   args)
+    : primary(primary), typeArgs(typeArgs), args(args) {
     primary->setLocationContext(ASTNode::FunctionCall);
   }
 
@@ -35,8 +37,10 @@ public:
   virtual bool needsNewScope(size_t k) const { return false; }
 
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext*  ctx,
-              analysis::InstantiatedType* expected);
+    typeCheck(analysis::SemanticContext* ctx,
+              analysis::InstantiatedType* expected = NULL,
+              const analysis::InstantiatedTypeVec& typeParamArgs
+                = analysis::InstantiatedTypeVec());
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(funccall ";
@@ -48,6 +52,7 @@ public:
 
 private:
   ASTExpressionNode* primary;
+  TypeStringVec      typeArgs;
   ExprNodeVec        args;
 };
 

@@ -10,11 +10,12 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-ArrayAccessNode::typeCheck(SemanticContext*  ctx,
-                           InstantiatedType* expected) {
+ArrayAccessNode::typeCheck(SemanticContext* ctx,
+                           InstantiatedType* expected,
+                           const InstantiatedTypeVec& typeParamArgs) {
 
-  InstantiatedType *primaryType = primary->typeCheck(ctx, NULL);
-  InstantiatedType *indexType = index->typeCheck(ctx, NULL);
+  InstantiatedType *primaryType = primary->typeCheck(ctx);
+  InstantiatedType *indexType = index->typeCheck(ctx);
 
   bool isList = primaryType->getType()->equals(*Type::ListType);
   bool isMap  = primaryType->getType()->equals(*Type::MapType);

@@ -12,19 +12,21 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-AttrAccessNode::typeCheck(SemanticContext*  ctx,
-                          InstantiatedType* expected) {
-  InstantiatedType *obj = primary->typeCheck(ctx, NULL);
+AttrAccessNode::typeCheck(SemanticContext* ctx,
+                          InstantiatedType* expected,
+                          const InstantiatedTypeVec& typeParamArgs) {
+  InstantiatedType *obj = primary->typeCheck(ctx);
   TypeTranslator t;
   BaseSymbol *attrSym =
     obj
       ->getClassSymbolTable()
       ->findBaseSymbol(name, SymbolTable::Any, true, t);
+  t.bind(obj);
   if (!attrSym) {
     throw TypeViolationException(
         "Type " + obj->stringify() + " has no member " + name);
   }
-  return attrSym->bind(ctx, t, InstantiatedTypeVec());
+  return attrSym->bind(ctx, t, typeParamArgs);
 }
 
 }

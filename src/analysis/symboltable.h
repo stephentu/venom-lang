@@ -28,9 +28,11 @@ typedef std::vector< std::pair<InstantiatedType*, InstantiatedType*> > TypeMap;
 
 class TypeTranslator {
   friend class SymbolTable;
+  friend class FuncSymbol;
 public:
   TypeTranslator() {}
   InstantiatedType* translate(SemanticContext* ctx, InstantiatedType* type);
+  void bind(InstantiatedType* obj);
 protected:
   TypeMap map;
 };
@@ -95,6 +97,7 @@ public:
 
   FuncSymbol*
   createFuncSymbol(const std::string&                    name,
+                   const std::vector<InstantiatedType*>& typeParams,
                    const std::vector<InstantiatedType*>& params,
                    InstantiatedType*                     returnType);
 
@@ -105,7 +108,9 @@ public:
   ClassSymbol*
   createClassSymbol(const std::string& name,
                     SymbolTable*       classTable,
-                    Type*              type);
+                    Type*              type,
+                    const std::vector<InstantiatedType*>& typeParams =
+                      std::vector<InstantiatedType*>());
 
   ClassSymbol*
   findClassSymbol(const std::string& name, bool recurse,
@@ -154,6 +159,8 @@ private:
     }
     bool find(S& elem, const std::string& name, bool recurse,
               TypeTranslator& translator) {
+      // TODO: don't allow certain lookups to cross parent
+      // boundaries
       typename map_type::iterator it = map.find(name);
       if (it != map.end()) {
         elem = it->second;

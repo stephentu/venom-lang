@@ -48,38 +48,55 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     throw SemanticViolationException("Duplicate parameter names");
   }
 
+  // type params
+  assert(typeParamTypes.empty());
+  InstantiatedTypeVec typeParamITypes;
+  for (size_t pos = 0; pos < typeParams.size(); pos++) {
+    // add all the type params into the body's symtab
+    Type *type = ctx->createTypeParam(typeParams[pos], pos);
+    typeParamTypes.push_back(type);
+    typeParamITypes.push_back(type->instantiate(ctx));
+    stmts->getSymbolTable()->createClassSymbol(
+        typeParams[pos],
+        ctx->getRootSymbolTable()->newChildScope(NULL),
+        type);
+  }
+
   // check and instantiate parameter types
-  vector<InstantiatedType*> itypes;
-  itypes.resize(params.size());
+  vector<InstantiatedType*> itypes(params.size());
   transform(params.begin(), params.end(),
-            itypes.begin(), itype_functor(ctx, symbols));
+            itypes.begin(), itype_functor(ctx, stmts->getSymbolTable()));
 
   // check and instantiate return type
-  InstantiatedType* retType;
-  if (ret_typename) {
-    retType = ctx->instantiateOrThrow(symbols, ret_typename);
-  } else {
-    // treat no ret type as void type
-    retType = InstantiatedType::VoidType;
-  }
+  InstantiatedType* retType =
+    ctx->instantiateOrThrow(stmts->getSymbolTable(), ret_typename);
 
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
 
-    // check that ctors dont have non-void return types
-    if (cdn->getName() == name &&
-        !retType->equals(*InstantiatedType::VoidType)) {
-      throw SemanticViolationException(
-          "Constructor cannot have non void return type");
+    if (cdn->getName() == name) {
+      // check that ctors dont have non-void return types
+      if (!retType->equals(*InstantiatedType::VoidType)) {
+        throw SemanticViolationException(
+            "Constructor cannot have non void return type");
+      }
+
+      // check that ctors dont have type parameters
+      if (!typeParamTypes.empty()) {
+        throw SemanticViolationException(
+            "Constructor cannot have type parameters");
+      }
     }
 
     // check that type-signature matches for overrides
     TypeTranslator t;
     FuncSymbol *fs = symbols->findFuncSymbol(name, true, t);
+    // TODO: this isn't entirely correct way to determine overriding- for
+    // instance a nested class could define a method with the same name of a
+    // method of an outer class, but its not an override in that case
     if (fs && fs->isMethod()) {
-      InstantiatedType *overrideType =
-        fs->bind(ctx, t, InstantiatedTypeVec());
+      InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
 
       vector<InstantiatedType*> fparams(itypes);
       fparams.push_back(retType);
@@ -96,7 +113,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   }
 
   // add symbol to current symtab
-  symbols->createFuncSymbol(name, itypes, retType);
+  symbols->createFuncSymbol(name, typeParamITypes, itypes, retType);
 
   // add parameters to block (child) symtab
   for (size_t i = 0; i < params.size(); i++) {

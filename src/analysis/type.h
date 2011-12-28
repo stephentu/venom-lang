@@ -94,6 +94,8 @@ public:
   inline size_t getParams() const { return params; }
   inline bool hasParams() const { return params > 0; }
 
+  virtual bool isCurrentScopeOnly() const { return false; }
+
   // TODO: stringify parameterized types
   virtual std::string stringify() const { return name; }
 
@@ -173,6 +175,8 @@ protected:
   TypeParamType(const std::string& name, size_t pos);
 
 public:
+  virtual bool isCurrentScopeOnly() const { return true; }
+
   // TODO: not really sure if equals() is necessary...
   virtual bool equals(const Type& other) const;
   virtual std::string stringify() const;

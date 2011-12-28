@@ -20,12 +20,13 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
 }
 
 InstantiatedType*
-VariableNode::typeCheck(SemanticContext*  ctx,
-                        InstantiatedType* expected) {
+VariableNode::typeCheck(SemanticContext* ctx,
+                        InstantiatedType* expected,
+                        const InstantiatedTypeVec& typeParamArgs) {
   TypeTranslator t;
   BaseSymbol *sym = symbols->findBaseSymbol(name, SymbolTable::Any, true, t);
   assert(sym);
-  return sym->bind(ctx, t, InstantiatedTypeVec());
+  return sym->bind(ctx, t, typeParamArgs);
 }
 
 }

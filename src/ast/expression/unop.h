@@ -43,12 +43,13 @@ public:
   virtual bool needsNewScope(size_t k) const { return false; }
 
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext*  ctx,
-              analysis::InstantiatedType* expected);
+    typeCheck(analysis::SemanticContext* ctx,
+              analysis::InstantiatedType* expected = NULL,
+              const analysis::InstantiatedTypeVec& typeParamArgs
+                = analysis::InstantiatedTypeVec());
 
   virtual void print(std::ostream& o, size_t indent = 0) {
-    // TODO: stringify type meaningfully
-    o << "(unop " << int(type) << " ";
+    o << "(unop " << StringifyType(type) << " ";
     kid->print(o, indent);
     o << ")";
   }

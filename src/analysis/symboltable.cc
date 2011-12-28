@@ -41,6 +41,16 @@ TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) {
   return ctx->createInstantiatedType(type->getType(), buf);
 }
 
+void TypeTranslator::bind(InstantiatedType* type) {
+  vector<InstantiatedType*> &lhs =
+    type->getType()->getClassSymbol()->getTypeParams();
+  vector<InstantiatedType*> &rhs = type->getParams();
+  assert(lhs.size() == rhs.size());
+  TypeMap tmap(lhs.size());
+  util::zip(lhs.begin(), lhs.end(), rhs.begin(), tmap.begin());
+  map.insert(map.end(), tmap.begin(), tmap.end());
+}
+
 SymbolTable::SymbolTable(SymbolTable* parent, const TypeMap& map, ASTNode* owner)
   : owner(owner),
     symbolContainer(
@@ -105,9 +115,11 @@ SymbolTable::findSymbol(const string& name, bool recurse,
 
 FuncSymbol*
 SymbolTable::createFuncSymbol(const string&                    name,
+                              const vector<InstantiatedType*>& typeParams,
                               const vector<InstantiatedType*>& params,
                               InstantiatedType*                returnType) {
-  FuncSymbol *sym = new FuncSymbol(name, this, params, returnType);
+  FuncSymbol *sym =
+    new FuncSymbol(name, typeParams, this, params, returnType);
   funcContainer.insert(name, sym);
   return sym;
 }
@@ -123,8 +135,10 @@ SymbolTable::findFuncSymbol(const string& name, bool recurse,
 ClassSymbol*
 SymbolTable::createClassSymbol(const string& name,
                                SymbolTable*  classTable,
-                               Type*         type) {
-  ClassSymbol *sym = new ClassSymbol(name, this, classTable, type);
+                               Type*         type,
+                               const vector<InstantiatedType*>& typeParams) {
+  //assert(type->getParams() == typeParams.size());
+  ClassSymbol *sym = new ClassSymbol(name, typeParams, this, classTable, type);
   type->setClassSymbol(sym);
   classContainer.insert(name, sym);
   return sym;

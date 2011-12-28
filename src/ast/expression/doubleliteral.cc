@@ -9,7 +9,8 @@ namespace ast {
 
 InstantiatedType*
 DoubleLiteralNode::typeCheck(SemanticContext*  ctx,
-                             InstantiatedType* expected) {
+                             InstantiatedType* expected,
+                             const InstantiatedTypeVec& typeParamArgs) {
   return InstantiatedType::FloatType;
 }
 

@@ -35,6 +35,8 @@ public:
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
+  virtual void typeCheck(analysis::SemanticContext* ctx);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(attr ";
     variable->print(o, indent);

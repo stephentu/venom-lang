@@ -28,6 +28,10 @@ public:
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params) = 0;
 
+  /** Is this symbol visible to the current scope (and not
+   * descendants) only? */
+  virtual bool isCurrentScopeOnly() const { return false; }
+
 protected:
   BaseSymbol(const std::string& name,
              SymbolTable*       table)
@@ -66,16 +70,24 @@ private:
 class FuncSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
-  FuncSymbol(const std::string&                    name,
-             SymbolTable*                          table,
-             const std::vector<InstantiatedType*>& params,
-             InstantiatedType*                     returnType)
-    : BaseSymbol(name, table), params(params), returnType(returnType) {}
+  FuncSymbol(const std::string&         name,
+             const InstantiatedTypeVec& typeParams,
+             SymbolTable*               table,
+             const InstantiatedTypeVec& params,
+             InstantiatedType*          returnType)
+    : BaseSymbol(name, table), typeParams(typeParams),
+      params(params), returnType(returnType) {}
 
 public:
-  inline std::vector<InstantiatedType*>
+
+  inline InstantiatedTypeVec&
+    getTypeParams() { return typeParams; }
+  inline const InstantiatedTypeVec&
+    getTypeParams() const { return typeParams; }
+
+  inline InstantiatedTypeVec&
     getParams() { return params; }
-  inline const std::vector<InstantiatedType*>
+  inline const InstantiatedTypeVec&
     getParams() const { return params; }
 
   inline InstantiatedType*
@@ -92,8 +104,9 @@ public:
   bool isMethod() const;
 
 private:
-  std::vector<InstantiatedType*> params;
-  InstantiatedType*              returnType;
+  InstantiatedTypeVec typeParams;
+  InstantiatedTypeVec params;
+  InstantiatedType*   returnType;
 };
 
 /**
@@ -102,13 +115,20 @@ private:
 class ClassSymbol : public BaseSymbol {
   friend class SymbolTable;
 protected:
-  ClassSymbol(const std::string& name,
-              SymbolTable*       table,      /* defined */
-              SymbolTable*       classTable, /* class's table */
-              Type*              type)
-    : BaseSymbol(name, table), classTable(classTable), type(type) {}
+  ClassSymbol(const std::string&         name,
+              const InstantiatedTypeVec& typeParams,
+              SymbolTable*               table,      /* defined */
+              SymbolTable*               classTable, /* class's table */
+              Type*                      type)
+    : BaseSymbol(name, table), typeParams(typeParams),
+      classTable(classTable), type(type) {}
 
 public:
+  inline InstantiatedTypeVec&
+    getTypeParams() { return typeParams; }
+  inline const InstantiatedTypeVec&
+    getTypeParams() const { return typeParams; }
+
   inline SymbolTable* getClassSymbolTable() { return classTable; }
   inline const SymbolTable* getClassSymbolTable() const { return classTable; }
 
@@ -119,9 +139,14 @@ public:
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
+  virtual bool isCurrentScopeOnly() const {
+    return type->isCurrentScopeOnly();
+  }
+
 private:
-  SymbolTable* classTable;
-  Type*        type;
+  InstantiatedTypeVec typeParams;
+  SymbolTable*        classTable;
+  Type*               type;
 };
 
 }
