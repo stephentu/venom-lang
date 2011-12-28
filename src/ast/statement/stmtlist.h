@@ -32,6 +32,9 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
+
   virtual void setLocationContext(LocationCtx ctx) {
     forchild (kid) {
       if (kid) kid->setLocationContext(ctx);

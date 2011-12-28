@@ -13,6 +13,9 @@ namespace analysis {
 
 namespace ast {
 
+class FuncDeclNode;
+class ClassDeclNode;
+
 class ASTNode {
 public:
   ASTNode() : symbols(NULL), locCtx((LocationCtx)0) {}
@@ -33,6 +36,12 @@ public:
 
   inline LocationCtx getLocationContext() const    { return locCtx; }
   virtual void setLocationContext(LocationCtx ctx) { locCtx = ctx;  }
+
+  FuncDeclNode* getParentFuncNode();
+  const FuncDeclNode* getParentFuncNode() const;
+
+  ClassDeclNode* getParentClassNode();
+  const ClassDeclNode* getParentClassNode() const;
 
   /** Semantic checks **/
 

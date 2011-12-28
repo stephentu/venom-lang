@@ -8,12 +8,21 @@
 #include <util/stl.h>
 
 namespace venom {
+
+namespace analysis {
+  /** Forward decl */
+  class InstantiatedType;
+}
+
 namespace ast {
 
 class ASTStatementNode : public ASTNode {
 public:
   ASTStatementNode() {}
-  virtual void typeCheck(analysis::SemanticContext* ctx);
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
+protected:
+  void checkExpectedType(analysis::InstantiatedType* expected);
 };
 
 typedef std::vector<ASTStatementNode *> StmtNodeVec;

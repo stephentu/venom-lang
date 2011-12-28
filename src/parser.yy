@@ -189,8 +189,8 @@ whilestmt : "while" expr "do" stmtlist "end"
 forstmt : "for" variable "<-" expr "do" stmtlist "end"
            { $$ = new ast::ForStmtNode($2, $4, $6); }
 
-returnstmt : "return" expr exprend
-             { $$ = new ast::ReturnNode($2); }
+returnstmt : "return" exprend      { $$ = new ast::ReturnNode(NULL); }
+           | "return" expr exprend { $$ = new ast::ReturnNode($2);   }
 
 funcdeclstmt : "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end"
                {

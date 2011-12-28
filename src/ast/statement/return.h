@@ -16,7 +16,7 @@ public:
     : expr(expr) {}
 
   ~ReturnNode() {
-    delete expr;
+    if (expr) delete expr;
   }
 
   virtual size_t getNumKids() const { return 1; }
@@ -28,9 +28,14 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(return ";
-    expr->print(o, indent);
+    if (expr) expr->print(o, indent);
     o << ")";
   }
 

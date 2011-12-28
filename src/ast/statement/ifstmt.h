@@ -35,6 +35,9 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return k != 0; }
 
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(if ";
     cond->print(o, indent);

@@ -123,5 +123,14 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   }
 }
 
+void
+FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
+  TypeTranslator t;
+  FuncSymbol *fs = symbols->findFuncSymbol(name, false, t);
+  assert(fs);
+  stmts->typeCheck(ctx, fs->getReturnType());
+  checkExpectedType(expected);
+}
+
 }
 }

@@ -39,7 +39,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  virtual void typeCheck(analysis::SemanticContext* ctx);
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(for ";

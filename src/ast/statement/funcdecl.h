@@ -37,6 +37,9 @@ public:
     delete stmts;
   }
 
+  inline std::string& getName() { return name; }
+  inline const std::string& getName() const { return name; }
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {
@@ -47,6 +50,9 @@ public:
   virtual bool needsNewScope(size_t k) const { return true; }
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(func " << name << " -> " << *ret_typename;

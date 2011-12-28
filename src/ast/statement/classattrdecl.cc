@@ -32,7 +32,9 @@ ClassAttrDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 }
 
 void
-ClassAttrDeclNode::typeCheck(SemanticContext* ctx) {
+ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
+                             InstantiatedType* expected) {
+  assert(!expected);
   if (value) AssignNode::TypeCheckAssignment(ctx, symbols, variable, value);
 }
 

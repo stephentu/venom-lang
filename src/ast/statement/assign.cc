@@ -86,9 +86,10 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 }
 
 void
-AssignNode::typeCheck(SemanticContext* ctx) {
+AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   assert(value);
   TypeCheckAssignment(ctx, symbols, variable, value);
+  checkExpectedType(expected);
 }
 
 }

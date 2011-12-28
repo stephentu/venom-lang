@@ -31,8 +31,8 @@ ForStmtNode::registerSymbol(SemanticContext* ctx) {
 }
 
 void
-ForStmtNode::typeCheck(SemanticContext* ctx) {
-  InstantiatedType *iterableType = expr->typeCheck(ctx, NULL);
+ForStmtNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
+  InstantiatedType *iterableType = expr->typeCheck(ctx);
 
   // for now, assume that expr must be of type list[x] or string
   // in the future, we should allow any iterable (and string will be
@@ -55,6 +55,7 @@ ForStmtNode::typeCheck(SemanticContext* ctx) {
         vn->getName(), InstantiatedType::StringType);
   }
   stmts->typeCheck(ctx);
+  checkExpectedType(expected);
 }
 
 }

@@ -28,9 +28,8 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
-  virtual void typeCheck(analysis::SemanticContext* ctx) {
-    expr->typeCheck(ctx, NULL);
-  }
+  virtual void typeCheck(analysis::SemanticContext* ctx,
+                         analysis::InstantiatedType* expected = NULL);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stmtexpr ";
