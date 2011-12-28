@@ -63,7 +63,6 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     retType = InstantiatedType::VoidType;
   }
 
-
   if (locCtx & ASTNode::TopLevelClassBody) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
@@ -76,10 +75,11 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     }
 
     // check that type-signature matches for overrides
-    FuncSymbol *fs = symbols->findFuncSymbol(name, true);
+    TypeTranslator t;
+    FuncSymbol *fs = symbols->findFuncSymbol(name, true, t);
     if (fs && fs->isMethod()) {
       InstantiatedType *overrideType =
-        fs->bind(ctx, vector<InstantiatedType*>());
+        fs->bind(ctx, t, InstantiatedTypeVec());
 
       vector<InstantiatedType*> fparams(itypes);
       fparams.push_back(retType);

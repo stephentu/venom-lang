@@ -102,6 +102,25 @@ bool Type::isFunction() const {
   return false;
 }
 
+TypeParamType::TypeParamType(const string& name, size_t pos) :
+    Type(name, NULL, InstantiatedType::AnyType, 0), pos(pos) {}
+
+bool TypeParamType::equals(const Type& other) const {
+  const TypeParamType* t =
+    dynamic_cast<const TypeParamType*>(&other);
+  if (!t) return false;
+  if (!Type::equals(other)) return false;
+  return pos == t->pos;
+}
+
+string TypeParamType::stringify() const {
+  stringstream buf;
+  buf << getName() << "$$" << util::stringify(pos + 1);
+  return buf.str();
+}
+
+string TypeParamType::stringifyTypename() const { return stringify(); }
+
 InstantiatedType* Type::instantiate() {
   assert(params == 0);
   return itype ? itype : (itype = new InstantiatedType(this));
@@ -184,6 +203,8 @@ InstantiatedType::mostCommonType(InstantiatedType* other) {
   if (getType()->isBoundlessType()) return other;
   if (other->getType()->isBoundlessType()) return this;
 
+  // TODO: shortcut for when the two types are equal?
+
   stack<InstantiatedType*> a;
   stack<InstantiatedType*> b;
   FillStack(a, this);
@@ -208,7 +229,7 @@ struct stringify_functor_t {
 
 string InstantiatedType::stringify() const {
   stringstream buf;
-  buf << type->getName();
+  buf << type->stringifyTypename();
   if (!params.empty()) {
     buf << "<";
     vector<string> s(params.size());

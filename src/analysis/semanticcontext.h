@@ -80,6 +80,8 @@ public:
                    InstantiatedType*  parent,
                    size_t             params = 0);
 
+  Type* createTypeParam(const std::string& name, size_t pos);
+
   InstantiatedType*
   createInstantiatedType(Type* type,
                          const std::vector<InstantiatedType*>& params);

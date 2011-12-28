@@ -12,6 +12,12 @@
 #include <util/macros.h>
 
 namespace venom {
+
+namespace analysis {
+  /** Forward decl */
+  class Type;
+}
+
 namespace ast {
 
 class ClassDeclNode : public ASTStatementNode {
@@ -21,7 +27,8 @@ public:
                 const TypeStringVec& parents,
                 const util::StrVec&  typeParams,
                 ASTStatementNode*    stmts)
-    : name(name), parents(parents), typeParams(typeParams), stmts(stmts) {
+    : name(name), parents(parents),
+      typeParams(typeParams), stmts(stmts) {
     stmts->setLocationContext(ASTNode::TopLevelClassBody);
   }
 
@@ -32,6 +39,9 @@ public:
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
+
+  inline util::StrVec& getTypeParams() { return typeParams; }
+  inline util::ConstStrVec& getTypeParams() const { return typeParams; }
 
   virtual size_t getNumKids() const { return 1; }
 
@@ -56,10 +66,12 @@ public:
   }
 
 private:
-  std::string       name;
-  TypeStringVec     parents;
-  util::StrVec      typeParams;
-  ASTStatementNode* stmts;
+  std::string        name;
+  TypeStringVec      parents;
+  util::StrVec       typeParams;
+  ASTStatementNode*  stmts;
+
+  std::vector<analysis::Type*> typeParamTypes;
 };
 
 }

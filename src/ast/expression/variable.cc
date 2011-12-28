@@ -3,6 +3,7 @@
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
+#include <analysis/type.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -21,9 +22,10 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
 InstantiatedType*
 VariableNode::typeCheck(SemanticContext*  ctx,
                         InstantiatedType* expected) {
-  BaseSymbol *sym = symbols->findBaseSymbol(name, SymbolTable::Any, true);
+  TypeTranslator t;
+  BaseSymbol *sym = symbols->findBaseSymbol(name, SymbolTable::Any, true, t);
   assert(sym);
-  return sym->bind(ctx, vector<InstantiatedType*>());
+  return sym->bind(ctx, t, InstantiatedTypeVec());
 }
 
 }

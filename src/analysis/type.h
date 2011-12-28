@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace venom {
 namespace analysis {
@@ -35,7 +36,7 @@ protected:
   void setClassSymbol(ClassSymbol* symbol);
 
 public:
-  ~Type();
+  virtual ~Type();
 
   /** Built-in types **/
   static Type* AnyType;
@@ -94,7 +95,9 @@ public:
   inline bool hasParams() const { return params > 0; }
 
   // TODO: stringify parameterized types
-  inline std::string stringify() const { return name; }
+  virtual std::string stringify() const { return name; }
+
+  virtual std::string stringifyTypename() const { return name; }
 
   bool isNumeric() const;
   bool isFunction() const;
@@ -105,7 +108,7 @@ public:
    * Note that this <: other is NOT well-defined on a Type
    * (see InstantiatedType) for subtype relations.
    */
-  inline bool equals(const Type& other) const {
+  virtual bool equals(const Type& other) const {
     // TODO: symbol equality is implemented as pointer equality
     // for now, fix later. Also will need to move this into
     // type.cc if we don't use pointer equality (and remove the inline)
@@ -159,6 +162,24 @@ private:
   /** InstantiatedType of this type, only created if params = 0.
    * Takes ownership */
   InstantiatedType* itype;
+};
+
+/**
+ * Represents a placeholder type parameter
+ */
+class TypeParamType : public Type {
+  friend class SemanticContext;
+protected:
+  TypeParamType(const std::string& name, size_t pos);
+
+public:
+  // TODO: not really sure if equals() is necessary...
+  virtual bool equals(const Type& other) const;
+  virtual std::string stringify() const;
+  virtual std::string stringifyTypename() const;
+
+private:
+  size_t pos;
 };
 
 /**
@@ -221,6 +242,7 @@ public:
 
   /** this =:= other? */
   bool equals(const InstantiatedType& other) const;
+
   /** this <: other ? */
   bool isSubtypeOf(const InstantiatedType& other) const;
 
@@ -239,6 +261,7 @@ private:
 };
 
 typedef std::vector<InstantiatedType*> InstantiatedTypeVec;
+typedef std::pair<InstantiatedType*, InstantiatedType*> InstantiatedTypePair;
 
 }
 }

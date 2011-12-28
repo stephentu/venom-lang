@@ -17,6 +17,12 @@ Type* SemanticContext::createType(const string&     name,
   return t;
 }
 
+Type* SemanticContext::createTypeParam(const string& name, size_t pos) {
+  Type* t = new TypeParamType(name, pos);
+  types.push_back(t);
+  return t;
+}
+
 InstantiatedType*
 SemanticContext::createInstantiatedType(
     Type* type, const vector<InstantiatedType*>& params) {
@@ -38,7 +44,8 @@ struct functor {
 InstantiatedType*
 SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
-  ClassSymbol *cs = symbols->findClassSymbol(type->name, true);
+  TypeTranslator t;
+  ClassSymbol *cs = symbols->findClassSymbol(type->name, true, t);
   if (!cs) {
     throw SemanticViolationException(
         "Type " + type->name + " not defined");
@@ -53,7 +60,7 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
   transform(type->params.begin(), type->params.end(),
             buf.begin(), functor(this, symbols));
 
-  return cs->getType()->instantiate(this, buf);
+  return t.translate(this, cs->getType()->instantiate(this, buf));
 }
 
 }

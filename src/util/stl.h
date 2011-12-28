@@ -171,7 +171,8 @@ inline std::string stringify(const T& t) {
 }
 
 /** Useful Typedefs **/
-typedef std::vector<std::string> StrVec;
+typedef std::vector<std::string>       StrVec;
+typedef const std::vector<std::string> ConstStrVec;
 
 }
 }

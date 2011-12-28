@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <ast/node.h>
 #include <analysis/symbol.h>
@@ -20,19 +21,36 @@ namespace ast {
 
 namespace analysis {
 
+/** Forward decl */
+class InstantiatedType;
+class SemanticContext;
+typedef std::vector< std::pair<InstantiatedType*, InstantiatedType*> > TypeMap;
+
+class TypeTranslator {
+  friend class SymbolTable;
+public:
+  TypeTranslator() {}
+  InstantiatedType* translate(SemanticContext* ctx, InstantiatedType* type);
+protected:
+  TypeMap map;
+};
+
 class SymbolTable {
   friend class ast::ClassDeclNode;
 private:
   /** Create a child symbol table */
-  SymbolTable(SymbolTable* parent, ast::ASTNode* owner);
-  SymbolTable(const std::vector<SymbolTable*>& parents, ast::ASTNode* owner);
+  SymbolTable(SymbolTable* parent, const TypeMap& typeMap, ast::ASTNode* owner);
 
 protected:
-  inline void addParent(SymbolTable* parent) {
-    parents.push_back(parent);
+  inline void addParent(SymbolTable* parent, const TypeMap& typeMap) {
     symbolContainer.parents.push_back(&parent->symbolContainer);
+    symbolContainer.maps.push_back(typeMap);
+
     funcContainer.parents.push_back(&parent->funcContainer);
+    funcContainer.maps.push_back(typeMap);
+
     classContainer.parents.push_back(&parent->classContainer);
+    classContainer.maps.push_back(typeMap);
   }
 
 public:
@@ -49,7 +67,7 @@ public:
   inline const ast::ASTNode* getOwner() const { return owner; }
 
   inline SymbolTable* newChildScope(ast::ASTNode* owner) {
-    SymbolTable *child = new SymbolTable(this, owner);
+    SymbolTable *child = new SymbolTable(this, TypeMap(), owner);
     children.push_back(child);
     return child;
   }
@@ -64,14 +82,16 @@ public:
   bool isDefined(const std::string& name, unsigned int type, bool recurse);
 
   BaseSymbol*
-  findBaseSymbol(const std::string& name, unsigned int type, bool recurse);
+  findBaseSymbol(const std::string& name, unsigned int type, bool recurse,
+                 TypeTranslator& translator);
 
   Symbol*
   createSymbol(const std::string& name,
                InstantiatedType*  type);
 
   Symbol*
-  findSymbol(const std::string& name, bool recurse);
+  findSymbol(const std::string& name, bool recurse,
+             TypeTranslator& translator);
 
   FuncSymbol*
   createFuncSymbol(const std::string&                    name,
@@ -79,7 +99,8 @@ public:
                    InstantiatedType*                     returnType);
 
   FuncSymbol*
-  findFuncSymbol(const std::string& name, bool recurse);
+  findFuncSymbol(const std::string& name, bool recurse,
+                 TypeTranslator& translator);
 
   ClassSymbol*
   createClassSymbol(const std::string& name,
@@ -87,7 +108,8 @@ public:
                     Type*              type);
 
   ClassSymbol*
-  findClassSymbol(const std::string& name, bool recurse);
+  findClassSymbol(const std::string& name, bool recurse,
+                  TypeTranslator& translator);
 
   /**
    * Recurse only applies to the outer type, not the parameterized types
@@ -95,21 +117,20 @@ public:
    * The parameterized types will be recusively checked regardless of
    * recurse.
    */
-  ClassSymbol*
-  findClassSymbol(const ast::ParameterizedTypeString* name,
-                  bool recurse,
-                  const ast::ParameterizedTypeString*& failed_type,
-                  bool& wrong_params);
+  //ClassSymbol*
+  //findClassSymbol(const ast::ParameterizedTypeString* name,
+  //                bool recurse,
+  //                const ast::ParameterizedTypeString*& failed_type,
+  //                bool& wrong_params);
 
-  ClassSymbol*
-  findClassSymbolOrThrow(const ast::ParameterizedTypeString* name,
-                         bool recurse);
+  //ClassSymbol*
+  //findClassSymbolOrThrow(const ast::ParameterizedTypeString* name,
+  //                       bool recurse);
 
 private:
   /** WARNING: while a SymbolTable can have multiple parents, only
    * one of its parents can have it as a child. This allows us to
    * prevent double-deletes when calling the destructor */
-  std::vector<SymbolTable*> parents;
   ast::ASTNode*             owner;
   std::vector<SymbolTable*> children;
 
@@ -117,8 +138,11 @@ private:
   class container {
   public:
     container() {}
-    container(const std::vector<container<S>*>& parents)
-      : parents(parents) {}
+    container(const std::vector<container<S>*>& parents,
+              const std::vector<TypeMap>&       maps)
+      : parents(parents), maps(maps) {
+      assert(parents.size() == maps.size());
+    }
     typedef std::map<std::string, S> map_type;
     typedef std::vector<S>           vec_type;
     map_type map;
@@ -128,21 +152,26 @@ private:
       map[name] = elem;
       vec.push_back(elem);
     }
-    bool find(S& elem, const std::string& name, bool recurse) {
+    bool find(S& elem, const std::string& name, bool recurse,
+              TypeTranslator& translator) {
       typename map_type::iterator it = map.find(name);
       if (it != map.end()) {
         elem = it->second;
         return true;
       }
       if (recurse) {
-        typename std::vector<container<S>*>::iterator it = parents.begin();
-        for (; it != parents.end(); ++it) {
-          if ((*it)->find(elem, name, true)) return true;
+        for (size_t i = 0; i < parents.size(); i++) {
+          if (parents[i]->find(elem, name, true, translator)) {
+            TypeMap &tm = maps[i];
+            translator.map.insert(translator.map.end(), tm.begin(), tm.end());
+            return true;
+          }
         }
       }
       return false;
     }
     std::vector<container<S>*> parents;
+    std::vector<TypeMap>       maps;
   };
 
   template <typename S>

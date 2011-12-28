@@ -13,6 +13,12 @@ using namespace venom::ast;
 namespace venom {
 namespace analysis {
 
+InstantiatedType*
+Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
+             const InstantiatedTypeVec& params) {
+  return t.translate(ctx, type);
+}
+
 bool FuncSymbol::isConstructor() const {
   const ClassDeclNode *cdn =
     dynamic_cast<const ClassDeclNode*>(getDefinedSymbolTable()->getOwner());
@@ -27,10 +33,10 @@ bool FuncSymbol::isMethod() const {
 }
 
 InstantiatedType*
-FuncSymbol::bind(SemanticContext* ctx,
-                 const vector<InstantiatedType*>& params) {
-  // TODO: actually bind params
-
+FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+                 const InstantiatedTypeVec& params) {
+  // TODO: bind params to func type when we have parameterized
+  // function types
   if (this->params.size() >= Type::FuncTypes.size()) {
     // TODO: better error message
     throw runtime_error("Too many parameters");
@@ -38,15 +44,16 @@ FuncSymbol::bind(SemanticContext* ctx,
 
   vector<InstantiatedType*> fparams(this->params);
   fparams.push_back(returnType);
-  InstantiatedType *ret = Type::FuncTypes.at(this->params.size())->instantiate(ctx, fparams);
+  InstantiatedType *ret =
+    Type::FuncTypes.at(this->params.size())->instantiate(ctx, fparams);
   assert(ret);
-  return ret;
+  return t.translate(ctx, ret);
 }
 
 InstantiatedType*
-ClassSymbol::bind(SemanticContext* ctx,
-                  const vector<InstantiatedType*>& params) {
-  return type->instantiate(ctx);
+ClassSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+                  const InstantiatedTypeVec& params) {
+  return t.translate(ctx, type->instantiate(ctx, params));
 }
 
 }

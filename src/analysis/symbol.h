@@ -12,6 +12,7 @@ namespace analysis {
 /** Forward decl */
 class SemanticContext;
 class SymbolTable;
+class TypeTranslator;
 
 class BaseSymbol {
 public:
@@ -24,8 +25,8 @@ public:
   inline const SymbolTable* getDefinedSymbolTable() const { return table; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx,
-         const std::vector<InstantiatedType*>& params) = 0;
+    bind(SemanticContext* ctx, TypeTranslator& t,
+         const InstantiatedTypeVec& params) = 0;
 
 protected:
   BaseSymbol(const std::string& name,
@@ -52,11 +53,8 @@ public:
   inline const InstantiatedType* getInstantiatedType() const { return type; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx,
-         const std::vector<InstantiatedType*>& params) {
-    // TODO: actually bind params
-    return type;
-  }
+    bind(SemanticContext* ctx, TypeTranslator& t,
+         const InstantiatedTypeVec& params);
 
 private:
   InstantiatedType* type;
@@ -86,8 +84,8 @@ public:
     getReturnType() const { return returnType; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx,
-         const std::vector<InstantiatedType*>& params);
+    bind(SemanticContext* ctx, TypeTranslator& t,
+         const InstantiatedTypeVec& params);
 
   bool isConstructor() const;
 
@@ -118,8 +116,8 @@ public:
   inline const Type* getType() const { return type; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx,
-         const std::vector<InstantiatedType*>& params);
+    bind(SemanticContext* ctx, TypeTranslator& t,
+         const InstantiatedTypeVec& params);
 
 private:
   SymbolTable* classTable;

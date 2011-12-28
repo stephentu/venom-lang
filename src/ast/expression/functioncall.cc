@@ -39,13 +39,14 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
   bool isCtor = false;
   if (!funcType->isFunction()) {
     // try to find the constructor
+    TypeTranslator t;
     BaseSymbol *ctorSym = funcType
       ->getClassSymbolTable()
       ->findBaseSymbol(funcType->getType()->getName(),
                        SymbolTable::Function,
-                       false);
+                       false, t);
     assert(ctorSym);
-    funcType = ctorSym->bind(ctx, funcType->getParams());
+    funcType = ctorSym->bind(ctx, t, InstantiatedTypeVec());
     assert(funcType->isFunction());
     isCtor = true;
   }
