@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <ast/include.h>
+#include <util/stl.h>
 
 %}
 
@@ -68,6 +69,8 @@
 
     ast::ParameterizedTypeString* typeString;
     ast::TypeStringVec*           typeStrVec;
+
+    util::StrVec*                 strVec;
 }
 
 %token   END            0
@@ -129,6 +132,8 @@
 
 %type <typeString> paramtypename rettype
 %type <typeStrVec> paramtypenames paramtypenames0 optparamtypenames inheritance
+
+%type <strVec>     typeparams typeparams0 typeparams0rest
 
 %{
 
@@ -193,10 +198,10 @@ funcdeclstmt : "def" IDENTIFIER '(' paramlist ')' rettype stmtlist "end"
                  delete $2; delete $4;
                }
 
-classdeclstmt : "class" IDENTIFIER inheritance classbodystmtlist "end"
+classdeclstmt : "class" IDENTIFIER typeparams inheritance classbodystmtlist "end"
                 {
-                  $$ = new ast::ClassDeclNode(*$2, *$3, $4);
-                  delete $2; delete $3;
+                  $$ = new ast::ClassDeclNode(*$2, *$4, *$3, $5);
+                  delete $2; delete $3; delete $4;
                 }
 
 attrdeclstmt : "attr" variable '=' expr
@@ -218,6 +223,14 @@ classbodystmtlist_buffer : /* empty */
                            { $$ = new ast::StmtNodeVec;  }
                          | classbodystmtlist_buffer classbodystmt
                            { $1->push_back($2); $$ = $1; }
+
+typeparams : /* empty */ { $$ = new util::StrVec; }
+           | '<' typeparams0 '>' { $$ = $2; }
+
+typeparams0: typeparams0rest IDENTIFIER { $1->push_back(*$2); $$ = $1; delete $2; }
+
+typeparams0rest : /* empty */ { $$ = new util::StrVec; }
+                | typeparams0rest IDENTIFIER ',' { $1->push_back(*$2); $$ = $1; delete $2; }
 
 inheritance : /* empty */         { $$ = new ast::TypeStringVec; }
             | "<-" paramtypenames { $$ = $2; }

@@ -170,6 +170,9 @@ inline std::string stringify(const T& t) {
   return buf.str();
 }
 
+/** Useful Typedefs **/
+typedef std::vector<std::string> StrVec;
+
 }
 }
 

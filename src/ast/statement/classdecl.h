@@ -19,8 +19,9 @@ public:
   /** Takes ownership of parents and stmts */
   ClassDeclNode(const std::string&   name,
                 const TypeStringVec& parents,
+                const util::StrVec&  typeParams,
                 ASTStatementNode*    stmts)
-    : name(name), parents(parents), stmts(stmts) {
+    : name(name), parents(parents), typeParams(typeParams), stmts(stmts) {
     stmts->setLocationContext(ASTNode::TopLevelClassBody);
   }
 
@@ -47,6 +48,9 @@ public:
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(class" << std::endl << util::indent(indent + 1);
+    o << "(type-params (" <<
+      util::join(typeParams.begin(), typeParams.end(), ",") <<
+      "))" << std::endl << util::indent(indent + 1);
     stmts->print(o, indent + 1);
     o << ")";
   }
@@ -54,6 +58,7 @@ public:
 private:
   std::string       name;
   TypeStringVec     parents;
+  util::StrVec      typeParams;
   ASTStatementNode* stmts;
 };
 
