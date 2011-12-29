@@ -14,7 +14,8 @@ namespace ast {
 
 void
 VariableNode::registerSymbol(SemanticContext* ctx) {
-  if (!symbols->isDefined(name, SymbolTable::Any, true)) {
+  if (!symbols->isDefined(
+        name, SymbolTable::Any, SymbolTable::AllowCurrentScope)) {
     throw SemanticViolationException(
         "Symbol " + name + " is not defined in scope");
   }
@@ -25,14 +26,16 @@ VariableNode::typeCheck(SemanticContext* ctx,
                         InstantiatedType* expected,
                         const InstantiatedTypeVec& typeParamArgs) {
   TypeTranslator t;
-  BaseSymbol *sym = symbols->findBaseSymbol(name, SymbolTable::Any, true, t);
+  BaseSymbol *sym =
+    symbols->findBaseSymbol(
+        name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
   assert(sym);
   return sym->bind(ctx, t, typeParamArgs);
 }
 
 void
 VariableSelfNode::registerSymbol(SemanticContext* ctx) {
-  ClassDeclNode *cdn = getParentClassNode();
+  ClassDeclNode *cdn = getEnclosingClassNode();
   if (!cdn) {
     throw SemanticViolationException(
         "self cannot be used outside of class scope");
@@ -43,14 +46,37 @@ InstantiatedType*
 VariableSelfNode::typeCheck(SemanticContext* ctx,
                             InstantiatedType* expected,
                             const InstantiatedTypeVec& typeParamArgs) {
-  ClassDeclNode *cdn = getParentClassNode();
+  ClassDeclNode *cdn = getEnclosingClassNode();
   assert(cdn);
   TypeTranslator t;
   ClassSymbol *cs =
-    cdn->getSymbolTable()->findClassSymbol(cdn->getName(), false, t);
+    cdn->getSymbolTable()->findClassSymbol(
+        cdn->getName(), SymbolTable::NoRecurse, t);
   assert(cs);
   return cs->getSelfType(ctx);
+}
 
+void
+VariableSuperNode::registerSymbol(SemanticContext* ctx) {
+  ClassDeclNode *cdn = getEnclosingClassNode();
+  if (!cdn) {
+    throw SemanticViolationException(
+        "super cannot be used outside of class scope");
+  }
+}
+
+InstantiatedType*
+VariableSuperNode::typeCheck(SemanticContext* ctx,
+                             InstantiatedType* expected,
+                             const InstantiatedTypeVec& typeParamArgs) {
+  ClassDeclNode *cdn = getEnclosingClassNode();
+  assert(cdn);
+  TypeTranslator t;
+  ClassSymbol *cs =
+    cdn->getSymbolTable()->findClassSymbol(
+        cdn->getName(), SymbolTable::NoRecurse, t);
+  assert(cs);
+  return cs->getType()->getParent();
 }
 
 }

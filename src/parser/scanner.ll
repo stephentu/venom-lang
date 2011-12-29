@@ -83,6 +83,7 @@ LSTRCHAR [^\n']
 "return" { return token::RETURN; }
 "import" { return token::IMPORT; }
 "self"   { return token::SELF;   }
+"super"  { return token::SUPER;  }
 "True"   { return token::TRUE;   }
 "False"  { return token::FALSE;  }
 "Nil"    { return token::NIL;    }

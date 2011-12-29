@@ -1,12 +1,17 @@
 #include <algorithm>
 
-#include <ast/statement/classdecl.h>
-#include <ast/statement/funcdecl.h>
-#include <ast/expression/variable.h>
-
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
+
+#include <ast/expression/attraccess.h>
+#include <ast/expression/functioncall.h>
+#include <ast/expression/variable.h>
+
+#include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
+#include <ast/statement/stmtexpr.h>
+#include <ast/statement/stmtlist.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -35,7 +40,7 @@ struct itype_functor {
 };
 
 void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
-  if (symbols->isDefined(name, SymbolTable::Any, false)) {
+  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
     throw SemanticViolationException(
         "Function/Method " + name + " already defined");
   }
@@ -68,33 +73,18 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
             itypes.begin(), itype_functor(ctx, stmts->getSymbolTable()));
 
   // check and instantiate return type
-  InstantiatedType* retType =
-    ctx->instantiateOrThrow(stmts->getSymbolTable(), ret_typename);
+  InstantiatedType* retType = ret_typename ?
+    ctx->instantiateOrThrow(stmts->getSymbolTable(), ret_typename) :
+    InstantiatedType::VoidType;
 
-  if (locCtx & ASTNode::TopLevelClassBody) {
+  if (!isCtor() && (locCtx & ASTNode::TopLevelClassBody)) {
     ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
     assert(cdn);
 
-    if (cdn->getName() == name) {
-      // check that ctors dont have non-void return types
-      if (!retType->equals(*InstantiatedType::VoidType)) {
-        throw SemanticViolationException(
-            "Constructor cannot have non void return type");
-      }
-
-      // check that ctors dont have type parameters
-      if (!typeParamTypes.empty()) {
-        throw SemanticViolationException(
-            "Constructor cannot have type parameters");
-      }
-    }
-
     // check that type-signature matches for overrides
     TypeTranslator t;
-    FuncSymbol *fs = symbols->findFuncSymbol(name, true, t);
-    // TODO: this isn't entirely correct way to determine overriding- for
-    // instance a nested class could define a method with the same name of a
-    // method of an outer class, but its not an override in that case
+    FuncSymbol *fs =
+      symbols->findFuncSymbol(name, SymbolTable::ClassParents, t);
     if (fs && fs->isMethod()) {
       InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
 
@@ -126,10 +116,37 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
 void
 FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   TypeTranslator t;
-  FuncSymbol *fs = symbols->findFuncSymbol(name, false, t);
+  FuncSymbol *fs = symbols->findFuncSymbol(name, SymbolTable::NoRecurse, t);
   assert(fs);
   stmts->typeCheck(ctx, fs->getReturnType());
   checkExpectedType(expected);
+}
+
+void
+CtorDeclNode::registerSymbol(SemanticContext* ctx) {
+  assert(locCtx & ASTNode::TopLevelClassBody);
+  assert(dynamic_cast<ClassDeclNode*>(symbols->getOwner()));
+
+  // rewrite:
+  //
+  // def self(...) : super(a0, a1, ...) = stmts end
+  //
+  // into
+  //
+  // def self(...) = super.<ctor>(a0, a1, ...); stmts end
+  StmtExprNode *stmt =
+    new StmtExprNode(
+      new FunctionCallNode(
+          new AttrAccessNode(new VariableSuperNode, "<ctor>"),
+          TypeStringVec(),
+          superArgs));
+  dynamic_cast<StmtListNode*>(stmts)->prependStatement(stmt);
+
+  // stmt gets semanticCheck called *AFTER* this invocation
+  // to registerSymbol(), so we don't need to call it manually
+  stmt->initSymbolTable(stmts->getSymbolTable());
+
+  FuncDeclNode::registerSymbol(ctx);
 }
 
 }

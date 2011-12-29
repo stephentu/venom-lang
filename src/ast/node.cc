@@ -15,7 +15,7 @@ ASTNode::~ASTNode() {
   if (symbols) delete symbols;
 }
 
-FuncDeclNode* ASTNode::getParentFuncNode() {
+FuncDeclNode* ASTNode::getEnclosingFuncNode() {
   ASTNode *cur = this;
   while (cur) {
     if (FuncDeclNode *fdn = dynamic_cast<FuncDeclNode*>(cur)) {
@@ -26,11 +26,11 @@ FuncDeclNode* ASTNode::getParentFuncNode() {
   return NULL;
 }
 
-const FuncDeclNode* ASTNode::getParentFuncNode() const {
-  return const_cast<ASTNode*>(this)->getParentFuncNode();
+const FuncDeclNode* ASTNode::getEnclosingFuncNode() const {
+  return const_cast<ASTNode*>(this)->getEnclosingFuncNode();
 }
 
-ClassDeclNode* ASTNode::getParentClassNode() {
+ClassDeclNode* ASTNode::getEnclosingClassNode() {
   assert(symbols);
   ASTNode *cur = this;
   while (cur) {
@@ -42,8 +42,8 @@ ClassDeclNode* ASTNode::getParentClassNode() {
   return NULL;
 }
 
-const ClassDeclNode* ASTNode::getParentClassNode() const {
-  return const_cast<ASTNode*>(this)->getParentClassNode();
+const ClassDeclNode* ASTNode::getEnclosingClassNode() const {
+  return const_cast<ASTNode*>(this)->getEnclosingClassNode();
 }
 
 void ASTNode::initSymbolTable(analysis::SymbolTable* symbols) {

@@ -6,7 +6,7 @@ class Animal <- object
   attr type::string = "animal"
   attr weight::int
 
-  def Animal(name::string) =
+  def self(name::string) =
     self.name = name;
   end
 

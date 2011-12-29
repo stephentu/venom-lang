@@ -33,12 +33,14 @@ public:
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
-    delete ret_typename;
+    if (ret_typename) delete ret_typename;
     delete stmts;
   }
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
+
+  virtual bool isCtor() const { return false; }
 
   virtual size_t getNumKids() const { return 1; }
 
@@ -55,7 +57,9 @@ public:
                          analysis::InstantiatedType* expected = NULL);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
-    o << "(func " << name << " -> " << *ret_typename;
+    o << "(func " << name << " -> ";
+    if (ret_typename) o << *ret_typename;
+    else o << "void";
     o << std::endl << util::indent(indent + 1);
     o << "(params ";
     PrintExprNodeVec(o, params, indent + 1);
@@ -65,7 +69,7 @@ public:
     o << ")";
   }
 
-private:
+protected:
   std::string              name;
   util::StrVec             typeParams;
   ExprNodeVec              params;
@@ -73,6 +77,20 @@ private:
   ASTStatementNode*        stmts;
 
   std::vector<analysis::Type*> typeParamTypes;
+};
+
+class CtorDeclNode : public FuncDeclNode {
+public:
+  CtorDeclNode(const ExprNodeVec& params,
+               ASTStatementNode* stmts,
+               const ExprNodeVec& superArgs)
+    : FuncDeclNode("<ctor>", util::StrVec(), params, NULL, stmts),
+      superArgs(superArgs) {}
+
+  virtual bool isCtor() const { return true; }
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+private:
+  ExprNodeVec superArgs;
 };
 
 }

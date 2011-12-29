@@ -1,7 +1,7 @@
 class tuple{A, B}
   attr first::A
   attr second::B
-  def tuple(lhs::A, rhs::B) =
+  def self(lhs::A, rhs::B) =
     first = lhs;
     second = rhs;
   end
@@ -10,6 +10,7 @@ class tuple{A, B}
 end
 
 class s <- tuple{int, string}
+  def self(a::int, b::string) : super(a, b) = end
   def addAndGet1(x::int) -> int = 
     return first + x;
   end
@@ -19,6 +20,7 @@ class s <- tuple{int, string}
 end
 
 class t{V} <- tuple{int, V}
+  def self(a::int, b::V) : super(a, b) = end
   def getV() -> V = self.second; end
 end
 
@@ -26,7 +28,7 @@ def makeTuple{A, B}(a::A, b::B) -> tuple{A, B} =
   tuple{A, B}(a, b); 
 end
 
-x = t{int}();
+x = t{int}(10, 10);
 y::tuple{int, string} = makeTuple{int, string}(10, "foo");
 z = makeTuple{int, int}(10, 20);
 print (z);

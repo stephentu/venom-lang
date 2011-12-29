@@ -40,6 +40,9 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  inline TypeStringVec& getParents() { return parents; }
+  inline const TypeStringVec& getParents() const { return parents; }
+
   inline util::StrVec& getTypeParams() { return typeParams; }
   inline util::ConstStrVec& getTypeParams() const { return typeParams; }
 

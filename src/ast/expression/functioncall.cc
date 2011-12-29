@@ -47,6 +47,7 @@ InstantiatedType*
 FunctionCallNode::typeCheck(SemanticContext*  ctx,
                             InstantiatedType* expected,
                             const InstantiatedTypeVec& typeParamArgs) {
+  assert(typeParamArgs.empty());
 
   // instantiate type parameters
   InstantiatedTypeVec tparams(typeArgs.size());
@@ -62,9 +63,8 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
     TypeTranslator t;
     BaseSymbol *ctorSym = funcType
       ->getClassSymbolTable()
-      ->findBaseSymbol(funcType->getType()->getName(),
-                       SymbolTable::Function,
-                       false, t);
+      ->findBaseSymbol("<ctor>", SymbolTable::Function,
+                       SymbolTable::NoRecurse, t);
     assert(ctorSym);
     t.bind(funcType);
     funcType = ctorSym->bind(ctx, t, InstantiatedTypeVec());
@@ -98,7 +98,6 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
   }
 
   return isCtor ? origType : funcType->getParams().back();
-
 }
 
 }

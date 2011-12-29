@@ -45,7 +45,8 @@ InstantiatedType*
 SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
   TypeTranslator t;
-  ClassSymbol *cs = symbols->findClassSymbol(type->name, true, t);
+  ClassSymbol *cs =
+    symbols->findClassSymbol(type->name, SymbolTable::AllowCurrentScope, t);
   if (!cs) {
     throw SemanticViolationException(
         "Type " + type->name + " not defined");

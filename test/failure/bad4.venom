@@ -1,4 +1,5 @@
 class Foo
-  def Foo() -> int =
+  def self(x::int) =
+    self.x = x; 
   end
 end

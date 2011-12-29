@@ -1,6 +1,6 @@
 class A{T}
   attr elem_::T
-  def A(elem::T) =
+  def self(elem::T) =
     elem_ = elem;
   end
 end

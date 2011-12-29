@@ -29,7 +29,7 @@ struct functor {
 
 void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
-  if (symbols->isDefined(name, SymbolTable::Any, false)) {
+  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
     throw SemanticViolationException(
         "Class " + name + " already defined");
   }
@@ -113,24 +113,19 @@ void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 
   // now look for a ctor definition
   TypeTranslator t;
-  if (!stmts->getSymbolTable()->findFuncSymbol(name, false, t)) {
+  if (!stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t)) {
     // no ctor defined, insert a default one
-    ASTStatementNode *ctor =
-      new FuncDeclNode(
-          name,
-          util::StrVec(),
-          ExprNodeVec(),
-          new ParameterizedTypeString("void"),
-          new StmtListNode);
+    CtorDeclNode *ctor =
+      new CtorDeclNode(ExprNodeVec(), new StmtListNode, ExprNodeVec());
+    dynamic_cast<StmtListNode*>(stmts)->appendStatement(ctor);
 
     ctor->initSymbolTable(stmts->getSymbolTable());
     ctor->registerSymbol(ctx);
     ctor->semanticCheckImpl(ctx, false); // technically not needed,
                                          // since empty body
-
-    dynamic_cast<StmtListNode*>(stmts)->appendStatement(ctor);
   }
-  assert(stmts->getSymbolTable()->findFuncSymbol(name, false, t));
+  assert(stmts->getLocationContext() & TopLevelClassBody);
+  assert(stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t));
 }
 
 }

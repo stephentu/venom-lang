@@ -37,11 +37,11 @@ public:
   inline LocationCtx getLocationContext() const    { return locCtx; }
   virtual void setLocationContext(LocationCtx ctx) { locCtx = ctx;  }
 
-  FuncDeclNode* getParentFuncNode();
-  const FuncDeclNode* getParentFuncNode() const;
+  FuncDeclNode* getEnclosingFuncNode();
+  const FuncDeclNode* getEnclosingFuncNode() const;
 
-  ClassDeclNode* getParentClassNode();
-  const ClassDeclNode* getParentClassNode() const;
+  ClassDeclNode* getEnclosingClassNode();
+  const ClassDeclNode* getEnclosingClassNode() const;
 
   /** Semantic checks **/
 

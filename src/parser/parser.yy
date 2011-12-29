@@ -88,6 +88,8 @@
 %token   CLASS          "class"
 %token   ATTR           "attr"
 %token   RETURN         "return"
+%token   SELF           "self"
+%token   SUPER          "super"
 %token   IMPORT         "import"
 %token   TRUE           "True"
 %token   FALSE          "False"
@@ -111,15 +113,14 @@
 %token   <doubleVal>    DOUBLE
 %token   <stringVal>    STRING
 %token   <stringVal>    IDENTIFIER
-%token   <stringVal>    SELF          "self"
 
 %type <stmtNode>   start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
-                   whilestmt forstmt returnstmt funcdeclstmt classdeclstmt
+                   whilestmt forstmt returnstmt funcdeclstmt ctordeclstmt classdeclstmt
                    classbodystmt classbodystmtlist attrdeclstmt
 
 %type <expNode>    intlit boollit nillit doublelit strlit arraylit dictlit
                    pairkey pairvalue variable typedvariable expr literal atom
-                   self primary unop_pm unop_bool binop_mult binop_add
+                   self super primary unop_pm unop_bool binop_mult binop_add
                    binop_shift binop_cmp binop_eq binop_bit_and binop_xor
                    binop_bit_or binop_and binop_or attropteq
 
@@ -198,6 +199,15 @@ funcdeclstmt : "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlis
                  delete $2; delete $3; delete $5;
                }
 
+ctordeclstmt : "def" "self" '(' paramlist ')' '=' stmtlist "end"
+                {
+                  $$ = new ast::CtorDeclNode(*$4, $7, ast::ExprNodeVec()); delete $4;
+                }
+             | "def" "self" '(' paramlist ')' ':' "super" '(' exprlist ')' '=' stmtlist "end"
+                {
+                  $$ = new ast::CtorDeclNode(*$4, $12, *$9); delete $4; delete $9;
+                }
+
 classdeclstmt : "class" IDENTIFIER typeparams inheritance classbodystmtlist "end"
                 {
                   $$ = new ast::ClassDeclNode(*$2, *$4, *$3, $5);
@@ -213,6 +223,7 @@ attropteq : /* empty */ { $$ = NULL; }
           | '=' expr    { $$ = $2;   }
 
 classbodystmt : funcdeclstmt
+              | ctordeclstmt
               | classdeclstmt
               | attrdeclstmt
 
@@ -262,6 +273,7 @@ literal : intlit
 atom : literal
      | variable
      | self
+     | super
      | '(' expr ')' { $$ = $2; }
 
 primary : atom
@@ -403,6 +415,8 @@ typename0 : /* empty */
            }
 
 self     : "self" { $$ = new ast::VariableSelfNode; }
+
+super    : "super" { $$ = new ast::VariableSuperNode; }
 
 %% /*** Additional Code ***/
 

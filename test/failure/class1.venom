@@ -1,0 +1,7 @@
+class foo 
+  def self(x::string) = 
+  end
+end
+
+class bar <- foo
+end

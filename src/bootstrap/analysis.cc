@@ -46,7 +46,10 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("func18", root->newChildScope(NULL), Type::Func18Type);
   root->createClassSymbol("func19", root->newChildScope(NULL), Type::Func19Type);
 
-  root->createClassSymbol("object", root->newChildScope(NULL), Type::ObjectType);
+  SymbolTable *objSymTab = root->newChildScope(NULL);
+  objSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
+                              InstantiatedTypeVec(), InstantiatedType::VoidType);
+  root->createClassSymbol("object", objSymTab, Type::ObjectType);
 
   root->createClassSymbol("list", root->newChildScope(NULL), Type::ListType);
   root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType);

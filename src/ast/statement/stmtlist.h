@@ -21,7 +21,15 @@ public:
   }
 
   /** Takes ownership of stmt. Returns self for chaining */
+  inline StmtListNode* prependStatement(ASTStatementNode* stmt) {
+    stmt->setLocationContext(locCtx);
+    stmts.insert(stmts.begin(), stmt);
+    return this;
+  }
+
+  /** Takes ownership of stmt. Returns self for chaining */
   inline StmtListNode* appendStatement(ASTStatementNode* stmt) {
+    stmt->setLocationContext(locCtx);
     stmts.push_back(stmt);
     return this;
   }
@@ -36,6 +44,7 @@ public:
                          analysis::InstantiatedType* expected = NULL);
 
   virtual void setLocationContext(LocationCtx ctx) {
+    ASTNode::setLocationContext(ctx);
     forchild (kid) {
       if (kid) kid->setLocationContext(ctx);
     } endfor

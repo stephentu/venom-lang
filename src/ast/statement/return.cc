@@ -15,7 +15,7 @@ namespace venom {
 namespace ast {
 
 void ReturnNode::registerSymbol(SemanticContext* ctx) {
-  FuncDeclNode *fdn = getParentFuncNode();
+  FuncDeclNode *fdn = getEnclosingFuncNode();
   if (!fdn) {
     throw SemanticViolationException(
         "return statement must be in context of function scope");
@@ -23,11 +23,12 @@ void ReturnNode::registerSymbol(SemanticContext* ctx) {
 }
 
 void ReturnNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
-  FuncDeclNode *fdn = getParentFuncNode();
+  FuncDeclNode *fdn = getEnclosingFuncNode();
   assert(fdn);
   TypeTranslator t;
   FuncSymbol* fs =
-    fdn->getSymbolTable()->findFuncSymbol(fdn->getName(), false, t);
+    fdn->getSymbolTable()->findFuncSymbol(
+        fdn->getName(), SymbolTable::NoRecurse, t);
   InstantiatedType* expRetType = t.translate(ctx, fs->getReturnType());
   InstantiatedType *retType =
     expr ? expr->typeCheck(ctx) : InstantiatedType::VoidType;

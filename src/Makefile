@@ -16,7 +16,9 @@ ALLOBJFILES := $(sort $(OBJFILES) $(GENOBJFILES))
 
 all: venom
 
+.PHONY: test
 test: test/venom-test
+	test/venom-test
 
 # Generate scanner and parser
 

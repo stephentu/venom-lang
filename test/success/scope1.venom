@@ -1,0 +1,10 @@
+class Foo
+  class Foo
+    attr s::string
+    def self(s::string) = self.s = s; end
+    def speak() = print (s); end
+  end
+  def make(s::string) -> Foo = 
+    Foo(s);
+  end
+end

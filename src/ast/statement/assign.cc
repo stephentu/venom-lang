@@ -20,13 +20,14 @@ AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
                                         bool             allowLocDups) {
   // check for duplicate definition
   if (symbols->isDefined(
-        var->getName(), SymbolTable::Function | SymbolTable::Class, false)) {
+        var->getName(), SymbolTable::Function | SymbolTable::Class,
+        SymbolTable::NoRecurse)) {
     throw SemanticViolationException(
         "Symbol " + var->getName() + " already defined");
   }
 
   if (symbols->isDefined(
-        var->getName(), SymbolTable::Location, false)) {
+        var->getName(), SymbolTable::Location, SymbolTable::NoRecurse)) {
     if (allowLocDups) {
       if (var->getExplicitParameterizedTypeString()) {
         throw SemanticViolationException(
@@ -44,7 +45,8 @@ AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
     }
 
     symbols->createSymbol(var->getName(), itype);
-    assert(symbols->isDefined(var->getName(), SymbolTable::Location, true));
+    assert(symbols->isDefined(
+          var->getName(), SymbolTable::Location, SymbolTable::NoRecurse));
   }
 }
 

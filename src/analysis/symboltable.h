@@ -74,6 +74,13 @@ public:
     return child;
   }
 
+  enum RecurseMode {
+    NoRecurse,
+    AllowCurrentScope,
+    DisallowCurrentScope,
+    ClassParents,
+  };
+
   enum SymType {
     Location = 0x1,
     Function = 0x1 << 1,
@@ -81,10 +88,10 @@ public:
     Any      = (unsigned)-1,
   };
 
-  bool isDefined(const std::string& name, unsigned int type, bool recurse);
+  bool isDefined(const std::string& name, unsigned int type, RecurseMode mode);
 
   BaseSymbol*
-  findBaseSymbol(const std::string& name, unsigned int type, bool recurse,
+  findBaseSymbol(const std::string& name, unsigned int type, RecurseMode mode,
                  TypeTranslator& translator);
 
   Symbol*
@@ -92,7 +99,7 @@ public:
                InstantiatedType*  type);
 
   Symbol*
-  findSymbol(const std::string& name, bool recurse,
+  findSymbol(const std::string& name, RecurseMode mode,
              TypeTranslator& translator);
 
   FuncSymbol*
@@ -102,7 +109,7 @@ public:
                    InstantiatedType*                     returnType);
 
   FuncSymbol*
-  findFuncSymbol(const std::string& name, bool recurse,
+  findFuncSymbol(const std::string& name, RecurseMode mode,
                  TypeTranslator& translator);
 
   ClassSymbol*
@@ -113,24 +120,8 @@ public:
                       std::vector<InstantiatedType*>());
 
   ClassSymbol*
-  findClassSymbol(const std::string& name, bool recurse,
+  findClassSymbol(const std::string& name, RecurseMode mode,
                   TypeTranslator& translator);
-
-  /**
-   * Recurse only applies to the outer type, not the parameterized types
-   *
-   * The parameterized types will be recusively checked regardless of
-   * recurse.
-   */
-  //ClassSymbol*
-  //findClassSymbol(const ast::ParameterizedTypeString* name,
-  //                bool recurse,
-  //                const ast::ParameterizedTypeString*& failed_type,
-  //                bool& wrong_params);
-
-  //ClassSymbol*
-  //findClassSymbolOrThrow(const ast::ParameterizedTypeString* name,
-  //                       bool recurse);
 
 private:
   /** WARNING: while a SymbolTable can have multiple parents, only
@@ -138,6 +129,13 @@ private:
    * prevent double-deletes when calling the destructor */
   ast::ASTNode*             owner;
   std::vector<SymbolTable*> children;
+
+  static inline void AssertValidRecurseMode(RecurseMode mode) {
+    assert(mode == NoRecurse ||
+           mode == AllowCurrentScope ||
+           mode == DisallowCurrentScope ||
+           mode == ClassParents);
+  }
 
   template <typename S>
   class container {
@@ -157,22 +155,34 @@ private:
       map[name] = elem;
       vec.push_back(elem);
     }
-    bool find(S& elem, const std::string& name, bool recurse,
-              TypeTranslator& translator) {
-      // TODO: don't allow certain lookups to cross parent
-      // boundaries
-      typename map_type::iterator it = map.find(name);
-      if (it != map.end()) {
-        elem = it->second;
-        return true;
+    inline bool find(S& elem, const std::string& name,
+                     RecurseMode mode,
+                     TypeTranslator& translator) {
+      AssertValidRecurseMode(mode);
+      if (mode == ClassParents) {
+        return find0(elem, name, DisallowCurrentScope,
+                     translator, true, false);
       }
-      if (recurse) {
-        for (size_t i = 0; i < parents.size(); i++) {
-          if (parents[i]->find(elem, name, true, translator)) {
-            TypeMap &tm = maps[i];
-            translator.map.insert(translator.map.end(), tm.begin(), tm.end());
-            return true;
-          }
+      return find0(elem, name, mode, translator, false, false);
+    }
+    bool find0(S& elem, const std::string& name,
+               RecurseMode mode,
+               TypeTranslator& translator,
+               bool excludeFirstParent, bool isParentScope) {
+      assert(mode != ClassParents);
+      if (isParentScope || mode != DisallowCurrentScope) {
+        typename map_type::iterator it = map.find(name);
+        if (it != map.end()) {
+          elem = it->second;
+          return true;
+        }
+      }
+      if (mode == NoRecurse) return false;
+      for (size_t i = excludeFirstParent ? 1 : 0; i < parents.size(); i++) {
+        if (parents[i]->find0(elem, name, mode, translator, i != 0, true)) {
+          TypeMap &tm = maps[i];
+          translator.map.insert(translator.map.end(), tm.begin(), tm.end());
+          return true;
         }
       }
       return false;
