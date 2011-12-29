@@ -85,7 +85,7 @@ bool compile(const string& fname,
 
     // bootstrap
     analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
-    pctx.stmts->initSymbolTable(root->newChildScope(pctx.stmts));
+    pctx.stmts->initSymbolTable(root->newChildScope(NULL));
 
     // semantic check
     pctx.stmts->semanticCheck(&ctx);

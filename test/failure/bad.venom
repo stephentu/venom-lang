@@ -1,0 +1,4 @@
+class Foo
+  attr name = 10
+  attr name = 20
+end

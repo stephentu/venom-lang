@@ -67,6 +67,7 @@ public:
     // we have ownership of the types
     util::delete_pointers(types.begin(), types.end());
     if (rootSymbols) delete rootSymbols;
+    Type::ResetBuiltinTypes();
   }
 
   inline std::string& getModuleName() { return moduleName; }

@@ -1,0 +1,8 @@
+x::list{int} = [];
+y::list{int} = x;
+class foo 
+  attr y::int
+  def foo(x::int) =
+    y = x;
+  end
+end

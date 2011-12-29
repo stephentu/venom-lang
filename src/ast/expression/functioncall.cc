@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <utility>
 
 #include <ast/expression/functioncall.h>
 
@@ -15,8 +16,9 @@ namespace ast {
 
 struct functor {
   functor(SemanticContext* ctx) : ctx(ctx) {}
-  inline InstantiatedType* operator()(ASTExpressionNode* node) const {
-    return node->typeCheck(ctx);
+  inline InstantiatedType* operator()(
+      const pair<ASTExpressionNode*, InstantiatedType*>& p) const {
+    return p.first->typeCheck(ctx, p.second);
   }
   SemanticContext* ctx;
 };
@@ -77,8 +79,12 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
         ", expected " + stringify(funcType->getType()->getParams() - 1));
   }
 
-  vector<InstantiatedType*> paramTypes(args.size());
-  transform(args.begin(), args.end(), paramTypes.begin(), functor(ctx));
+  vector< pair<ASTExpressionNode*, InstantiatedType*> > zipped(args.size());
+  zip(args.begin(), args.end(),
+      funcType->getParams().begin(), zipped.begin());
+
+  vector<InstantiatedType*> paramTypes(zipped.size());
+  transform(zipped.begin(), zipped.end(), paramTypes.begin(), functor(ctx));
 
   vector<InstantiatedType*>::iterator it =
     binpred_find_if(funcType->getParams().begin(),

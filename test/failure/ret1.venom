@@ -1,0 +1,10 @@
+def x() -> int =
+  def y() -> int = 
+    10;
+  end
+  if (y() > 10) then
+    15;
+  else
+    return "foo";
+  end
+end

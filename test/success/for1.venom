@@ -1,0 +1,5 @@
+y = "hi";
+for x <- y do
+  z::string = x;
+  print (z);
+end

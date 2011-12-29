@@ -1,0 +1,8 @@
+class A{T}
+  attr elem_::T
+  def A(elem::T) =
+    elem_ = elem;
+  end
+end
+a::A{int} = A{int}(1);
+b::A{string} = A{string}("foobar");

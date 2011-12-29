@@ -1,0 +1,3 @@
+def foo(x::int, y::int) -> map{int, int} =
+  1;
+end

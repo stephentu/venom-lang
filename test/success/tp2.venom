@@ -1,0 +1,12 @@
+class foo{T}
+  def bar{V}(v::V, t::T) -> V = 
+    v;
+  end
+  def baz{V}(v::V, t::T) -> T =
+    t;
+  end
+end
+
+f = foo{int}();
+v::string = f.bar{string}("foo", 10);
+t::int    = f.baz{string}("foo", 10);

@@ -69,5 +69,10 @@ ClassSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
   return t.translate(ctx, type->instantiate(ctx, params));
 }
 
+InstantiatedType*
+ClassSymbol::getSelfType(SemanticContext* ctx) {
+  return type->instantiate(ctx, typeParams);
+}
+
 }
 }

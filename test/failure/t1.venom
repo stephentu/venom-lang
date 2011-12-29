@@ -1,0 +1,26 @@
+a::int = 5;
+b::int = 5;
+if a > 3 then
+  print ("hello");
+elsif a > 10 then
+  print ("foo");
+end
+
+while b == 5 or a == 5 do
+  print ("baz");
+end
+
+for x <- c do
+  print (x);
+end
+
+def hello(x::int, y::int) -> int =
+  if x < y then
+    return x;
+  end
+  x + y;
+end
+
+def foo() -> map{string, int} = 
+  { "foo" : 30 };
+end

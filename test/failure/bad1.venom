@@ -1,0 +1,3 @@
+class foo
+  attr x::map{int} = 10
+end

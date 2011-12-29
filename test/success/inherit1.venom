@@ -1,0 +1,11 @@
+class foo
+  def name(x::string) -> string =
+    "foo" + x;
+  end
+end
+
+class bar <- foo
+  def name(x::string) -> string =
+    "bar" + x;
+  end
+end

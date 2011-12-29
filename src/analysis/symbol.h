@@ -139,6 +139,8 @@ public:
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
+  InstantiatedType* getSelfType(SemanticContext* ctx);
+
   virtual bool isCurrentScopeOnly() const {
     return type->isCurrentScopeOnly();
   }

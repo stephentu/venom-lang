@@ -1,0 +1,32 @@
+class tuple{A, B}
+  attr first::A
+  attr second::B
+  def tuple(lhs::A, rhs::B) =
+    first = lhs;
+    second = rhs;
+  end
+  def getFirst() -> A = self.first; end
+  def getSecond() -> B = self.second; end
+end
+
+class s <- tuple{int, string}
+  def addAndGet1(x::int) -> int = 
+    return first + x;
+  end
+  def concatAndGet2(x::string) -> string = 
+    return second + x;
+  end
+end
+
+class t{V} <- tuple{int, V}
+  def getV() -> V = self.second; end
+end
+
+def makeTuple{A, B}(a::A, b::B) -> tuple{A, B} = 
+  tuple{A, B}(a, b); 
+end
+
+x = t{int}();
+y::tuple{int, string} = makeTuple{int, string}(10, "foo");
+z = makeTuple{int, int}(10, 20);
+print (z);

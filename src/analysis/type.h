@@ -35,6 +35,9 @@ protected:
 
   void setClassSymbol(ClassSymbol* symbol);
 
+  /** TODO: this is a hack for now */
+  static void ResetBuiltinTypes();
+
 public:
   virtual ~Type();
 

@@ -1,0 +1,4 @@
+class animal
+end
+
+x::animal = animal();

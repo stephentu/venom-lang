@@ -1,0 +1,9 @@
+class LinkedList{T}
+  attr elem::T
+  attr next::LinkedList{T}
+  def LinkedList(elem::T, next::LinkedList{T}) =
+    self.elem = elem;
+    self.next = next;
+  end
+end
+x::LinkedList{int} = LinkedList{int}(10, LinkedList{int}(20, Nil));

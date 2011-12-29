@@ -86,6 +86,50 @@ void Type::setClassSymbol(ClassSymbol* symbol) {
   this->symbol = symbol;
 }
 
+void Type::ResetBuiltinTypes() {
+  Type *types[] = {
+    AnyType,
+    IntType,
+    BoolType,
+    FloatType,
+    StringType,
+    VoidType,
+
+    Func0Type,
+    Func1Type,
+    Func2Type,
+    Func3Type,
+    Func4Type,
+    Func5Type,
+    Func6Type,
+    Func7Type,
+    Func8Type,
+    Func9Type,
+
+    Func10Type,
+    Func11Type,
+    Func12Type,
+    Func13Type,
+    Func14Type,
+    Func15Type,
+    Func16Type,
+    Func17Type,
+    Func18Type,
+    Func19Type,
+
+    ObjectType,
+
+    BoundlessType,
+
+    ListType,
+    MapType,
+  };
+
+  for (size_t i = 0; i < VENOM_NELEMS(types); i++) {
+    types[i]->symbol = NULL;
+  }
+}
+
 Type::~Type() {
   if (itype) delete itype;
 }
