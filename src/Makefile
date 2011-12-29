@@ -2,40 +2,48 @@ CXX = g++
 LEX = flex
 YACC = bison
 
-PWD = $(shell pwd)
-
-CXXFLAGS = -Wall -g  -I$(PWD)
+CXXFLAGS = -Wall -g -I$(PWD)
 LDFLAGS = 
 
-SRCFILES = $(shell find . -type f -name '*.cc')
-OBJFILES = $(patsubst %.cc,%.o,$(SRCFILES))
+PWD := $(shell pwd)
+
+# TODO: hack for now
+SRCFILES := $(shell find . -path './test'  -prune -o -type f \( -name '*.cc' ! -name 'venom.cc' \) -print)
+OBJFILES := $(patsubst %.cc,%.o,$(subst ./,,$(SRCFILES)))
+
+GENOBJFILES = parser/parser.o parser/scanner.o
+ALLOBJFILES := $(sort $(OBJFILES) $(GENOBJFILES))
 
 all: venom
 
+test: test/venom-test
+
 # Generate scanner and parser
 
-parser.cc: parser.yy
-	$(YACC) -v -o parser.cc --defines=parser.h parser.yy
+parser/parser.cc: parser/parser.yy
+	$(YACC) -v -o $@ --defines=parser/parser.h $< 
 
-scanner.cc: scanner.ll
-	$(LEX) -o scanner.cc scanner.ll
+parser/scanner.cc: parser/scanner.ll
+	$(LEX) -o $@ $<
 
 # Implicit rule to compile c++ files
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-.PHONY: generated
-generated: parser.o scanner.o
-
 # Link executable
 
-venom: generated $(OBJFILES)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJFILES)
+venom: $(GENOBJFILES) $(ALLOBJFILES) venom.o
+	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) venom.o 
 
-GENERATED = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
+test/venom-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-test.o
+	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-test.o
+
+GENFILES = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
+GENERATED = $(addprefix parser/,$(GENFILES))
 
 clean:
-	rm -f $(OBJFILES) 
+	rm -f $(ALLOBJFILES) venom.o test/venom-test.o
 	rm -f $(GENERATED)
 	rm -f venom
+	rm -f test/venom-test

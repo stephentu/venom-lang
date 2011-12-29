@@ -19,7 +19,7 @@
 #undef yyFlexLexer
 #endif
 
-#include "parser.h"
+#include <parser/parser.h>
 
 namespace venom {
 

@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "scanner.h"
+#include <parser/scanner.h>
 
 /* import the parser's token type into a local typedef */
 typedef venom::Parser::token      token;

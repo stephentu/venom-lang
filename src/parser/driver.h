@@ -83,6 +83,30 @@ public:
     ParseContext& ctx;
 };
 
+struct compile_opts {
+  compile_opts()
+    : trace_lex(false), trace_parse(false), print_ast(false) {}
+  bool trace_lex;
+  bool trace_parse;
+  bool print_ast;
+};
+
+struct compile_result {
+  enum type {
+    Success,
+    InvalidSyntax,
+    SemanticError,
+    TypeError,
+    UnknownError,
+  };
+  type result;
+  std::string message;
+};
+
+bool compile(const std::string& fname,
+             const compile_opts& opts,
+             compile_result& result);
+
 } // namespace venom
 
 #endif // VENOM_DRIVER_H

@@ -1,0 +1,3643 @@
+Terminals which are not used
+
+   EOL
+   "import"
+
+
+Grammar
+
+    0 $accept: start END
+
+    1 start: stmtlist END
+
+    2 stmtlist: stmtlist_buffer
+
+    3 stmtlist_buffer: /* empty */
+    4                | stmtlist_buffer stmt
+
+    5 stmt: stmtexpr
+    6     | assignstmt
+    7     | ifstmt
+    8     | whilestmt
+    9     | forstmt
+   10     | returnstmt
+   11     | funcdeclstmt
+   12     | classdeclstmt
+
+   13 stmtexpr: expr exprend
+
+   14 exprend: ';'
+
+   15 assignstmt: expr '=' expr exprend
+   16           | typedvariable '=' expr exprend
+
+   17 ifstmt: "if" expr "then" stmtlist ifstmt_else "end"
+
+   18 ifstmt_else: /* empty */
+   19            | "elsif" expr "then" stmtlist ifstmt_else
+   20            | "else" stmtlist
+
+   21 whilestmt: "while" expr "do" stmtlist "end"
+
+   22 forstmt: "for" variable "<-" expr "do" stmtlist "end"
+
+   23 returnstmt: "return" exprend
+   24           | "return" expr exprend
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end"
+
+   26 classdeclstmt: "class" IDENTIFIER typeparams inheritance classbodystmtlist "end"
+
+   27 attrdeclstmt: "attr" variable '=' expr
+   28             | "attr" typedvariable attropteq
+
+   29 attropteq: /* empty */
+   30          | '=' expr
+
+   31 classbodystmt: funcdeclstmt
+   32              | classdeclstmt
+   33              | attrdeclstmt
+
+   34 classbodystmtlist: classbodystmtlist_buffer
+
+   35 classbodystmtlist_buffer: /* empty */
+   36                         | classbodystmtlist_buffer classbodystmt
+
+   37 typeparams: /* empty */
+   38           | '{' typeparams0 '}'
+
+   39 typeparams0: typeparams0rest IDENTIFIER
+
+   40 typeparams0rest: /* empty */
+   41                | typeparams0rest IDENTIFIER ','
+
+   42 inheritance: /* empty */
+   43            | "<-" paramtypenames
+
+   44 rettype: /* empty */
+   45        | "->" paramtypename
+
+   46 paramlist: /* empty */
+   47          | paramlist0 typedvariable
+
+   48 paramlist0: /* empty */
+   49           | paramlist0 typedvariable ','
+
+   50 expr: binop_or
+
+   51 literal: intlit
+   52        | boollit
+   53        | nillit
+   54        | doublelit
+   55        | strlit
+   56        | arraylit
+   57        | dictlit
+
+   58 atom: literal
+   59     | variable
+   60     | self
+   61     | '(' expr ')'
+
+   62 primary: atom
+   63        | primary '.' IDENTIFIER
+   64        | primary '[' expr ']'
+   65        | primary optparamtypenames '(' exprlist ')'
+
+   66 unop_pm: primary
+   67        | '-' unop_pm
+   68        | '+' unop_pm
+
+   69 unop_bool: unop_pm
+   70          | '~' unop_bool
+   71          | "not" unop_bool
+
+   72 binop_mult: unop_bool
+   73           | binop_mult '*' unop_bool
+   74           | binop_mult '/' unop_bool
+   75           | binop_mult '%' unop_bool
+
+   76 binop_add: binop_mult
+   77          | binop_add '+' binop_mult
+   78          | binop_add '-' binop_mult
+
+   79 binop_shift: binop_add
+   80            | binop_shift "<<" binop_add
+   81            | binop_shift ">>" binop_add
+
+   82 binop_cmp: binop_shift
+   83          | binop_cmp '<' binop_shift
+   84          | binop_cmp "<=" binop_shift
+   85          | binop_cmp '>' binop_shift
+   86          | binop_cmp ">=" binop_shift
+
+   87 binop_eq: binop_cmp
+   88         | binop_eq "==" binop_cmp
+   89         | binop_eq "!=" binop_cmp
+
+   90 binop_bit_and: binop_eq
+   91              | binop_bit_and '&' binop_eq
+
+   92 binop_xor: binop_bit_and
+   93          | binop_xor '^' binop_bit_and
+
+   94 binop_bit_or: binop_xor
+   95             | binop_bit_or '|' binop_xor
+
+   96 binop_and: binop_bit_or
+   97          | binop_and "and" binop_bit_or
+
+   98 binop_or: binop_and
+   99         | binop_or "or" binop_and
+
+  100 intlit: INTEGER
+
+  101 boollit: "True"
+  102        | "False"
+
+  103 nillit: "Nil"
+
+  104 doublelit: DOUBLE
+
+  105 strlit: STRING
+
+  106 arraylit: '[' exprlist ']'
+
+  107 exprlist: /* empty */
+  108         | expr
+  109         | exprlist ',' expr
+
+  110 dictlit: '{' pairlist '}'
+
+  111 pairkey: expr
+
+  112 pairvalue: expr
+
+  113 pair: pairkey ':' pairvalue
+
+  114 pairlist: /* empty */
+  115         | pair
+  116         | pairlist ',' pair
+
+  117 variable: IDENTIFIER
+
+  118 typedvariable: IDENTIFIER "::" paramtypename
+
+  119 paramtypename: typename optparamtypenames
+
+  120 optparamtypenames: /* empty */
+  121                  | '{' paramtypenames '}'
+
+  122 paramtypenames: paramtypenames0 paramtypename
+
+  123 paramtypenames0: /* empty */
+  124                | paramtypenames0 paramtypename ','
+
+  125 typename: IDENTIFIER typename0
+
+  126 typename0: /* empty */
+  127          | '.' IDENTIFIER typename0
+
+  128 self: "self"
+
+
+Terminals, with rules where they appear
+
+END (0) 0 1
+'%' (37) 75
+'&' (38) 91
+'(' (40) 25 61 65
+')' (41) 25 61 65
+'*' (42) 73
+'+' (43) 68 77
+',' (44) 41 49 109 116 124
+'-' (45) 67 78
+'.' (46) 63 127
+'/' (47) 74
+':' (58) 113
+';' (59) 14
+'<' (60) 83
+'=' (61) 15 16 25 27 30
+'>' (62) 85
+'[' (91) 64 106
+']' (93) 64 106
+'^' (94) 93
+'{' (123) 38 110 121
+'|' (124) 95
+'}' (125) 38 110 121
+'~' (126) 70
+error (256)
+EOL (258)
+"if" (259) 17
+"then" (260) 17 19
+"else" (261) 20
+"elsif" (262) 19
+"for" (263) 22
+"while" (264) 21
+"do" (265) 21 22
+"def" (266) 25
+"end" (267) 17 21 22 25 26
+"class" (268) 26
+"attr" (269) 27 28
+"return" (270) 23 24
+"import" (271)
+"True" (272) 101
+"False" (273) 102
+"Nil" (274) 103
+"<<" (275) 80
+">>" (276) 81
+"<=" (277) 84
+">=" (278) 86
+"==" (279) 88
+"!=" (280) 89
+"and" (281) 97
+"or" (282) 99
+"not" (283) 71
+"::" (284) 118
+"<-" (285) 22 43
+"->" (286) 45
+INTEGER (287) 100
+DOUBLE (288) 104
+STRING (289) 105
+IDENTIFIER (290) 25 26 39 41 63 117 118 125 127
+"self" (291) 128
+
+
+Nonterminals, with rules where they appear
+
+$accept (59)
+    on left: 0
+start (60)
+    on left: 1, on right: 0
+stmtlist (61)
+    on left: 2, on right: 1 17 19 20 21 22 25
+stmtlist_buffer (62)
+    on left: 3 4, on right: 2 4
+stmt (63)
+    on left: 5 6 7 8 9 10 11 12, on right: 4
+stmtexpr (64)
+    on left: 13, on right: 5
+exprend (65)
+    on left: 14, on right: 13 15 16 23 24
+assignstmt (66)
+    on left: 15 16, on right: 6
+ifstmt (67)
+    on left: 17, on right: 7
+ifstmt_else (68)
+    on left: 18 19 20, on right: 17 19
+whilestmt (69)
+    on left: 21, on right: 8
+forstmt (70)
+    on left: 22, on right: 9
+returnstmt (71)
+    on left: 23 24, on right: 10
+funcdeclstmt (72)
+    on left: 25, on right: 11 31
+classdeclstmt (73)
+    on left: 26, on right: 12 32
+attrdeclstmt (74)
+    on left: 27 28, on right: 33
+attropteq (75)
+    on left: 29 30, on right: 28
+classbodystmt (76)
+    on left: 31 32 33, on right: 36
+classbodystmtlist (77)
+    on left: 34, on right: 26
+classbodystmtlist_buffer (78)
+    on left: 35 36, on right: 34 36
+typeparams (79)
+    on left: 37 38, on right: 25 26
+typeparams0 (80)
+    on left: 39, on right: 38
+typeparams0rest (81)
+    on left: 40 41, on right: 39 41
+inheritance (82)
+    on left: 42 43, on right: 26
+rettype (83)
+    on left: 44 45, on right: 25
+paramlist (84)
+    on left: 46 47, on right: 25
+paramlist0 (85)
+    on left: 48 49, on right: 47 49
+expr (86)
+    on left: 50, on right: 13 15 16 17 19 21 22 24 27 30 61 64 108
+    109 111 112
+literal (87)
+    on left: 51 52 53 54 55 56 57, on right: 58
+atom (88)
+    on left: 58 59 60 61, on right: 62
+primary (89)
+    on left: 62 63 64 65, on right: 63 64 65 66
+unop_pm (90)
+    on left: 66 67 68, on right: 67 68 69
+unop_bool (91)
+    on left: 69 70 71, on right: 70 71 72 73 74 75
+binop_mult (92)
+    on left: 72 73 74 75, on right: 73 74 75 76 77 78
+binop_add (93)
+    on left: 76 77 78, on right: 77 78 79 80 81
+binop_shift (94)
+    on left: 79 80 81, on right: 80 81 82 83 84 85 86
+binop_cmp (95)
+    on left: 82 83 84 85 86, on right: 83 84 85 86 87 88 89
+binop_eq (96)
+    on left: 87 88 89, on right: 88 89 90 91
+binop_bit_and (97)
+    on left: 90 91, on right: 91 92 93
+binop_xor (98)
+    on left: 92 93, on right: 93 94 95
+binop_bit_or (99)
+    on left: 94 95, on right: 95 96 97
+binop_and (100)
+    on left: 96 97, on right: 97 98 99
+binop_or (101)
+    on left: 98 99, on right: 50 99
+intlit (102)
+    on left: 100, on right: 51
+boollit (103)
+    on left: 101 102, on right: 52
+nillit (104)
+    on left: 103, on right: 53
+doublelit (105)
+    on left: 104, on right: 54
+strlit (106)
+    on left: 105, on right: 55
+arraylit (107)
+    on left: 106, on right: 56
+exprlist (108)
+    on left: 107 108 109, on right: 65 106 109
+dictlit (109)
+    on left: 110, on right: 57
+pairkey (110)
+    on left: 111, on right: 113
+pairvalue (111)
+    on left: 112, on right: 113
+pair (112)
+    on left: 113, on right: 115 116
+pairlist (113)
+    on left: 114 115 116, on right: 110 116
+variable (114)
+    on left: 117, on right: 22 27 59
+typedvariable (115)
+    on left: 118, on right: 16 28 47 49
+paramtypename (116)
+    on left: 119, on right: 45 118 122 124
+optparamtypenames (117)
+    on left: 120 121, on right: 65 119
+paramtypenames (118)
+    on left: 122, on right: 43 121
+paramtypenames0 (119)
+    on left: 123 124, on right: 122 124
+typename (120)
+    on left: 125, on right: 119
+typename0 (121)
+    on left: 126 127, on right: 125 127
+self (122)
+    on left: 128, on right: 60
+
+
+state 0
+
+    0 $accept: . start END
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    start            go to state 1
+    stmtlist         go to state 2
+    stmtlist_buffer  go to state 3
+
+
+state 1
+
+    0 $accept: start . END
+
+    END  shift, and go to state 4
+
+
+state 2
+
+    1 start: stmtlist . END
+
+    END  shift, and go to state 5
+
+
+state 3
+
+    2 stmtlist: stmtlist_buffer .
+    4 stmtlist_buffer: stmtlist_buffer . stmt
+
+    "if"        shift, and go to state 6
+    "for"       shift, and go to state 7
+    "while"     shift, and go to state 8
+    "def"       shift, and go to state 9
+    "class"     shift, and go to state 10
+    "return"    shift, and go to state 11
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 19
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    $default  reduce using rule 2 (stmtlist)
+
+    stmt           go to state 27
+    stmtexpr       go to state 28
+    assignstmt     go to state 29
+    ifstmt         go to state 30
+    whilestmt      go to state 31
+    forstmt        go to state 32
+    returnstmt     go to state 33
+    funcdeclstmt   go to state 34
+    classdeclstmt  go to state 35
+    expr           go to state 36
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    typedvariable  go to state 60
+    self           go to state 61
+
+
+state 4
+
+    0 $accept: start END .
+
+    $default  accept
+
+
+state 5
+
+    1 start: stmtlist END .
+
+    $default  reduce using rule 1 (start)
+
+
+state 6
+
+   17 ifstmt: "if" . expr "then" stmtlist ifstmt_else "end"
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 63
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 7
+
+   22 forstmt: "for" . variable "<-" expr "do" stmtlist "end"
+
+    IDENTIFIER  shift, and go to state 62
+
+    variable  go to state 64
+
+
+state 8
+
+   21 whilestmt: "while" . expr "do" stmtlist "end"
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 65
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 9
+
+   25 funcdeclstmt: "def" . IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end"
+
+    IDENTIFIER  shift, and go to state 66
+
+
+state 10
+
+   26 classdeclstmt: "class" . IDENTIFIER typeparams inheritance classbodystmtlist "end"
+
+    IDENTIFIER  shift, and go to state 67
+
+
+state 11
+
+   23 returnstmt: "return" . exprend
+   24           | "return" . expr exprend
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    ';'         shift, and go to state 68
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    exprend        go to state 69
+    expr           go to state 70
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 12
+
+  101 boollit: "True" .
+
+    $default  reduce using rule 101 (boollit)
+
+
+state 13
+
+  102 boollit: "False" .
+
+    $default  reduce using rule 102 (boollit)
+
+
+state 14
+
+  103 nillit: "Nil" .
+
+    $default  reduce using rule 103 (nillit)
+
+
+state 15
+
+   71 unop_bool: "not" . unop_bool
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 40
+    unop_bool  go to state 71
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 16
+
+  100 intlit: INTEGER .
+
+    $default  reduce using rule 100 (intlit)
+
+
+state 17
+
+  104 doublelit: DOUBLE .
+
+    $default  reduce using rule 104 (doublelit)
+
+
+state 18
+
+  105 strlit: STRING .
+
+    $default  reduce using rule 105 (strlit)
+
+
+state 19
+
+  117 variable: IDENTIFIER .
+  118 typedvariable: IDENTIFIER . "::" paramtypename
+
+    "::"  shift, and go to state 72
+
+    $default  reduce using rule 117 (variable)
+
+
+state 20
+
+  128 self: "self" .
+
+    $default  reduce using rule 128 (self)
+
+
+state 21
+
+   61 atom: '(' . expr ')'
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 73
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 22
+
+  110 dictlit: '{' . pairlist '}'
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    $default  reduce using rule 114 (pairlist)
+
+    expr           go to state 74
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    pairkey        go to state 75
+    pair           go to state 76
+    pairlist       go to state 77
+    variable       go to state 59
+    self           go to state 61
+
+
+state 23
+
+  106 arraylit: '[' . exprlist ']'
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    $default  reduce using rule 107 (exprlist)
+
+    expr           go to state 78
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    exprlist       go to state 79
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 24
+
+   67 unop_pm: '-' . unop_pm
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 80
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 25
+
+   68 unop_pm: '+' . unop_pm
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 81
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 26
+
+   70 unop_bool: '~' . unop_bool
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 40
+    unop_bool  go to state 82
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 27
+
+    4 stmtlist_buffer: stmtlist_buffer stmt .
+
+    $default  reduce using rule 4 (stmtlist_buffer)
+
+
+state 28
+
+    5 stmt: stmtexpr .
+
+    $default  reduce using rule 5 (stmt)
+
+
+state 29
+
+    6 stmt: assignstmt .
+
+    $default  reduce using rule 6 (stmt)
+
+
+state 30
+
+    7 stmt: ifstmt .
+
+    $default  reduce using rule 7 (stmt)
+
+
+state 31
+
+    8 stmt: whilestmt .
+
+    $default  reduce using rule 8 (stmt)
+
+
+state 32
+
+    9 stmt: forstmt .
+
+    $default  reduce using rule 9 (stmt)
+
+
+state 33
+
+   10 stmt: returnstmt .
+
+    $default  reduce using rule 10 (stmt)
+
+
+state 34
+
+   11 stmt: funcdeclstmt .
+
+    $default  reduce using rule 11 (stmt)
+
+
+state 35
+
+   12 stmt: classdeclstmt .
+
+    $default  reduce using rule 12 (stmt)
+
+
+state 36
+
+   13 stmtexpr: expr . exprend
+   15 assignstmt: expr . '=' expr exprend
+
+    ';'  shift, and go to state 68
+    '='  shift, and go to state 83
+
+    exprend  go to state 84
+
+
+state 37
+
+   58 atom: literal .
+
+    $default  reduce using rule 58 (atom)
+
+
+state 38
+
+   62 primary: atom .
+
+    $default  reduce using rule 62 (primary)
+
+
+state 39
+
+   63 primary: primary . '.' IDENTIFIER
+   64        | primary . '[' expr ']'
+   65        | primary . optparamtypenames '(' exprlist ')'
+   66 unop_pm: primary .
+
+    '{'  shift, and go to state 85
+    '.'  shift, and go to state 86
+    '['  shift, and go to state 87
+
+    '('       reduce using rule 120 (optparamtypenames)
+    $default  reduce using rule 66 (unop_pm)
+
+    optparamtypenames  go to state 88
+
+
+state 40
+
+   69 unop_bool: unop_pm .
+
+    $default  reduce using rule 69 (unop_bool)
+
+
+state 41
+
+   72 binop_mult: unop_bool .
+
+    $default  reduce using rule 72 (binop_mult)
+
+
+state 42
+
+   73 binop_mult: binop_mult . '*' unop_bool
+   74           | binop_mult . '/' unop_bool
+   75           | binop_mult . '%' unop_bool
+   76 binop_add: binop_mult .
+
+    '*'  shift, and go to state 89
+    '/'  shift, and go to state 90
+    '%'  shift, and go to state 91
+
+    $default  reduce using rule 76 (binop_add)
+
+
+state 43
+
+   77 binop_add: binop_add . '+' binop_mult
+   78          | binop_add . '-' binop_mult
+   79 binop_shift: binop_add .
+
+    '-'  shift, and go to state 92
+    '+'  shift, and go to state 93
+
+    $default  reduce using rule 79 (binop_shift)
+
+
+state 44
+
+   80 binop_shift: binop_shift . "<<" binop_add
+   81            | binop_shift . ">>" binop_add
+   82 binop_cmp: binop_shift .
+
+    "<<"  shift, and go to state 94
+    ">>"  shift, and go to state 95
+
+    $default  reduce using rule 82 (binop_cmp)
+
+
+state 45
+
+   83 binop_cmp: binop_cmp . '<' binop_shift
+   84          | binop_cmp . "<=" binop_shift
+   85          | binop_cmp . '>' binop_shift
+   86          | binop_cmp . ">=" binop_shift
+   87 binop_eq: binop_cmp .
+
+    "<="  shift, and go to state 96
+    ">="  shift, and go to state 97
+    '<'   shift, and go to state 98
+    '>'   shift, and go to state 99
+
+    $default  reduce using rule 87 (binop_eq)
+
+
+state 46
+
+   88 binop_eq: binop_eq . "==" binop_cmp
+   89         | binop_eq . "!=" binop_cmp
+   90 binop_bit_and: binop_eq .
+
+    "=="  shift, and go to state 100
+    "!="  shift, and go to state 101
+
+    $default  reduce using rule 90 (binop_bit_and)
+
+
+state 47
+
+   91 binop_bit_and: binop_bit_and . '&' binop_eq
+   92 binop_xor: binop_bit_and .
+
+    '&'  shift, and go to state 102
+
+    $default  reduce using rule 92 (binop_xor)
+
+
+state 48
+
+   93 binop_xor: binop_xor . '^' binop_bit_and
+   94 binop_bit_or: binop_xor .
+
+    '^'  shift, and go to state 103
+
+    $default  reduce using rule 94 (binop_bit_or)
+
+
+state 49
+
+   95 binop_bit_or: binop_bit_or . '|' binop_xor
+   96 binop_and: binop_bit_or .
+
+    '|'  shift, and go to state 104
+
+    $default  reduce using rule 96 (binop_and)
+
+
+state 50
+
+   97 binop_and: binop_and . "and" binop_bit_or
+   98 binop_or: binop_and .
+
+    "and"  shift, and go to state 105
+
+    $default  reduce using rule 98 (binop_or)
+
+
+state 51
+
+   50 expr: binop_or .
+   99 binop_or: binop_or . "or" binop_and
+
+    "or"  shift, and go to state 106
+
+    $default  reduce using rule 50 (expr)
+
+
+state 52
+
+   51 literal: intlit .
+
+    $default  reduce using rule 51 (literal)
+
+
+state 53
+
+   52 literal: boollit .
+
+    $default  reduce using rule 52 (literal)
+
+
+state 54
+
+   53 literal: nillit .
+
+    $default  reduce using rule 53 (literal)
+
+
+state 55
+
+   54 literal: doublelit .
+
+    $default  reduce using rule 54 (literal)
+
+
+state 56
+
+   55 literal: strlit .
+
+    $default  reduce using rule 55 (literal)
+
+
+state 57
+
+   56 literal: arraylit .
+
+    $default  reduce using rule 56 (literal)
+
+
+state 58
+
+   57 literal: dictlit .
+
+    $default  reduce using rule 57 (literal)
+
+
+state 59
+
+   59 atom: variable .
+
+    $default  reduce using rule 59 (atom)
+
+
+state 60
+
+   16 assignstmt: typedvariable . '=' expr exprend
+
+    '='  shift, and go to state 107
+
+
+state 61
+
+   60 atom: self .
+
+    $default  reduce using rule 60 (atom)
+
+
+state 62
+
+  117 variable: IDENTIFIER .
+
+    $default  reduce using rule 117 (variable)
+
+
+state 63
+
+   17 ifstmt: "if" expr . "then" stmtlist ifstmt_else "end"
+
+    "then"  shift, and go to state 108
+
+
+state 64
+
+   22 forstmt: "for" variable . "<-" expr "do" stmtlist "end"
+
+    "<-"  shift, and go to state 109
+
+
+state 65
+
+   21 whilestmt: "while" expr . "do" stmtlist "end"
+
+    "do"  shift, and go to state 110
+
+
+state 66
+
+   25 funcdeclstmt: "def" IDENTIFIER . typeparams '(' paramlist ')' rettype '=' stmtlist "end"
+
+    '{'  shift, and go to state 111
+
+    $default  reduce using rule 37 (typeparams)
+
+    typeparams  go to state 112
+
+
+state 67
+
+   26 classdeclstmt: "class" IDENTIFIER . typeparams inheritance classbodystmtlist "end"
+
+    '{'  shift, and go to state 111
+
+    $default  reduce using rule 37 (typeparams)
+
+    typeparams  go to state 113
+
+
+state 68
+
+   14 exprend: ';' .
+
+    $default  reduce using rule 14 (exprend)
+
+
+state 69
+
+   23 returnstmt: "return" exprend .
+
+    $default  reduce using rule 23 (returnstmt)
+
+
+state 70
+
+   24 returnstmt: "return" expr . exprend
+
+    ';'  shift, and go to state 68
+
+    exprend  go to state 114
+
+
+state 71
+
+   71 unop_bool: "not" unop_bool .
+
+    $default  reduce using rule 71 (unop_bool)
+
+
+state 72
+
+  118 typedvariable: IDENTIFIER "::" . paramtypename
+
+    IDENTIFIER  shift, and go to state 115
+
+    paramtypename  go to state 116
+    typename       go to state 117
+
+
+state 73
+
+   61 atom: '(' expr . ')'
+
+    ')'  shift, and go to state 118
+
+
+state 74
+
+  111 pairkey: expr .
+
+    $default  reduce using rule 111 (pairkey)
+
+
+state 75
+
+  113 pair: pairkey . ':' pairvalue
+
+    ':'  shift, and go to state 119
+
+
+state 76
+
+  115 pairlist: pair .
+
+    $default  reduce using rule 115 (pairlist)
+
+
+state 77
+
+  110 dictlit: '{' pairlist . '}'
+  116 pairlist: pairlist . ',' pair
+
+    '}'  shift, and go to state 120
+    ','  shift, and go to state 121
+
+
+state 78
+
+  108 exprlist: expr .
+
+    $default  reduce using rule 108 (exprlist)
+
+
+state 79
+
+  106 arraylit: '[' exprlist . ']'
+  109 exprlist: exprlist . ',' expr
+
+    ','  shift, and go to state 122
+    ']'  shift, and go to state 123
+
+
+state 80
+
+   67 unop_pm: '-' unop_pm .
+
+    $default  reduce using rule 67 (unop_pm)
+
+
+state 81
+
+   68 unop_pm: '+' unop_pm .
+
+    $default  reduce using rule 68 (unop_pm)
+
+
+state 82
+
+   70 unop_bool: '~' unop_bool .
+
+    $default  reduce using rule 70 (unop_bool)
+
+
+state 83
+
+   15 assignstmt: expr '=' . expr exprend
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 124
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 84
+
+   13 stmtexpr: expr exprend .
+
+    $default  reduce using rule 13 (stmtexpr)
+
+
+state 85
+
+  121 optparamtypenames: '{' . paramtypenames '}'
+
+    $default  reduce using rule 123 (paramtypenames0)
+
+    paramtypenames   go to state 125
+    paramtypenames0  go to state 126
+
+
+state 86
+
+   63 primary: primary '.' . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 127
+
+
+state 87
+
+   64 primary: primary '[' . expr ']'
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 128
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 88
+
+   65 primary: primary optparamtypenames . '(' exprlist ')'
+
+    '('  shift, and go to state 129
+
+
+state 89
+
+   73 binop_mult: binop_mult '*' . unop_bool
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 40
+    unop_bool  go to state 130
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 90
+
+   74 binop_mult: binop_mult '/' . unop_bool
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 40
+    unop_bool  go to state 131
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 91
+
+   75 binop_mult: binop_mult '%' . unop_bool
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal    go to state 37
+    atom       go to state 38
+    primary    go to state 39
+    unop_pm    go to state 40
+    unop_bool  go to state 132
+    intlit     go to state 52
+    boollit    go to state 53
+    nillit     go to state 54
+    doublelit  go to state 55
+    strlit     go to state 56
+    arraylit   go to state 57
+    dictlit    go to state 58
+    variable   go to state 59
+    self       go to state 61
+
+
+state 92
+
+   78 binop_add: binop_add '-' . binop_mult
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal     go to state 37
+    atom        go to state 38
+    primary     go to state 39
+    unop_pm     go to state 40
+    unop_bool   go to state 41
+    binop_mult  go to state 133
+    intlit      go to state 52
+    boollit     go to state 53
+    nillit      go to state 54
+    doublelit   go to state 55
+    strlit      go to state 56
+    arraylit    go to state 57
+    dictlit     go to state 58
+    variable    go to state 59
+    self        go to state 61
+
+
+state 93
+
+   77 binop_add: binop_add '+' . binop_mult
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal     go to state 37
+    atom        go to state 38
+    primary     go to state 39
+    unop_pm     go to state 40
+    unop_bool   go to state 41
+    binop_mult  go to state 134
+    intlit      go to state 52
+    boollit     go to state 53
+    nillit      go to state 54
+    doublelit   go to state 55
+    strlit      go to state 56
+    arraylit    go to state 57
+    dictlit     go to state 58
+    variable    go to state 59
+    self        go to state 61
+
+
+state 94
+
+   80 binop_shift: binop_shift "<<" . binop_add
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal     go to state 37
+    atom        go to state 38
+    primary     go to state 39
+    unop_pm     go to state 40
+    unop_bool   go to state 41
+    binop_mult  go to state 42
+    binop_add   go to state 135
+    intlit      go to state 52
+    boollit     go to state 53
+    nillit      go to state 54
+    doublelit   go to state 55
+    strlit      go to state 56
+    arraylit    go to state 57
+    dictlit     go to state 58
+    variable    go to state 59
+    self        go to state 61
+
+
+state 95
+
+   81 binop_shift: binop_shift ">>" . binop_add
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal     go to state 37
+    atom        go to state 38
+    primary     go to state 39
+    unop_pm     go to state 40
+    unop_bool   go to state 41
+    binop_mult  go to state 42
+    binop_add   go to state 136
+    intlit      go to state 52
+    boollit     go to state 53
+    nillit      go to state 54
+    doublelit   go to state 55
+    strlit      go to state 56
+    arraylit    go to state 57
+    dictlit     go to state 58
+    variable    go to state 59
+    self        go to state 61
+
+
+state 96
+
+   84 binop_cmp: binop_cmp "<=" . binop_shift
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 137
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 97
+
+   86 binop_cmp: binop_cmp ">=" . binop_shift
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 138
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 98
+
+   83 binop_cmp: binop_cmp '<' . binop_shift
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 139
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 99
+
+   85 binop_cmp: binop_cmp '>' . binop_shift
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 140
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 100
+
+   88 binop_eq: binop_eq "==" . binop_cmp
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 44
+    binop_cmp    go to state 141
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 101
+
+   89 binop_eq: binop_eq "!=" . binop_cmp
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 44
+    binop_cmp    go to state 142
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 102
+
+   91 binop_bit_and: binop_bit_and '&' . binop_eq
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal      go to state 37
+    atom         go to state 38
+    primary      go to state 39
+    unop_pm      go to state 40
+    unop_bool    go to state 41
+    binop_mult   go to state 42
+    binop_add    go to state 43
+    binop_shift  go to state 44
+    binop_cmp    go to state 45
+    binop_eq     go to state 143
+    intlit       go to state 52
+    boollit      go to state 53
+    nillit       go to state 54
+    doublelit    go to state 55
+    strlit       go to state 56
+    arraylit     go to state 57
+    dictlit      go to state 58
+    variable     go to state 59
+    self         go to state 61
+
+
+state 103
+
+   93 binop_xor: binop_xor '^' . binop_bit_and
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 144
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 104
+
+   95 binop_bit_or: binop_bit_or '|' . binop_xor
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 145
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 105
+
+   97 binop_and: binop_and "and" . binop_bit_or
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 146
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 106
+
+   99 binop_or: binop_or "or" . binop_and
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 147
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 107
+
+   16 assignstmt: typedvariable '=' . expr exprend
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 148
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 108
+
+   17 ifstmt: "if" expr "then" . stmtlist ifstmt_else "end"
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 149
+    stmtlist_buffer  go to state 3
+
+
+state 109
+
+   22 forstmt: "for" variable "<-" . expr "do" stmtlist "end"
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 150
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 110
+
+   21 whilestmt: "while" expr "do" . stmtlist "end"
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 151
+    stmtlist_buffer  go to state 3
+
+
+state 111
+
+   38 typeparams: '{' . typeparams0 '}'
+
+    $default  reduce using rule 40 (typeparams0rest)
+
+    typeparams0      go to state 152
+    typeparams0rest  go to state 153
+
+
+state 112
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams . '(' paramlist ')' rettype '=' stmtlist "end"
+
+    '('  shift, and go to state 154
+
+
+state 113
+
+   26 classdeclstmt: "class" IDENTIFIER typeparams . inheritance classbodystmtlist "end"
+
+    "<-"  shift, and go to state 155
+
+    $default  reduce using rule 42 (inheritance)
+
+    inheritance  go to state 156
+
+
+state 114
+
+   24 returnstmt: "return" expr exprend .
+
+    $default  reduce using rule 24 (returnstmt)
+
+
+state 115
+
+  125 typename: IDENTIFIER . typename0
+
+    '.'  shift, and go to state 157
+
+    $default  reduce using rule 126 (typename0)
+
+    typename0  go to state 158
+
+
+state 116
+
+  118 typedvariable: IDENTIFIER "::" paramtypename .
+
+    $default  reduce using rule 118 (typedvariable)
+
+
+state 117
+
+  119 paramtypename: typename . optparamtypenames
+
+    '{'  shift, and go to state 85
+
+    $default  reduce using rule 120 (optparamtypenames)
+
+    optparamtypenames  go to state 159
+
+
+state 118
+
+   61 atom: '(' expr ')' .
+
+    $default  reduce using rule 61 (atom)
+
+
+state 119
+
+  113 pair: pairkey ':' . pairvalue
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 160
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    pairvalue      go to state 161
+    variable       go to state 59
+    self           go to state 61
+
+
+state 120
+
+  110 dictlit: '{' pairlist '}' .
+
+    $default  reduce using rule 110 (dictlit)
+
+
+state 121
+
+  116 pairlist: pairlist ',' . pair
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 74
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    pairkey        go to state 75
+    pair           go to state 162
+    variable       go to state 59
+    self           go to state 61
+
+
+state 122
+
+  109 exprlist: exprlist ',' . expr
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 163
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 123
+
+  106 arraylit: '[' exprlist ']' .
+
+    $default  reduce using rule 106 (arraylit)
+
+
+state 124
+
+   15 assignstmt: expr '=' expr . exprend
+
+    ';'  shift, and go to state 68
+
+    exprend  go to state 164
+
+
+state 125
+
+  121 optparamtypenames: '{' paramtypenames . '}'
+
+    '}'  shift, and go to state 165
+
+
+state 126
+
+  122 paramtypenames: paramtypenames0 . paramtypename
+  124 paramtypenames0: paramtypenames0 . paramtypename ','
+
+    IDENTIFIER  shift, and go to state 115
+
+    paramtypename  go to state 166
+    typename       go to state 117
+
+
+state 127
+
+   63 primary: primary '.' IDENTIFIER .
+
+    $default  reduce using rule 63 (primary)
+
+
+state 128
+
+   64 primary: primary '[' expr . ']'
+
+    ']'  shift, and go to state 167
+
+
+state 129
+
+   65 primary: primary optparamtypenames '(' . exprlist ')'
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    $default  reduce using rule 107 (exprlist)
+
+    expr           go to state 78
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    exprlist       go to state 168
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 130
+
+   73 binop_mult: binop_mult '*' unop_bool .
+
+    $default  reduce using rule 73 (binop_mult)
+
+
+state 131
+
+   74 binop_mult: binop_mult '/' unop_bool .
+
+    $default  reduce using rule 74 (binop_mult)
+
+
+state 132
+
+   75 binop_mult: binop_mult '%' unop_bool .
+
+    $default  reduce using rule 75 (binop_mult)
+
+
+state 133
+
+   73 binop_mult: binop_mult . '*' unop_bool
+   74           | binop_mult . '/' unop_bool
+   75           | binop_mult . '%' unop_bool
+   78 binop_add: binop_add '-' binop_mult .
+
+    '*'  shift, and go to state 89
+    '/'  shift, and go to state 90
+    '%'  shift, and go to state 91
+
+    $default  reduce using rule 78 (binop_add)
+
+
+state 134
+
+   73 binop_mult: binop_mult . '*' unop_bool
+   74           | binop_mult . '/' unop_bool
+   75           | binop_mult . '%' unop_bool
+   77 binop_add: binop_add '+' binop_mult .
+
+    '*'  shift, and go to state 89
+    '/'  shift, and go to state 90
+    '%'  shift, and go to state 91
+
+    $default  reduce using rule 77 (binop_add)
+
+
+state 135
+
+   77 binop_add: binop_add . '+' binop_mult
+   78          | binop_add . '-' binop_mult
+   80 binop_shift: binop_shift "<<" binop_add .
+
+    '-'  shift, and go to state 92
+    '+'  shift, and go to state 93
+
+    $default  reduce using rule 80 (binop_shift)
+
+
+state 136
+
+   77 binop_add: binop_add . '+' binop_mult
+   78          | binop_add . '-' binop_mult
+   81 binop_shift: binop_shift ">>" binop_add .
+
+    '-'  shift, and go to state 92
+    '+'  shift, and go to state 93
+
+    $default  reduce using rule 81 (binop_shift)
+
+
+state 137
+
+   80 binop_shift: binop_shift . "<<" binop_add
+   81            | binop_shift . ">>" binop_add
+   84 binop_cmp: binop_cmp "<=" binop_shift .
+
+    "<<"  shift, and go to state 94
+    ">>"  shift, and go to state 95
+
+    $default  reduce using rule 84 (binop_cmp)
+
+
+state 138
+
+   80 binop_shift: binop_shift . "<<" binop_add
+   81            | binop_shift . ">>" binop_add
+   86 binop_cmp: binop_cmp ">=" binop_shift .
+
+    "<<"  shift, and go to state 94
+    ">>"  shift, and go to state 95
+
+    $default  reduce using rule 86 (binop_cmp)
+
+
+state 139
+
+   80 binop_shift: binop_shift . "<<" binop_add
+   81            | binop_shift . ">>" binop_add
+   83 binop_cmp: binop_cmp '<' binop_shift .
+
+    "<<"  shift, and go to state 94
+    ">>"  shift, and go to state 95
+
+    $default  reduce using rule 83 (binop_cmp)
+
+
+state 140
+
+   80 binop_shift: binop_shift . "<<" binop_add
+   81            | binop_shift . ">>" binop_add
+   85 binop_cmp: binop_cmp '>' binop_shift .
+
+    "<<"  shift, and go to state 94
+    ">>"  shift, and go to state 95
+
+    $default  reduce using rule 85 (binop_cmp)
+
+
+state 141
+
+   83 binop_cmp: binop_cmp . '<' binop_shift
+   84          | binop_cmp . "<=" binop_shift
+   85          | binop_cmp . '>' binop_shift
+   86          | binop_cmp . ">=" binop_shift
+   88 binop_eq: binop_eq "==" binop_cmp .
+
+    "<="  shift, and go to state 96
+    ">="  shift, and go to state 97
+    '<'   shift, and go to state 98
+    '>'   shift, and go to state 99
+
+    $default  reduce using rule 88 (binop_eq)
+
+
+state 142
+
+   83 binop_cmp: binop_cmp . '<' binop_shift
+   84          | binop_cmp . "<=" binop_shift
+   85          | binop_cmp . '>' binop_shift
+   86          | binop_cmp . ">=" binop_shift
+   89 binop_eq: binop_eq "!=" binop_cmp .
+
+    "<="  shift, and go to state 96
+    ">="  shift, and go to state 97
+    '<'   shift, and go to state 98
+    '>'   shift, and go to state 99
+
+    $default  reduce using rule 89 (binop_eq)
+
+
+state 143
+
+   88 binop_eq: binop_eq . "==" binop_cmp
+   89         | binop_eq . "!=" binop_cmp
+   91 binop_bit_and: binop_bit_and '&' binop_eq .
+
+    "=="  shift, and go to state 100
+    "!="  shift, and go to state 101
+
+    $default  reduce using rule 91 (binop_bit_and)
+
+
+state 144
+
+   91 binop_bit_and: binop_bit_and . '&' binop_eq
+   93 binop_xor: binop_xor '^' binop_bit_and .
+
+    '&'  shift, and go to state 102
+
+    $default  reduce using rule 93 (binop_xor)
+
+
+state 145
+
+   93 binop_xor: binop_xor . '^' binop_bit_and
+   95 binop_bit_or: binop_bit_or '|' binop_xor .
+
+    '^'  shift, and go to state 103
+
+    $default  reduce using rule 95 (binop_bit_or)
+
+
+state 146
+
+   95 binop_bit_or: binop_bit_or . '|' binop_xor
+   97 binop_and: binop_and "and" binop_bit_or .
+
+    '|'  shift, and go to state 104
+
+    $default  reduce using rule 97 (binop_and)
+
+
+state 147
+
+   97 binop_and: binop_and . "and" binop_bit_or
+   99 binop_or: binop_or "or" binop_and .
+
+    "and"  shift, and go to state 105
+
+    $default  reduce using rule 99 (binop_or)
+
+
+state 148
+
+   16 assignstmt: typedvariable '=' expr . exprend
+
+    ';'  shift, and go to state 68
+
+    exprend  go to state 169
+
+
+state 149
+
+   17 ifstmt: "if" expr "then" stmtlist . ifstmt_else "end"
+
+    "else"   shift, and go to state 170
+    "elsif"  shift, and go to state 171
+
+    $default  reduce using rule 18 (ifstmt_else)
+
+    ifstmt_else  go to state 172
+
+
+state 150
+
+   22 forstmt: "for" variable "<-" expr . "do" stmtlist "end"
+
+    "do"  shift, and go to state 173
+
+
+state 151
+
+   21 whilestmt: "while" expr "do" stmtlist . "end"
+
+    "end"  shift, and go to state 174
+
+
+state 152
+
+   38 typeparams: '{' typeparams0 . '}'
+
+    '}'  shift, and go to state 175
+
+
+state 153
+
+   39 typeparams0: typeparams0rest . IDENTIFIER
+   41 typeparams0rest: typeparams0rest . IDENTIFIER ','
+
+    IDENTIFIER  shift, and go to state 176
+
+
+state 154
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' . paramlist ')' rettype '=' stmtlist "end"
+
+    IDENTIFIER  reduce using rule 48 (paramlist0)
+    $default    reduce using rule 46 (paramlist)
+
+    paramlist   go to state 177
+    paramlist0  go to state 178
+
+
+state 155
+
+   43 inheritance: "<-" . paramtypenames
+
+    $default  reduce using rule 123 (paramtypenames0)
+
+    paramtypenames   go to state 179
+    paramtypenames0  go to state 126
+
+
+state 156
+
+   26 classdeclstmt: "class" IDENTIFIER typeparams inheritance . classbodystmtlist "end"
+
+    $default  reduce using rule 35 (classbodystmtlist_buffer)
+
+    classbodystmtlist         go to state 180
+    classbodystmtlist_buffer  go to state 181
+
+
+state 157
+
+  127 typename0: '.' . IDENTIFIER typename0
+
+    IDENTIFIER  shift, and go to state 182
+
+
+state 158
+
+  125 typename: IDENTIFIER typename0 .
+
+    $default  reduce using rule 125 (typename)
+
+
+state 159
+
+  119 paramtypename: typename optparamtypenames .
+
+    $default  reduce using rule 119 (paramtypename)
+
+
+state 160
+
+  112 pairvalue: expr .
+
+    $default  reduce using rule 112 (pairvalue)
+
+
+state 161
+
+  113 pair: pairkey ':' pairvalue .
+
+    $default  reduce using rule 113 (pair)
+
+
+state 162
+
+  116 pairlist: pairlist ',' pair .
+
+    $default  reduce using rule 116 (pairlist)
+
+
+state 163
+
+  109 exprlist: exprlist ',' expr .
+
+    $default  reduce using rule 109 (exprlist)
+
+
+state 164
+
+   15 assignstmt: expr '=' expr exprend .
+
+    $default  reduce using rule 15 (assignstmt)
+
+
+state 165
+
+  121 optparamtypenames: '{' paramtypenames '}' .
+
+    $default  reduce using rule 121 (optparamtypenames)
+
+
+state 166
+
+  122 paramtypenames: paramtypenames0 paramtypename .
+  124 paramtypenames0: paramtypenames0 paramtypename . ','
+
+    ','  shift, and go to state 183
+
+    $default  reduce using rule 122 (paramtypenames)
+
+
+state 167
+
+   64 primary: primary '[' expr ']' .
+
+    $default  reduce using rule 64 (primary)
+
+
+state 168
+
+   65 primary: primary optparamtypenames '(' exprlist . ')'
+  109 exprlist: exprlist . ',' expr
+
+    ')'  shift, and go to state 184
+    ','  shift, and go to state 122
+
+
+state 169
+
+   16 assignstmt: typedvariable '=' expr exprend .
+
+    $default  reduce using rule 16 (assignstmt)
+
+
+state 170
+
+   20 ifstmt_else: "else" . stmtlist
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 185
+    stmtlist_buffer  go to state 3
+
+
+state 171
+
+   19 ifstmt_else: "elsif" . expr "then" stmtlist ifstmt_else
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 186
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 172
+
+   17 ifstmt: "if" expr "then" stmtlist ifstmt_else . "end"
+
+    "end"  shift, and go to state 187
+
+
+state 173
+
+   22 forstmt: "for" variable "<-" expr "do" . stmtlist "end"
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 188
+    stmtlist_buffer  go to state 3
+
+
+state 174
+
+   21 whilestmt: "while" expr "do" stmtlist "end" .
+
+    $default  reduce using rule 21 (whilestmt)
+
+
+state 175
+
+   38 typeparams: '{' typeparams0 '}' .
+
+    $default  reduce using rule 38 (typeparams)
+
+
+state 176
+
+   39 typeparams0: typeparams0rest IDENTIFIER .
+   41 typeparams0rest: typeparams0rest IDENTIFIER . ','
+
+    ','  shift, and go to state 189
+
+    $default  reduce using rule 39 (typeparams0)
+
+
+state 177
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist . ')' rettype '=' stmtlist "end"
+
+    ')'  shift, and go to state 190
+
+
+state 178
+
+   47 paramlist: paramlist0 . typedvariable
+   49 paramlist0: paramlist0 . typedvariable ','
+
+    IDENTIFIER  shift, and go to state 191
+
+    typedvariable  go to state 192
+
+
+state 179
+
+   43 inheritance: "<-" paramtypenames .
+
+    $default  reduce using rule 43 (inheritance)
+
+
+state 180
+
+   26 classdeclstmt: "class" IDENTIFIER typeparams inheritance classbodystmtlist . "end"
+
+    "end"  shift, and go to state 193
+
+
+state 181
+
+   34 classbodystmtlist: classbodystmtlist_buffer .
+   36 classbodystmtlist_buffer: classbodystmtlist_buffer . classbodystmt
+
+    "def"    shift, and go to state 9
+    "class"  shift, and go to state 10
+    "attr"   shift, and go to state 194
+
+    $default  reduce using rule 34 (classbodystmtlist)
+
+    funcdeclstmt   go to state 195
+    classdeclstmt  go to state 196
+    attrdeclstmt   go to state 197
+    classbodystmt  go to state 198
+
+
+state 182
+
+  127 typename0: '.' IDENTIFIER . typename0
+
+    '.'  shift, and go to state 157
+
+    $default  reduce using rule 126 (typename0)
+
+    typename0  go to state 199
+
+
+state 183
+
+  124 paramtypenames0: paramtypenames0 paramtypename ',' .
+
+    $default  reduce using rule 124 (paramtypenames0)
+
+
+state 184
+
+   65 primary: primary optparamtypenames '(' exprlist ')' .
+
+    $default  reduce using rule 65 (primary)
+
+
+state 185
+
+   20 ifstmt_else: "else" stmtlist .
+
+    $default  reduce using rule 20 (ifstmt_else)
+
+
+state 186
+
+   19 ifstmt_else: "elsif" expr . "then" stmtlist ifstmt_else
+
+    "then"  shift, and go to state 200
+
+
+state 187
+
+   17 ifstmt: "if" expr "then" stmtlist ifstmt_else "end" .
+
+    $default  reduce using rule 17 (ifstmt)
+
+
+state 188
+
+   22 forstmt: "for" variable "<-" expr "do" stmtlist . "end"
+
+    "end"  shift, and go to state 201
+
+
+state 189
+
+   41 typeparams0rest: typeparams0rest IDENTIFIER ',' .
+
+    $default  reduce using rule 41 (typeparams0rest)
+
+
+state 190
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' . rettype '=' stmtlist "end"
+
+    "->"  shift, and go to state 202
+
+    $default  reduce using rule 44 (rettype)
+
+    rettype  go to state 203
+
+
+state 191
+
+  118 typedvariable: IDENTIFIER . "::" paramtypename
+
+    "::"  shift, and go to state 72
+
+
+state 192
+
+   47 paramlist: paramlist0 typedvariable .
+   49 paramlist0: paramlist0 typedvariable . ','
+
+    ','  shift, and go to state 204
+
+    $default  reduce using rule 47 (paramlist)
+
+
+state 193
+
+   26 classdeclstmt: "class" IDENTIFIER typeparams inheritance classbodystmtlist "end" .
+
+    $default  reduce using rule 26 (classdeclstmt)
+
+
+state 194
+
+   27 attrdeclstmt: "attr" . variable '=' expr
+   28             | "attr" . typedvariable attropteq
+
+    IDENTIFIER  shift, and go to state 19
+
+    variable       go to state 205
+    typedvariable  go to state 206
+
+
+state 195
+
+   31 classbodystmt: funcdeclstmt .
+
+    $default  reduce using rule 31 (classbodystmt)
+
+
+state 196
+
+   32 classbodystmt: classdeclstmt .
+
+    $default  reduce using rule 32 (classbodystmt)
+
+
+state 197
+
+   33 classbodystmt: attrdeclstmt .
+
+    $default  reduce using rule 33 (classbodystmt)
+
+
+state 198
+
+   36 classbodystmtlist_buffer: classbodystmtlist_buffer classbodystmt .
+
+    $default  reduce using rule 36 (classbodystmtlist_buffer)
+
+
+state 199
+
+  127 typename0: '.' IDENTIFIER typename0 .
+
+    $default  reduce using rule 127 (typename0)
+
+
+state 200
+
+   19 ifstmt_else: "elsif" expr "then" . stmtlist ifstmt_else
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 207
+    stmtlist_buffer  go to state 3
+
+
+state 201
+
+   22 forstmt: "for" variable "<-" expr "do" stmtlist "end" .
+
+    $default  reduce using rule 22 (forstmt)
+
+
+state 202
+
+   45 rettype: "->" . paramtypename
+
+    IDENTIFIER  shift, and go to state 115
+
+    paramtypename  go to state 208
+    typename       go to state 117
+
+
+state 203
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' rettype . '=' stmtlist "end"
+
+    '='  shift, and go to state 209
+
+
+state 204
+
+   49 paramlist0: paramlist0 typedvariable ',' .
+
+    $default  reduce using rule 49 (paramlist0)
+
+
+state 205
+
+   27 attrdeclstmt: "attr" variable . '=' expr
+
+    '='  shift, and go to state 210
+
+
+state 206
+
+   28 attrdeclstmt: "attr" typedvariable . attropteq
+
+    '='  shift, and go to state 211
+
+    $default  reduce using rule 29 (attropteq)
+
+    attropteq  go to state 212
+
+
+state 207
+
+   19 ifstmt_else: "elsif" expr "then" stmtlist . ifstmt_else
+
+    "else"   shift, and go to state 170
+    "elsif"  shift, and go to state 171
+
+    $default  reduce using rule 18 (ifstmt_else)
+
+    ifstmt_else  go to state 213
+
+
+state 208
+
+   45 rettype: "->" paramtypename .
+
+    $default  reduce using rule 45 (rettype)
+
+
+state 209
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' . stmtlist "end"
+
+    $default  reduce using rule 3 (stmtlist_buffer)
+
+    stmtlist         go to state 214
+    stmtlist_buffer  go to state 3
+
+
+state 210
+
+   27 attrdeclstmt: "attr" variable '=' . expr
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 215
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 211
+
+   30 attropteq: '=' . expr
+
+    "True"      shift, and go to state 12
+    "False"     shift, and go to state 13
+    "Nil"       shift, and go to state 14
+    "not"       shift, and go to state 15
+    INTEGER     shift, and go to state 16
+    DOUBLE      shift, and go to state 17
+    STRING      shift, and go to state 18
+    IDENTIFIER  shift, and go to state 62
+    "self"      shift, and go to state 20
+    '('         shift, and go to state 21
+    '{'         shift, and go to state 22
+    '['         shift, and go to state 23
+    '-'         shift, and go to state 24
+    '+'         shift, and go to state 25
+    '~'         shift, and go to state 26
+
+    expr           go to state 216
+    literal        go to state 37
+    atom           go to state 38
+    primary        go to state 39
+    unop_pm        go to state 40
+    unop_bool      go to state 41
+    binop_mult     go to state 42
+    binop_add      go to state 43
+    binop_shift    go to state 44
+    binop_cmp      go to state 45
+    binop_eq       go to state 46
+    binop_bit_and  go to state 47
+    binop_xor      go to state 48
+    binop_bit_or   go to state 49
+    binop_and      go to state 50
+    binop_or       go to state 51
+    intlit         go to state 52
+    boollit        go to state 53
+    nillit         go to state 54
+    doublelit      go to state 55
+    strlit         go to state 56
+    arraylit       go to state 57
+    dictlit        go to state 58
+    variable       go to state 59
+    self           go to state 61
+
+
+state 212
+
+   28 attrdeclstmt: "attr" typedvariable attropteq .
+
+    $default  reduce using rule 28 (attrdeclstmt)
+
+
+state 213
+
+   19 ifstmt_else: "elsif" expr "then" stmtlist ifstmt_else .
+
+    $default  reduce using rule 19 (ifstmt_else)
+
+
+state 214
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist . "end"
+
+    "end"  shift, and go to state 217
+
+
+state 215
+
+   27 attrdeclstmt: "attr" variable '=' expr .
+
+    $default  reduce using rule 27 (attrdeclstmt)
+
+
+state 216
+
+   30 attropteq: '=' expr .
+
+    $default  reduce using rule 30 (attropteq)
+
+
+state 217
+
+   25 funcdeclstmt: "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end" .
+
+    $default  reduce using rule 25 (funcdeclstmt)
