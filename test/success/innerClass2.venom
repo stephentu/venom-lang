@@ -1,0 +1,23 @@
+class F{T}
+  def foo(x::T) -> T =
+    class Inner
+      attr a::T = x
+      attr b::T
+      def self(x::T) = 
+        self.b = x;
+        if b == x then
+          print("equality");
+        end
+      end
+    end
+    i::Inner = Inner(x);
+    j = Inner(x);
+    for x <- [i, j] do
+      print(x.a);
+      print(x.b);
+    end
+    i.a;
+  end
+end
+f = F{string}();
+print(f.foo("hello, world"));
