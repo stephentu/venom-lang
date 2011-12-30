@@ -2,10 +2,22 @@
 #include <bootstrap/analysis.h>
 #include <util/stl.h>
 
+using namespace std;
 using namespace venom::analysis;
 
 namespace venom {
 namespace bootstrap {
+
+static inline vector<InstantiatedType*>
+createTypeParams(SemanticContext* ctx, size_t n) {
+  vector<InstantiatedType*> ret;
+  ret.reserve(n);
+  for (size_t i = 0; i < n; i++) {
+    string name = "T" + util::stringify(n);
+    ret.push_back(ctx->createTypeParam(name, n)->instantiate(ctx));
+  }
+  return ret;
+}
 
 SymbolTable*
 NewBootstrapSymbolTable(SemanticContext* ctx) {
@@ -24,35 +36,49 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("string", root->newChildScope(NULL), Type::StringType);
   root->createClassSymbol("void", root->newChildScope(NULL), Type::VoidType);
 
-  root->createClassSymbol("func0", root->newChildScope(NULL), Type::Func0Type);
-  root->createClassSymbol("func1", root->newChildScope(NULL), Type::Func1Type);
-  root->createClassSymbol("func2", root->newChildScope(NULL), Type::Func2Type);
-  root->createClassSymbol("func3", root->newChildScope(NULL), Type::Func3Type);
-  root->createClassSymbol("func4", root->newChildScope(NULL), Type::Func4Type);
-  root->createClassSymbol("func5", root->newChildScope(NULL), Type::Func5Type);
-  root->createClassSymbol("func6", root->newChildScope(NULL), Type::Func6Type);
-  root->createClassSymbol("func7", root->newChildScope(NULL), Type::Func7Type);
-  root->createClassSymbol("func8", root->newChildScope(NULL), Type::Func8Type);
-  root->createClassSymbol("func9", root->newChildScope(NULL), Type::Func9Type);
+#define _CREATE_FUNC(n) \
+  do { \
+    root->createClassSymbol( \
+        "func" #n, root->newChildScope(NULL), \
+        Type::Func ## n ## Type, createTypeParams(ctx, 1 + n)); \
+  } while (0)
 
-  root->createClassSymbol("func10", root->newChildScope(NULL), Type::Func10Type);
-  root->createClassSymbol("func11", root->newChildScope(NULL), Type::Func11Type);
-  root->createClassSymbol("func12", root->newChildScope(NULL), Type::Func12Type);
-  root->createClassSymbol("func13", root->newChildScope(NULL), Type::Func13Type);
-  root->createClassSymbol("func14", root->newChildScope(NULL), Type::Func14Type);
-  root->createClassSymbol("func15", root->newChildScope(NULL), Type::Func15Type);
-  root->createClassSymbol("func16", root->newChildScope(NULL), Type::Func16Type);
-  root->createClassSymbol("func17", root->newChildScope(NULL), Type::Func17Type);
-  root->createClassSymbol("func18", root->newChildScope(NULL), Type::Func18Type);
-  root->createClassSymbol("func19", root->newChildScope(NULL), Type::Func19Type);
+  _CREATE_FUNC(0);
+  _CREATE_FUNC(1);
+  _CREATE_FUNC(2);
+  _CREATE_FUNC(3);
+  _CREATE_FUNC(4);
+  _CREATE_FUNC(5);
+  _CREATE_FUNC(6);
+  _CREATE_FUNC(7);
+  _CREATE_FUNC(8);
+  _CREATE_FUNC(9);
+
+  _CREATE_FUNC(10);
+  _CREATE_FUNC(11);
+  _CREATE_FUNC(12);
+  _CREATE_FUNC(13);
+  _CREATE_FUNC(14);
+  _CREATE_FUNC(15);
+  _CREATE_FUNC(16);
+  _CREATE_FUNC(17);
+  _CREATE_FUNC(18);
+  _CREATE_FUNC(19);
+
+#undef _CREATE_FUNC
 
   SymbolTable *objSymTab = root->newChildScope(NULL);
   objSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
                               InstantiatedTypeVec(), InstantiatedType::VoidType);
   root->createClassSymbol("object", objSymTab, Type::ObjectType);
 
-  root->createClassSymbol("list", root->newChildScope(NULL), Type::ListType);
-  root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType);
+  root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
+                          createTypeParams(ctx, 1));
+
+  root->createClassSymbol("list", root->newChildScope(NULL), Type::ListType,
+                          createTypeParams(ctx, 1));
+  root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType,
+                          createTypeParams(ctx, 2));
 
   // func symbols
   root->createFuncSymbol("print", InstantiatedTypeVec(),

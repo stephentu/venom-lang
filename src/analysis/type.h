@@ -73,6 +73,9 @@ public:
 
   static Type* ObjectType;
 
+  /** Special type which represents a class type */
+  static Type* ClassType;
+
   /** Special type which is the subtype of EVERY type */
   static Type* BoundlessType;
 
@@ -97,6 +100,8 @@ public:
   inline size_t getParams() const { return params; }
   inline bool hasParams() const { return params > 0; }
 
+  /** Is this type only visible to the scope it is defined in
+   * (and not child scopes)? */
   virtual bool isCurrentScopeOnly() const { return false; }
 
   // TODO: stringify parameterized types
@@ -106,6 +111,7 @@ public:
 
   bool isNumeric() const;
   bool isFunction() const;
+  bool isClassType() const;
 
   /**
    * this =:= other?

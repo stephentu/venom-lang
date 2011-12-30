@@ -66,7 +66,10 @@ FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
 InstantiatedType*
 ClassSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                   const InstantiatedTypeVec& params) {
-  return t.translate(ctx, type->instantiate(ctx, params));
+  return t.translate(
+      ctx,
+      Type::ClassType->instantiate(
+        ctx, util::vec1(type->instantiate(ctx, params))));
 }
 
 InstantiatedType*

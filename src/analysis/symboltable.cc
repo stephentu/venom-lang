@@ -161,7 +161,7 @@ SymbolTable::createClassSymbol(const string& name,
                                SymbolTable*  classTable,
                                Type*         type,
                                const vector<InstantiatedType*>& typeParams) {
-  //assert(type->getParams() == typeParams.size());
+  assert(type->getParams() == typeParams.size());
   ClassSymbol *sym = new ClassSymbol(name, typeParams, this, classTable, type);
   type->setClassSymbol(sym);
   classContainer.insert(name, sym);

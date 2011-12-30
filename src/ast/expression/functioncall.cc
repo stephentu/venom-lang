@@ -55,14 +55,17 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
             tparams.begin(), type_param_functor(ctx, symbols));
 
   InstantiatedType *funcType = primary->typeCheck(ctx, NULL, tparams);
-  InstantiatedType *origType = funcType;
-
+  InstantiatedType *classType;
   bool isCtor = false;
-  if (!funcType->isFunction()) {
+  if (funcType->getType()->isClassType()) {
     // check to see if this scope can instantiate the type this is only
     // possible if the type exists as a top level type
-    if (!funcType->getType()->getClassSymbol()->isTopLevelClass() &&
-        !symbols->canSee(funcType->getType()->getClassSymbol())) {
+
+    classType = funcType->getParams().at(0);
+    assert(classType);
+
+    if (!classType->getType()->getClassSymbol()->isTopLevelClass() &&
+        !symbols->canSee(classType->getType()->getClassSymbol())) {
       throw TypeViolationException(
           "Cannot instantiate instance of nested subclass outside "
           "the context of the class");
@@ -70,12 +73,15 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
 
     // try to find the constructor
     TypeTranslator t;
-    BaseSymbol *ctorSym = funcType
+    BaseSymbol *ctorSym = classType
       ->getClassSymbolTable()
       ->findBaseSymbol("<ctor>", SymbolTable::Function,
                        SymbolTable::NoRecurse, t);
-    assert(ctorSym);
-    t.bind(funcType);
+    if (!ctorSym) {
+      throw TypeViolationException(
+          "Type " + funcType->stringify() + " is unconstructable");
+    }
+    t.bind(classType);
     funcType = ctorSym->bind(ctx, t, InstantiatedTypeVec());
     assert(funcType->isFunction());
     isCtor = true;
@@ -106,7 +112,7 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
         paramTypes[it - funcType->getParams().begin()]->stringify());
   }
 
-  return isCtor ? origType : funcType->getParams().back();
+  return isCtor ? classType : funcType->getParams().back();
 }
 
 }

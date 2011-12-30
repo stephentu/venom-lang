@@ -49,6 +49,9 @@ Type* Type::Func19Type(new Type("func19", NULL, InstantiatedType::AnyType, 20));
 Type* Type::ObjectType(new Type("object", NULL, InstantiatedType::AnyType, 0));
 InstantiatedType* InstantiatedType::ObjectType(Type::ObjectType->instantiate());
 
+/** Cannot be named 'class', since 'class' is a keyword in the language */
+Type* Type::ClassType(new Type("classtype", NULL, InstantiatedType::ObjectType, 1));
+
 Type* Type::BoundlessType(new Type("boundless", NULL, NULL, 0));
 
 Type* Type::ListType(new Type("list", NULL, InstantiatedType::ObjectType, 1));
@@ -118,6 +121,7 @@ void Type::ResetBuiltinTypes() {
     Func19Type,
 
     ObjectType,
+    ClassType,
 
     BoundlessType,
 
@@ -145,6 +149,8 @@ bool Type::isFunction() const {
   }
   return false;
 }
+
+bool Type::isClassType() const { return equals(*Type::ClassType); }
 
 TypeParamType::TypeParamType(const string& name, size_t pos) :
     Type(name, NULL, InstantiatedType::AnyType, 0), pos(pos) {}
@@ -275,11 +281,11 @@ string InstantiatedType::stringify() const {
   stringstream buf;
   buf << type->stringifyTypename();
   if (!params.empty()) {
-    buf << "<";
+    buf << "{";
     vector<string> s(params.size());
     transform(params.begin(), params.end(), s.begin(), stringify_functor);
     buf << util::join(s.begin(), s.end(), ",");
-    buf << ">";
+    buf << "}";
   }
   return buf.str();
 }
