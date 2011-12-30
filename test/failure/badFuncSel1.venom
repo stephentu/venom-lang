@@ -1,0 +1,6 @@
+class A
+  def foo(x::string) -> string = x; end
+end
+a = A();
+foo = a.foo;
+bar::int = foo(32);

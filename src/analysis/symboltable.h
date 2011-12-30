@@ -45,6 +45,7 @@ private:
 
 protected:
   inline void addParent(SymbolTable* parent, const TypeMap& typeMap) {
+    assert(parent);
     symbolContainer.parents.push_back(&parent->symbolContainer);
     symbolContainer.maps.push_back(typeMap);
 
@@ -78,6 +79,7 @@ public:
     NoRecurse,
     AllowCurrentScope,
     DisallowCurrentScope,
+    ClassLookup,
     ClassParents,
   };
 
@@ -136,6 +138,7 @@ private:
     assert(mode == NoRecurse ||
            mode == AllowCurrentScope ||
            mode == DisallowCurrentScope ||
+           mode == ClassLookup ||
            mode == ClassParents);
   }
 
@@ -180,8 +183,10 @@ private:
     inline bool find(S& elem, const std::string& name, RecurseMode mode,
                      TypeTranslator& translator, Filter filter) {
       AssertValidRecurseMode(mode);
-      if (mode == ClassParents) {
-        return find0(elem, name, DisallowCurrentScope,
+      if (mode == ClassLookup || mode == ClassParents) {
+        return find0(elem, name,
+                     mode == ClassParents ?
+                        DisallowCurrentScope : AllowCurrentScope,
                      translator, true, false, filter);
       }
       return find0(elem, name, mode, translator, false, false, filter);
@@ -193,7 +198,7 @@ private:
                TypeTranslator& translator,
                bool excludeFirstParent, bool isParentScope,
                Filter filter) {
-      assert(mode != ClassParents);
+      assert(mode != ClassLookup && mode != ClassParents);
       if (isParentScope || mode != DisallowCurrentScope) {
         typename map_type::iterator it = map.find(name);
         if (it != map.end() && filter(it->second)) {

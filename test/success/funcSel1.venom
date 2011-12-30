@@ -1,0 +1,7 @@
+class A
+  def test(x::int) -> int = x; end
+end
+x = A();
+y = x.test;
+z::int = y(x.test(30));
+print (z);

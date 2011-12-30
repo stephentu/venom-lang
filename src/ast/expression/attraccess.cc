@@ -21,7 +21,7 @@ AttrAccessNode::typeCheck(SemanticContext* ctx,
     obj
       ->getClassSymbolTable()
       ->findBaseSymbol(name, SymbolTable::Any,
-                       SymbolTable::AllowCurrentScope, t);
+                       SymbolTable::ClassLookup, t);
   t.bind(obj);
   if (!attrSym) {
     throw TypeViolationException(
