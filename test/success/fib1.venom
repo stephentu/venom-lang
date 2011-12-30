@@ -1,0 +1,10 @@
+def fib(n::int) -> int = 
+  if n == 0 or n == 1 then n;
+  else fib(n - 1) + fib(n - 2); end
+end
+f0 = fib(0);
+f1::int = fib(1);
+print(f0);
+print(f1);
+print(fib(2));
+print(fib(5));

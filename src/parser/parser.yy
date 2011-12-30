@@ -129,12 +129,10 @@
 %type <pairs>      pairlist
 %type <pair>       pair
 
-%type <stringVal>  typename typename0
-
 %type <typeString> paramtypename rettype
 %type <typeStrVec> paramtypenames paramtypenames0 optparamtypenames inheritance
 
-%type <strVec>     typeparams typeparams0 typeparams0rest
+%type <strVec>     typename typename0 typeparams typeparams0 typeparams0rest
 
 %{
 
@@ -247,8 +245,8 @@ inheritance : /* empty */         { $$ = new ast::TypeStringVec; }
             | "<-" paramtypenames { $$ = $2; }
 
 
-rettype : /* empty */        { $$ = new ast::ParameterizedTypeString("void"); }
-        | "->" paramtypename { $$ = $2; }
+rettype : /* empty */        { $$ = NULL; }
+        | "->" paramtypename { $$ = $2;   }
 
 paramlist : /* empty */
             { $$ = new ast::ExprNodeVec;  }
@@ -400,19 +398,15 @@ paramtypenames0 : /* empty */
                 | paramtypenames0 paramtypename ','
                   { $1->push_back($2); $$ = $1;  }
 
-typename : IDENTIFIER typename0
+typename : typename0 IDENTIFIER
            {
-              $$ = new std::string(util::MakeString2(*$1, *$2));
-              delete $1; delete $2;
+              $1->push_back(*$2); $$ = $1; delete $2;
            }
 
 typename0 : /* empty */
-           { $$ = new std::string; }
-          | '.' IDENTIFIER typename0
-           {
-              $$ = new std::string(util::MakeString3(".", *$2, *$3));
-              delete $2; delete $3;
-           }
+           { $$ = new util::StrVec; }
+          | typename0 IDENTIFIER '.'
+           { $1->push_back(*$2); $$ = $1; delete $2; }
 
 self     : "self" { $$ = new ast::VariableSelfNode; }
 

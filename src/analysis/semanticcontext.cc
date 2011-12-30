@@ -44,20 +44,39 @@ struct functor {
 InstantiatedType*
 SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
+
   TypeTranslator t;
-  ClassSymbol *cs =
-    symbols->findClassSymbol(type->name, SymbolTable::AllowCurrentScope, t);
-  if (!cs) {
-    throw SemanticViolationException(
-        "Type " + type->name + " not defined");
+  SymbolTable *cur = symbols;
+  ClassSymbol *cs = NULL;
+  for (vector<string>::const_iterator it = type->names.begin();
+       it != type->names.end(); ++it) {
+    cs = cur->findClassSymbol(*it, SymbolTable::AllowCurrentScope, t);
+    if (!cs) {
+      throw SemanticViolationException(
+          "Type " + util::join(type->names.begin(), it + 1, ".") +
+          " not defined");
+    }
+    if (it != type->names.end() - 1) {
+      // TODO: fix this limitation
+      // for now, only the outermost type can have type parameters
+      if (cs->getType()->getParams()) {
+        throw SemanticViolationException(
+            "Implementation limitation: Cannot select inner class "
+            "from parameterized class: " +
+            util::join(type->names.begin(), it + 1, "."));
+      }
+    }
+    cur = cs->getClassSymbolTable();
+    assert(cur);
   }
+  assert(cs);
   if (cs->getType()->getParams() != type->params.size()) {
       throw SemanticViolationException(
-          "Wrong number of type parameters given to " + type->name);
+          "Wrong number of type parameters given to " +
+          cs->getType()->getName());
   }
 
-  vector<InstantiatedType*> buf;
-  buf.resize(type->params.size());
+  vector<InstantiatedType*> buf(type->params.size());
   transform(type->params.begin(), type->params.end(),
             buf.begin(), functor(this, symbols));
 

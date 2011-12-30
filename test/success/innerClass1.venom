@@ -1,0 +1,13 @@
+class Outer
+  attr x::int
+  def self(x::int) = print(x); end
+  class Inner
+    attr x::int = 5
+    def self(x::int) = self.x = x; end
+  end
+  def make() -> Inner = Inner(15); end
+end
+i::Outer.Inner = Outer(10).make();
+j = Outer(20).make();
+print(i.x);
+print(j.x);

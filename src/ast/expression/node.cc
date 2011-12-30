@@ -17,14 +17,14 @@ struct stringer_functor {
 
 string ParameterizedTypeString::stringify() const {
 	stringstream s;
-	s << name;
+	s << util::join(names.begin(), names.end(), ".");
 	if (!params.empty()) {
-		s << "<";
+		s << "{";
 		vector<string> buf;
 		buf.resize(params.size());
 		transform(params.begin(), params.end(), buf.begin(), stringer);
 		s << util::join(buf.begin(), buf.end(), ",");
-		s << ">";
+		s << "}";
 	}
 	return s.str();
 }

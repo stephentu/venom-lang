@@ -24,18 +24,18 @@ namespace ast {
  * properly resolved types, which we cannot get right away
  * from the parser */
 struct ParameterizedTypeString {
-  ParameterizedTypeString(const std::string& name)
-    : name(name) {}
-  ParameterizedTypeString(const std::string& name,
+  ParameterizedTypeString(const util::StrVec& names)
+    : names(names) {}
+  ParameterizedTypeString(const util::StrVec& names,
                           const std::vector<ParameterizedTypeString*>& params)
-    : name(name), params(params) {}
+    : names(names), params(params) {}
   ~ParameterizedTypeString() {
     util::delete_pointers(params.begin(), params.end());
   }
 
   std::string stringify() const;
 
-  const std::string                           name;
+  const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;
 };
 
