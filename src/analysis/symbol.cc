@@ -74,5 +74,12 @@ ClassSymbol::getSelfType(SemanticContext* ctx) {
   return type->instantiate(ctx, typeParams);
 }
 
+bool
+ClassSymbol::isTopLevelClass() const {
+  const ASTNode *owner = getDefinedSymbolTable()->getOwner();
+  return !owner || (!owner->getEnclosingFuncNode() &&
+                    !owner->getEnclosingClassNode());
+}
+
 }
 }

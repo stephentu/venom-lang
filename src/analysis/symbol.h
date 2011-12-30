@@ -141,6 +141,8 @@ public:
 
   InstantiatedType* getSelfType(SemanticContext* ctx);
 
+  bool isTopLevelClass() const;
+
   virtual bool isCurrentScopeOnly() const {
     return type->isCurrentScopeOnly();
   }

@@ -59,6 +59,15 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
 
   bool isCtor = false;
   if (!funcType->isFunction()) {
+    // check to see if this scope can instantiate the type this is only
+    // possible if the type exists as a top level type
+    if (!funcType->getType()->getClassSymbol()->isTopLevelClass() &&
+        !symbols->canSee(funcType->getType()->getClassSymbol())) {
+      throw TypeViolationException(
+          "Cannot instantiate instance of nested subclass outside "
+          "the context of the class");
+    }
+
     // try to find the constructor
     TypeTranslator t;
     BaseSymbol *ctorSym = funcType

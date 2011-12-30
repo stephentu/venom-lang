@@ -88,6 +88,8 @@ public:
     Any      = (unsigned)-1,
   };
 
+  bool canSee(BaseSymbol *sym);
+
   bool isDefined(const std::string& name, unsigned int type, RecurseMode mode);
 
   BaseSymbol*
@@ -137,6 +139,18 @@ private:
            mode == ClassParents);
   }
 
+  template <typename T>
+  struct default_find_filter {
+    inline bool operator()(const T& t) const { return true; }
+  };
+
+  template <typename T>
+  struct equality_find_filter {
+    equality_find_filter(const T& t) : t(t) {}
+    inline bool operator()(const T& v) const { return t == v; }
+    T t;
+  };
+
   template <typename S>
   class container {
   public:
@@ -146,40 +160,51 @@ private:
       : parents(parents), maps(maps) {
       assert(parents.size() == maps.size());
     }
+
     typedef std::map<std::string, S> map_type;
     typedef std::vector<S>           vec_type;
     map_type map;
     vec_type vec;
-    inline void insert(const std::string& name,
-                       const S&           elem) {
+
+    inline void insert(const std::string& name, const S& elem) {
       map[name] = elem;
       vec.push_back(elem);
     }
+
     inline bool find(S& elem, const std::string& name,
-                     RecurseMode mode,
-                     TypeTranslator& translator) {
+                     RecurseMode mode, TypeTranslator& translator) {
+      return find(elem, name, mode, translator, default_find_filter<S>());
+    }
+
+    template <typename Filter>
+    inline bool find(S& elem, const std::string& name, RecurseMode mode,
+                     TypeTranslator& translator, Filter filter) {
       AssertValidRecurseMode(mode);
       if (mode == ClassParents) {
         return find0(elem, name, DisallowCurrentScope,
-                     translator, true, false);
+                     translator, true, false, filter);
       }
-      return find0(elem, name, mode, translator, false, false);
+      return find0(elem, name, mode, translator, false, false, filter);
     }
+
+    template <typename Filter>
     bool find0(S& elem, const std::string& name,
                RecurseMode mode,
                TypeTranslator& translator,
-               bool excludeFirstParent, bool isParentScope) {
+               bool excludeFirstParent, bool isParentScope,
+               Filter filter) {
       assert(mode != ClassParents);
       if (isParentScope || mode != DisallowCurrentScope) {
         typename map_type::iterator it = map.find(name);
-        if (it != map.end()) {
+        if (it != map.end() && filter(it->second)) {
           elem = it->second;
           return true;
         }
       }
       if (mode == NoRecurse) return false;
       for (size_t i = excludeFirstParent ? 1 : 0; i < parents.size(); i++) {
-        if (parents[i]->find0(elem, name, mode, translator, i != 0, true)) {
+        if (parents[i]->find0(
+              elem, name, mode, translator, i != 0, true, filter)) {
           TypeMap &tm = maps[i];
           translator.map.insert(translator.map.end(), tm.begin(), tm.end());
           return true;
@@ -187,6 +212,7 @@ private:
       }
       return false;
     }
+
     std::vector<container<S>*> parents;
     std::vector<TypeMap>       maps;
   };

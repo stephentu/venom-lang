@@ -78,6 +78,26 @@ SymbolTable::SymbolTable(SymbolTable* parent, const TypeMap& map, ASTNode* owner
 }
 
 bool
+SymbolTable::canSee(BaseSymbol* bs) {
+  // TODO: not the greatest implementation...
+  TypeTranslator t;
+  if (Symbol *sym = dynamic_cast<Symbol*>(bs)) {
+    Symbol *ret;
+    return symbolContainer.find(ret, sym->getName(), AllowCurrentScope, t,
+                                equality_find_filter<Symbol*>(sym));
+  } else if (FuncSymbol *fs = dynamic_cast<FuncSymbol*>(bs)) {
+    FuncSymbol *ret;
+    return funcContainer.find(ret, fs->getName(), AllowCurrentScope, t,
+                              equality_find_filter<FuncSymbol*>(fs));
+  } else if (ClassSymbol *cs = dynamic_cast<ClassSymbol*>(bs)) {
+    ClassSymbol *ret;
+    return classContainer.find(ret, cs->getName(), AllowCurrentScope, t,
+                               equality_find_filter<ClassSymbol*>(cs));
+  }
+  return false;
+}
+
+bool
 SymbolTable::isDefined(const string& name,
                        unsigned int type,
                        RecurseMode mode) {
