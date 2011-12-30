@@ -2,12 +2,45 @@
 
 #include <analysis/semanticcontext.h>
 #include <ast/expression/node.h>
+#include <ast/statement/node.h>
 
 using namespace std;
 using namespace venom::ast;
 
 namespace venom {
 namespace analysis {
+
+SemanticContext::~SemanticContext() {
+  // we have ownership of moduleRoot + children + types + rootSymbols
+  if (moduleRoot) delete moduleRoot;
+  util::delete_pointers(children.begin(), children.end());
+  util::delete_pointers(types.begin(), types.end());
+  if (!parent) {
+    delete rootSymbols;
+    Type::ResetBuiltinTypes();
+  }
+}
+
+SemanticContext* SemanticContext::findModule(const util::StrVec& names) {
+  if (names.empty()) return this;
+  map<string, SemanticContext*>::iterator it = childrenMap.find(names[0]);
+  if (it == childrenMap.end()) return NULL;
+  // TODO: might want to use iterators for this, internally
+  return it->second->findModule(util::StrVec(names.begin() + 1, names.end()));
+}
+
+SemanticContext* SemanticContext::createModule(const util::StrVec& names) {
+  if (names.empty()) return this;
+  map<string, SemanticContext*>::iterator it = childrenMap.find(names[0]);
+  if (it == childrenMap.end()) {
+    // make a new child
+    SemanticContext *child = newChildContext(names[0]);
+    return child->createModule(util::StrVec(names.begin() + 1, names.end()));
+  }
+  // TODO: might want to use iterators for this, internally
+  return it->second->createModule(
+      util::StrVec(names.begin() + 1, names.end()));
+}
 
 Type* SemanticContext::createType(const string&     name,
                                   InstantiatedType* parent,

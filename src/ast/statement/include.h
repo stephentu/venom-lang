@@ -8,6 +8,7 @@
 #include <ast/statement/funcdecl.h>
 
 #include <ast/statement/ifstmt.h>
+#include <ast/statement/import.h>
 #include <ast/statement/forstmt.h>
 #include <ast/statement/whilestmt.h>
 

@@ -3,12 +3,16 @@
 #ifndef VENOM_DRIVER_H
 #define VENOM_DRIVER_H
 
+#include <fstream>
 #include <string>
 #include <vector>
 
 namespace venom {
 
-/** Forward decl of ASTStatementNode */
+namespace analysis {
+  class SemanticContext;
+}
+
 namespace ast {
   class ASTStatementNode;
 }
@@ -85,11 +89,14 @@ public:
 
 struct compile_opts {
   compile_opts()
-    : trace_lex(false), trace_parse(false), print_ast(false) {}
+    : trace_lex(false), trace_parse(false),
+      print_ast(false), venom_import_path(".") {}
   bool trace_lex;
   bool trace_parse;
   bool print_ast;
+  std::string venom_import_path;
 };
+extern compile_opts global_compile_opts;
 
 struct compile_result {
   enum type {
@@ -103,9 +110,13 @@ struct compile_result {
   std::string message;
 };
 
-bool compile(const std::string& fname,
-             const compile_opts& opts,
-             compile_result& result);
+/** Used internally */
+ast::ASTStatementNode*
+unsafe_compile(const std::string& fname, std::fstream& infile,
+               analysis::SemanticContext& ctx);
+
+/** Reads from global_compile_opts */
+bool compile(const std::string& fname, compile_result& result);
 
 } // namespace venom
 

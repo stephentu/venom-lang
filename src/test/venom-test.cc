@@ -53,10 +53,9 @@ inline string pad(const string& orig, size_t s) {
 }
 
 void run_test(bool success, const string& srcfile, size_t alignSize) {
-  compile_opts opts;
   compile_result result;
   Timer t;
-  bool res = compile(srcfile, opts, result);
+  bool res = compile(srcfile, result);
   double exec_ms = t.lap_ms();
   cout.setf(ios::fixed, ios::floatfield);
   cout.precision(3);
@@ -82,7 +81,8 @@ struct max_size_functor_t {
   }
 } max_size_functor;
 
-void run_tests(bool success, const vector<string>& srcfiles) {
+void run_tests(bool success, const vector<string>& srcfiles, const string& import_path) {
+  global_compile_opts.venom_import_path = import_path;
   vector<string>::const_iterator largest =
     max_element(srcfiles.begin(), srcfiles.end(), max_size_functor);
   for (vector<string>::const_iterator it = srcfiles.begin();
@@ -133,10 +133,10 @@ int main(int argc, char **argv) {
   }
 
   cout << "Running success tests" << endl;
-  run_tests(true, success_files);
+  run_tests(true, success_files, success_dir);
 
   cout << endl << "Running failure tests" << endl;
-  run_tests(false, failure_files);
+  run_tests(false, failure_files, failure_dir);
 
   return 0;
 }

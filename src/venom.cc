@@ -9,12 +9,11 @@ using namespace venom;
 
 int main(int argc, char **argv) {
   string fname;
-  compile_opts opts;
   for (int ai = 1; ai < argc; ++ai) {
     if (argv[ai] == string ("-p")) {
-      opts.trace_parse = true;
+      global_compile_opts.trace_parse = true;
     } else if (argv[ai] == string ("-s")) {
-      opts.trace_lex   = true;
+      global_compile_opts.trace_lex   = true;
     } else {
       fname = argv[ai];
     }
@@ -22,7 +21,7 @@ int main(int argc, char **argv) {
 
   if (!fname.empty()) {
     compile_result result;
-    if (compile(fname, opts, result)) {
+    if (compile(fname, result)) {
       return 0;
     } else {
       cerr << result.message << endl;

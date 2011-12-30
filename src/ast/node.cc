@@ -11,9 +11,7 @@
 namespace venom {
 namespace ast {
 
-ASTNode::~ASTNode() {
-  if (symbols) delete symbols;
-}
+ASTNode::~ASTNode() {}
 
 FuncDeclNode* ASTNode::getEnclosingFuncNode() {
   ASTNode *cur = this;

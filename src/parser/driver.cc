@@ -17,6 +17,8 @@ using namespace std;
 
 namespace venom {
 
+compile_opts global_compile_opts;
+
 Driver::Driver(ParseContext& ctx)
     : trace_scanning(false),
       trace_parsing(false),
@@ -58,41 +60,44 @@ void Driver::error(const string& m)
     cerr << m << endl;
 }
 
-bool compile(const string& fname,
-             const compile_opts& opts,
-             compile_result& result) {
+ast::ASTStatementNode*
+unsafe_compile(const string& fname, fstream& infile,
+               analysis::SemanticContext& ctx) {
+  ParseContext pctx;
+  Driver driver(pctx);
+  if (global_compile_opts.trace_lex)   driver.trace_scanning = true;
+  if (global_compile_opts.trace_parse) driver.trace_parsing = true;
+  bool validSyntax = driver.parse_stream(infile, fname);
+  if (!validSyntax) {
+    // TODO better error message
+    throw analysis::ParseErrorException("Invalid syntax");
+  }
+  assert(pctx.stmts);
+  ctx.setModuleRoot(pctx.stmts);
+  if (global_compile_opts.print_ast) {
+    pctx.stmts->print(cerr);
+    cerr << endl;
+  }
+  pctx.stmts->initSymbolTable(ctx.getRootSymbolTable()->newChildScope(NULL));
+  pctx.stmts->semanticCheck(&ctx);
+  pctx.stmts->typeCheck(&ctx);
+  return pctx.stmts;
+}
+
+bool compile(const string& fname, compile_result& result) {
   fstream infile(fname.c_str());
   if (!infile.good()) {
     throw invalid_argument("Invalid filename: " + fname);
   }
-  ParseContext pctx;
-  Driver driver(pctx);
-  if (opts.trace_lex) driver.trace_scanning = true;
-  if (opts.trace_parse) driver.trace_parsing = true;
-  bool validSyntax = driver.parse_stream(infile, fname);
-  if (!validSyntax) {
-    result.result = compile_result::InvalidSyntax;
-    result.message = "Invalid syntax";
-    return false;
-  }
-  assert(pctx.stmts != NULL);
-  if (opts.print_ast) {
-    pctx.stmts->print(cerr);
-    cerr << endl;
-  }
+  analysis::SemanticContext ctx("<main>");
+  // bootstrap- ctx takes ownership of root symbols
+  bootstrap::NewBootstrapSymbolTable(&ctx);
   try {
-    analysis::SemanticContext ctx("main");
-
-    // bootstrap
-    analysis::SymbolTable *root = bootstrap::NewBootstrapSymbolTable(&ctx);
-    pctx.stmts->initSymbolTable(root->newChildScope(NULL));
-
-    // semantic check
-    pctx.stmts->semanticCheck(&ctx);
-
-    // type check
-    pctx.stmts->typeCheck(&ctx);
-
+    unsafe_compile(fname, infile, ctx);
+  } catch (analysis::ParseErrorException& e) {
+    result.result  = compile_result::InvalidSyntax;
+    result.message = string("Syntax Error: ") + e.what();
+    return false;
   } catch (analysis::SemanticViolationException& e) {
     result.result  = compile_result::SemanticError;
     result.message = string("Semantic Violation: ") + e.what();

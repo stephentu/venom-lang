@@ -116,7 +116,7 @@
 
 %type <stmtNode>   start stmt stmtlist stmtexpr assignstmt ifstmt ifstmt_else
                    whilestmt forstmt returnstmt funcdeclstmt ctordeclstmt classdeclstmt
-                   classbodystmt classbodystmtlist attrdeclstmt
+                   classbodystmt classbodystmtlist attrdeclstmt importstmt
 
 %type <expNode>    intlit boollit nillit doublelit strlit arraylit dictlit
                    pairkey pairvalue variable typedvariable expr literal atom
@@ -133,6 +133,7 @@
 %type <typeStrVec> paramtypenames paramtypenames0 optparamtypenames inheritance
 
 %type <strVec>     typename typename0 typeparams typeparams0 typeparams0rest
+                   modulename modulename0
 
 %{
 
@@ -164,6 +165,7 @@ stmt   : stmtexpr
        | returnstmt
        | funcdeclstmt
        | classdeclstmt
+       | importstmt
 
 stmtexpr : expr exprend { $$ = new ast::StmtExprNode($1); }
 
@@ -219,6 +221,13 @@ attrdeclstmt : "attr" variable '=' expr
 
 attropteq : /* empty */ { $$ = NULL; }
           | '=' expr    { $$ = $2;   }
+
+importstmt : "import" modulename { $$ = new ast::ImportStmtNode(*$2); delete $2; }
+
+modulename : modulename0 IDENTIFIER { $1->push_back(*$2); $$ = $1; delete $2; }
+
+modulename0 : /* empty */ { $$ = new util::StrVec; }
+            | modulename0 IDENTIFIER '.' { $1->push_back(*$2); $$ = $1; delete $2; }
 
 classbodystmt : funcdeclstmt
               | ctordeclstmt

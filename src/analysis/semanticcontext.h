@@ -1,6 +1,8 @@
 #ifndef VENOM_ANALYSIS_SEMANTICCONTEXT_H
 #define VENOM_ANALYSIS_SEMANTICCONTEXT_H
 
+#include <cassert>
+#include <fstream>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -22,6 +24,8 @@ namespace analysis {
 namespace ast {
   /** Forward decl for SemanticContext::instantiateOrThrow */
   struct ParameterizedTypeString;
+
+  struct ASTStatementNode;
 }
 
 namespace bootstrap {
@@ -29,7 +33,19 @@ namespace bootstrap {
   analysis::SymbolTable* NewBootstrapSymbolTable(analysis::SemanticContext*);
 }
 
+ast::ASTStatementNode* unsafe_compile(
+    const std::string&, std::fstream&, analysis::SemanticContext&);
+
 namespace analysis {
+
+/**
+ * Indicates that a parse error has occured
+ */
+class ParseErrorException : public std::runtime_error {
+public:
+  explicit ParseErrorException(const std::string& what)
+    : std::runtime_error(what) {}
+};
 
 /**
  * Indicates that a semantic error has occured during program
@@ -59,22 +75,53 @@ public:
  */
 class SemanticContext {
   friend SymbolTable* bootstrap::NewBootstrapSymbolTable(SemanticContext*);
+  friend ast::ASTStatementNode* venom::unsafe_compile(
+      const std::string&, std::fstream&, SemanticContext&);
+private:
+  SemanticContext(const std::string& moduleName,
+                  SymbolTable* rootSymbols,
+                  SemanticContext* parent,
+                  SemanticContext* programRoot)
+    : moduleName(moduleName), moduleRoot(NULL), parent(parent),
+      programRoot(programRoot), rootSymbols(rootSymbols) {}
+
+protected:
+  /** Takes ownership */
+  inline void setModuleRoot(ast::ASTStatementNode* moduleRoot) {
+    assert(moduleRoot);
+    assert(!this->moduleRoot);
+    this->moduleRoot = moduleRoot;
+  }
+
 public:
   SemanticContext(const std::string& moduleName)
-    : moduleName(moduleName), rootSymbols(NULL) {}
+    : moduleName(moduleName), moduleRoot(NULL), parent(NULL),
+      programRoot(this), rootSymbols(NULL) {}
 
-  ~SemanticContext() {
-    // we have ownership of the types
-    util::delete_pointers(types.begin(), types.end());
-    if (rootSymbols) delete rootSymbols;
-    Type::ResetBuiltinTypes();
-  }
+  ~SemanticContext();
 
   inline std::string& getModuleName() { return moduleName; }
   inline const std::string& getModuleName() const { return moduleName; }
 
+  inline SemanticContext* getProgramRoot() { return programRoot; }
+
+  /** Root symbol table of the *module* */
   inline SymbolTable* getRootSymbolTable() { return rootSymbols; }
   inline const SymbolTable* getRootSymbolTable() const { return rootSymbols; }
+
+  inline bool isRootContext() const { return !parent; }
+
+  SemanticContext* newChildContext(const std::string& moduleName) {
+    SemanticContext *child =
+      new SemanticContext(moduleName, rootSymbols->newChildScope(NULL),
+                          this, isRootContext() ? this : programRoot);
+    childrenMap[moduleName] = child;
+    children.push_back(child);
+    return child;
+  }
+
+  SemanticContext* findModule(const util::StrVec& names);
+  SemanticContext* createModule(const util::StrVec& names);
 
   /** Creation of types. Should only be called when NEW types are encountered **/
   Type* createType(const std::string& name,
@@ -95,11 +142,26 @@ public:
 protected:
   /** Takes ownership of rootSymbols */
   inline void setRootSymbolTable(SymbolTable* rootSymbols) {
+    assert(rootSymbols);
+    assert(!this->rootSymbols);
     this->rootSymbols = rootSymbols;
   }
 private:
-  /** Fully qualified module name */
+  /** Module name */
   std::string moduleName;
+
+  /** Root AST node for the module */
+  ast::ASTStatementNode* moduleRoot;
+
+  /** Parent module (NULL if root) */
+  SemanticContext* parent;
+
+  /** Root for the *program* */
+  SemanticContext* programRoot;
+
+  /** Children */
+  std::map<std::string, SemanticContext*> childrenMap;
+  std::vector<SemanticContext*>           children;
 
   /** All types created during semantic analysis, for memory management */
   std::vector<Type*> types;
@@ -108,8 +170,9 @@ private:
    * for memory management */
   std::vector<InstantiatedType*> itypes;
 
-  /** Root symbol table */
+  /** Module root symbol table */
   SymbolTable* rootSymbols;
+
 };
 
 }
