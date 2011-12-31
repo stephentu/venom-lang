@@ -10,11 +10,11 @@ namespace runtime {
 // incRef()/decRef() it)
 
 venom_cell::venom_cell(venom_object* obj) : data(obj), type(ObjType) {
-	if (obj) obj->incRef();
+  if (obj) obj->incRef();
 }
 
 venom_cell::~venom_cell() {
-	if (type == ObjType && data.obj && !data.obj->decRef()) delete data.obj;
+  if (type == ObjType && data.obj && !data.obj->decRef()) delete data.obj;
 }
 
 }

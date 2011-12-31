@@ -11,28 +11,28 @@ namespace venom {
 namespace backend {
 
 class ExecutionContext {
-	friend class Instruction;
+  friend class Instruction;
 public:
-	/** Does *not* take ownership of program_counter or label_map */
-	ExecutionContext(Instruction** program_counter,
-									 Instruction** label_map)
-		: program_counter(program_counter), label_map(label_map) {
-		assert(program_counter);
-	}
+  /** Does *not* take ownership of program_counter or label_map */
+  ExecutionContext(Instruction** program_counter,
+                   Instruction** label_map)
+    : program_counter(program_counter), label_map(label_map) {
+    assert(program_counter);
+  }
 
-	runtime::venom_cell& execute() {
-		assert(*program_counter);
-		while (true) {
-			if ((*program_counter)->execute(*this)) program_counter++;
-			if (!(*program_counter)) return program_stack.top();
-		}
-	}
+  runtime::venom_cell& execute() {
+    assert(*program_counter);
+    while (true) {
+      if ((*program_counter)->execute(*this)) program_counter++;
+      if (!(*program_counter)) return program_stack.top();
+    }
+  }
 
 protected:
-	Instruction** program_counter;
-	Instruction** label_map;
+  Instruction** program_counter;
+  Instruction** label_map;
 
-	std::stack<runtime::venom_cell> program_stack;
+  std::stack<runtime::venom_cell> program_stack;
 };
 
 }
