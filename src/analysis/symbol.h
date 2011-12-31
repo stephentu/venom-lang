@@ -174,6 +174,11 @@ public:
   inline const SymbolTable*
     getModuleSymbolTable() const { return moduleTable; }
 
+  inline SemanticContext*
+    getOriginalContext() { return origCtx; }
+  inline const SemanticContext*
+    getOriginalContext() const { return origCtx; }
+
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);

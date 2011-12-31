@@ -112,6 +112,10 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
       }
       cur = cs->getClassSymbolTable();
     } else if (ModuleSymbol *ms = dynamic_cast<ModuleSymbol*>(bs)) {
+      if (this != ms->getOriginalContext()) {
+        throw TypeViolationException(
+            "Cannot access imported modules of another module");
+      }
       cur = ms->getModuleSymbolTable();
       if (it == type->names.end() - 1) {
         throw SemanticViolationException(
