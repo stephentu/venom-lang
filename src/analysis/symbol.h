@@ -1,6 +1,7 @@
 #ifndef VENOM_ANALYSIS_SYMBOL_H
 #define VENOM_ANALYSIS_SYMBOL_H
 
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -151,6 +152,34 @@ private:
   InstantiatedTypeVec typeParams;
   SymbolTable*        classTable;
   Type*               type;
+};
+
+/**
+ * Represents a module
+ */
+class ModuleSymbol : public BaseSymbol {
+  friend class SymbolTable;
+protected:
+  ModuleSymbol(const std::string& name,
+               SymbolTable* table, /* defined */
+               SymbolTable* moduleTable, /* module's root table */
+               Type *moduleType)
+    : BaseSymbol(name, table), moduleTable(moduleTable),
+      moduleType(moduleType) {}
+
+public:
+  inline SymbolTable*
+    getModuleSymbolTable() { return moduleTable; }
+  inline const SymbolTable*
+    getModuleSymbolTable() const { return moduleTable; }
+
+  virtual InstantiatedType*
+    bind(SemanticContext* ctx, TypeTranslator& t,
+         const InstantiatedTypeVec& params);
+
+private:
+  SymbolTable* moduleTable;
+  Type* moduleType;
 };
 
 }

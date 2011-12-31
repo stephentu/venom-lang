@@ -76,6 +76,9 @@ public:
   /** Special type which represents a class type */
   static Type* ClassType;
 
+  /** Special type which represents a module type */
+  static Type* ModuleType;
+
   /** Special type which is the subtype of EVERY type */
   static Type* BoundlessType;
 
@@ -112,6 +115,10 @@ public:
   bool isNumeric() const;
   bool isFunction() const;
   bool isClassType() const;
+  bool isModuleType() const;
+
+  /** Is this type visible to the program (can we assign a reference to it?) */
+  inline bool isVisible() const { return !isModuleType(); }
 
   /**
    * this =:= other?
@@ -238,6 +245,7 @@ public:
   static InstantiatedType* StringType;
   static InstantiatedType* VoidType;
   static InstantiatedType* ObjectType;
+  static InstantiatedType* ModuleType;
   static InstantiatedType* BoundlessType;
 
   inline Type* getType() { return type; }

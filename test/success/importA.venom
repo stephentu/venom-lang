@@ -1,0 +1,2 @@
+import importB
+print(importB.A());

@@ -87,6 +87,7 @@ public:
     Location = 0x1,
     Function = 0x1 << 1,
     Class    = 0x1 << 2,
+    Module   = 0x1 << 3,
     Any      = (unsigned)-1,
   };
 
@@ -126,6 +127,13 @@ public:
   ClassSymbol*
   findClassSymbol(const std::string& name, RecurseMode mode,
                   TypeTranslator& translator);
+
+  ModuleSymbol*
+  findModuleSymbol(const std::string& name, RecurseMode mode);
+
+  ModuleSymbol*
+  createModuleSymbol(const std::string& name, SymbolTable* moduleTable,
+                     Type* moduleType);
 
 private:
   /** WARNING: while a SymbolTable can have multiple parents, only
@@ -224,35 +232,21 @@ private:
 
   template <typename S>
   struct CType {
-    typedef std::vector<container<S>*>       vec_type;
+    typedef std::vector<container<S>*> vec_type;
     typedef const std::vector<container<S>*> const_vec_type;
-    typedef container<S>*                    result_type;
-    inline container<S>* operator()(SymbolTable* symtab) const {
-      VENOM_UNIMPLEMENTED;
-    }
+    typedef container<S>* result_type;
   };
 
   /** Containers for each kind of symbol */
-  container<Symbol*>      symbolContainer;
-  container<FuncSymbol*>  funcContainer;
-  container<ClassSymbol*> classContainer;
-
+  // TODO: consider merging these containers together (into one
+  // container which contains a BaseSymbol*). for some reason, it
+  // seemed like a good idea to separate them before, but I am not so
+  // sure anymore
+  container<Symbol*>       symbolContainer;
+  container<FuncSymbol*>   funcContainer;
+  container<ClassSymbol*>  classContainer;
+  container<ModuleSymbol*> moduleContainer;
 };
-
-template <> inline SymbolTable::container<Symbol*>*
-SymbolTable::CType<Symbol*>::operator()(SymbolTable* symtab) const {
-  return &symtab->symbolContainer;
-}
-
-template <> inline SymbolTable::container<FuncSymbol*>*
-SymbolTable::CType<FuncSymbol*>::operator()(SymbolTable* symtab) const {
-  return &symtab->funcContainer;
-}
-
-template <> inline SymbolTable::container<ClassSymbol*>*
-SymbolTable::CType<ClassSymbol*>::operator()(SymbolTable* symtab) const {
-  return &symtab->classContainer;
-}
 
 }
 }

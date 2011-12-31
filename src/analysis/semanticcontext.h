@@ -103,7 +103,15 @@ public:
   inline std::string& getModuleName() { return moduleName; }
   inline const std::string& getModuleName() const { return moduleName; }
 
-  inline SemanticContext* getProgramRoot() { return programRoot; }
+  inline SemanticContext*
+    getProgramRoot() { return programRoot; }
+  inline const SemanticContext*
+    getProgramRoot() const { return programRoot; }
+
+  inline ast::ASTStatementNode*
+    getModuleRoot() { return moduleRoot; }
+  inline const ast::ASTStatementNode*
+    getModuleRoot() const { return moduleRoot; }
 
   /** Root symbol table of the *module* */
   inline SymbolTable* getRootSymbolTable() { return rootSymbols; }
@@ -129,6 +137,8 @@ public:
                    size_t             params = 0);
 
   Type* createTypeParam(const std::string& name, size_t pos);
+
+  Type* createModuleType(const std::string& name);
 
   InstantiatedType*
   createInstantiatedType(Type* type,

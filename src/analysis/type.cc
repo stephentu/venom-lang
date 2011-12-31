@@ -52,6 +52,9 @@ InstantiatedType* InstantiatedType::ObjectType(Type::ObjectType->instantiate());
 /** Cannot be named 'class', since 'class' is a keyword in the language */
 Type* Type::ClassType(new Type("classtype", NULL, InstantiatedType::ObjectType, 1));
 
+/** moduletype should not be visible to the program */
+Type* Type::ModuleType(new Type("<moduletype>", NULL, InstantiatedType::ObjectType, 0));
+
 Type* Type::BoundlessType(new Type("boundless", NULL, NULL, 0));
 
 Type* Type::ListType(new Type("list", NULL, InstantiatedType::ObjectType, 1));
@@ -122,6 +125,7 @@ void Type::ResetBuiltinTypes() {
 
     ObjectType,
     ClassType,
+    ModuleType,
 
     BoundlessType,
 
@@ -152,6 +156,15 @@ bool Type::isFunction() const {
 
 bool Type::isClassType() const { return equals(*Type::ClassType); }
 
+bool Type::isModuleType() const {
+  if (params) return false;
+  // this is OK since isModuleType() never returns a non-const reference
+  // to the caller (and itype acts more as a cache than as part of the
+  // state of Type)
+  Type *self = const_cast<Type*>(this);
+  return self->instantiate()->isSubtypeOf(*InstantiatedType::ModuleType);
+}
+
 TypeParamType::TypeParamType(const string& name, size_t pos) :
     Type(name, NULL, InstantiatedType::AnyType, 0), pos(pos) {}
 
@@ -181,6 +194,7 @@ InstantiatedType* InstantiatedType::BoolType(Type::BoolType->instantiate());
 InstantiatedType* InstantiatedType::FloatType(Type::FloatType->instantiate());
 InstantiatedType* InstantiatedType::StringType(Type::StringType->instantiate());
 InstantiatedType* InstantiatedType::VoidType(Type::VoidType->instantiate());
+InstantiatedType* InstantiatedType::ModuleType(Type::ModuleType->instantiate());
 InstantiatedType* InstantiatedType::BoundlessType(Type::BoundlessType->instantiate());
 
 InstantiatedType*

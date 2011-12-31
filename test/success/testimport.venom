@@ -1,1 +1,5 @@
 import foo.bar
+print(bar.SOME_CONSTANT);
+x = bar.SOME_CLASS();
+y::bar.SOME_CLASS.SOME_INNER_CLASS = x.make();
+print(bar.SOME_FUNCTION(32));

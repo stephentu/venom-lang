@@ -1,2 +1,9 @@
-class hello_world
+import foo.baz
+def makeA() -> baz.A = baz.A(); end
+SOME_CONSTANT = 5;
+class SOME_CLASS
+  class SOME_INNER_CLASS
+  end
+  def make() -> SOME_INNER_CLASS = SOME_INNER_CLASS(); end
 end
+def SOME_FUNCTION(x::int) -> int = x; end

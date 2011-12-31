@@ -15,7 +15,7 @@ public:
   ImportStmtNode(const util::StrVec& names)
     : names(names) {}
 
-  std::string getFileName() const;
+  std::string getFileName(analysis::SemanticContext* ctx) const;
   std::string getModuleName() const;
 
   virtual size_t getNumKids() const { return 0; }

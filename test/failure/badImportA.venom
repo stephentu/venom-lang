@@ -1,0 +1,3 @@
+import badImport.badImportB
+x = badImportB.int();
+

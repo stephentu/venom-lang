@@ -73,6 +73,13 @@ SymbolTable::SymbolTable(SymbolTable* parent, const TypeMap& map, ASTNode* owner
           CType<ClassSymbol*>::vec_type(),
         parent ?
           util::vec1(map) :
+          vector<TypeMap>()),
+    moduleContainer(
+        parent ?
+          util::vec1(&parent->moduleContainer) :
+          CType<ModuleSymbol*>::vec_type(),
+        parent ?
+          util::vec1(map) :
           vector<TypeMap>()) {
   assert(parent || map.empty());
 }
@@ -93,7 +100,11 @@ SymbolTable::canSee(BaseSymbol* bs) {
     ClassSymbol *ret;
     return classContainer.find(ret, cs->getName(), AllowCurrentScope, t,
                                equality_find_filter<ClassSymbol*>(cs));
-  }
+  } else if (ModuleSymbol *ms = dynamic_cast<ModuleSymbol*>(bs)) {
+    ModuleSymbol *ret;
+    return moduleContainer.find(ret, ms->getName(), AllowCurrentScope, t,
+                                equality_find_filter<ModuleSymbol*>(ms));
+  } else assert(false);
   return false;
 }
 
@@ -110,13 +121,18 @@ SymbolTable::findBaseSymbol(const string& name,
                             unsigned int type,
                             RecurseMode mode,
                             TypeTranslator& translator) {
-  assert(type & (Location | Function | Class));
+  // TODO: this is actually really broken in the case where
+  // multiple symbols of different types are defined. we should really
+  // be searching all containers simultaneously level by level.
+  assert(type & (Location | Function | Class | Module));
   BaseSymbol *ret = NULL;
   if ((type & Location) && (ret = findSymbol(name, mode, translator)))
     return ret;
   if ((type & Function) && (ret = findFuncSymbol(name, mode, translator)))
     return ret;
   if ((type & Class) && (ret = findClassSymbol(name, mode, translator)))
+    return ret;
+  if ((type & Module) && (ret = findModuleSymbol(name, mode)))
     return ret;
   return NULL;
 }
@@ -162,6 +178,7 @@ SymbolTable::createClassSymbol(const string& name,
                                Type*         type,
                                const vector<InstantiatedType*>& typeParams) {
   assert(type->getParams() == typeParams.size());
+  assert(name == type->getName());
   ClassSymbol *sym = new ClassSymbol(name, typeParams, this, classTable, type);
   type->setClassSymbol(sym);
   classContainer.insert(name, sym);
@@ -174,6 +191,22 @@ SymbolTable::findClassSymbol(const string& name, RecurseMode mode,
   ClassSymbol *ret = NULL;
   classContainer.find(ret, name, mode, translator);
   return ret;
+}
+
+ModuleSymbol*
+SymbolTable::findModuleSymbol(const string& name, RecurseMode mode) {
+  ModuleSymbol *ret = NULL;
+  TypeTranslator t;
+  moduleContainer.find(ret, name, mode, t);
+  return ret;
+}
+
+ModuleSymbol*
+SymbolTable::createModuleSymbol(const string& name, SymbolTable* moduleTable,
+                                Type* moduleType) {
+  ModuleSymbol *sym = new ModuleSymbol(name, this, moduleTable, moduleType);
+  moduleContainer.insert(name, sym);
+  return sym;
 }
 
 }

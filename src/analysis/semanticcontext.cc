@@ -56,6 +56,11 @@ Type* SemanticContext::createTypeParam(const string& name, size_t pos) {
   return t;
 }
 
+Type*
+SemanticContext::createModuleType(const string& name) {
+  return createType(name + "$$<module>", InstantiatedType::ModuleType, 0);
+}
+
 InstantiatedType*
 SemanticContext::createInstantiatedType(
     Type* type, const vector<InstantiatedType*>& params) {
@@ -80,35 +85,43 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
 
   TypeTranslator t;
   SymbolTable *cur = symbols;
-  ClassSymbol *cs = NULL;
+  BaseSymbol *bs = NULL;
   for (vector<string>::const_iterator it = type->names.begin();
        it != type->names.end(); ++it) {
-    cs = cur->findClassSymbol(*it, SymbolTable::AllowCurrentScope, t);
-    if (!cs) {
+    bs = cur->findBaseSymbol(
+        *it,
+        SymbolTable::Class | SymbolTable::Module,
+        it == type->names.begin() ?
+            SymbolTable::AllowCurrentScope : SymbolTable::ClassLookup,
+        t);
+    if (!bs) {
       throw SemanticViolationException(
-          "Type " + util::join(type->names.begin(), it + 1, ".") +
+          "Type/Module " + util::join(type->names.begin(), it + 1, ".") +
           " not defined");
     }
-    if (it != type->names.end() - 1) {
-      // TODO: fix this limitation
-      // for now, only the outermost type can have type parameters
-      if (cs->getType()->getParams()) {
-        throw SemanticViolationException(
-            "Implementation limitation: Cannot select inner class "
-            "from parameterized class: " +
-            util::join(type->names.begin(), it + 1, "."));
+    if (ClassSymbol *cs = dynamic_cast<ClassSymbol*>(bs)) {
+      if (it != type->names.end() - 1) {
+        // TODO: fix this limitation
+        // for now, only the outermost type can have type parameters
+        if (cs->getType()->getParams()) {
+          throw SemanticViolationException(
+              "Implementation limitation: Cannot select inner class "
+              "from parameterized class: " +
+              util::join(type->names.begin(), it + 1, "."));
+        }
       }
-    }
-    cur = cs->getClassSymbolTable();
+      cur = cs->getClassSymbolTable();
+    } else if (ModuleSymbol *ms = dynamic_cast<ModuleSymbol*>(bs)) {
+      cur = ms->getModuleSymbolTable();
+      if (it == type->names.end() - 1) {
+        throw SemanticViolationException(
+            "Cannot name module " + ms->getName() + " as type");
+      }
+    } else assert(false);
     assert(cur);
   }
-  assert(cs);
-  if (cs->getType()->getParams() != type->params.size()) {
-      throw SemanticViolationException(
-          "Wrong number of type parameters given to " +
-          cs->getType()->getName());
-  }
-
+  assert(bs);
+  ClassSymbol *cs = static_cast<ClassSymbol*>(bs);
   vector<InstantiatedType*> buf(type->params.size());
   transform(type->params.begin(), type->params.end(),
             buf.begin(), functor(this, symbols));

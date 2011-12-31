@@ -21,6 +21,11 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
   InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
   InstantiatedType *rhs = value->typeCheck(ctx, lhs);
   assert(rhs);
+  if (!rhs->getType()->isVisible()) {
+    throw TypeViolationException(
+        "Cannot create reference to hidden type " + rhs->stringify());
+  }
+
   if (lhs) {
     // require rhs <: lhs
     if (!rhs->isSubtypeOf(*lhs)) {

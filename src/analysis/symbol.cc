@@ -84,5 +84,11 @@ ClassSymbol::isTopLevelClass() const {
                     !owner->getEnclosingClassNode());
 }
 
+InstantiatedType*
+ModuleSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+                   const InstantiatedTypeVec& params) {
+  return t.translate(ctx, moduleType->instantiate(ctx, params));
+}
+
 }
 }

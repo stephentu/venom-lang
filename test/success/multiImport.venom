@@ -1,0 +1,4 @@
+import foo.bar
+import foo.baz
+x::baz.A = bar.makeA();
+print (x);
