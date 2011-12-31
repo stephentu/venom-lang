@@ -11,9 +11,6 @@
 namespace venom {
 namespace ast {
 
-/** Forward decl for RegisterSymbolForAssignment */
-class VariableNode;
-
 class AssignNode : public ASTStatementNode {
   friend class ClassAttrDeclNode;
 public:
@@ -52,12 +49,6 @@ public:
   }
 
 protected:
-  static void
-  RegisterSymbolForAssignment(analysis::SemanticContext* ctx,
-                              analysis::SymbolTable*     symbols,
-                              VariableNode*              variable,
-                              bool                       allowLocDups);
-
   static void
   TypeCheckAssignment(analysis::SemanticContext* ctx,
                       analysis::SymbolTable*     symbols,

@@ -16,9 +16,30 @@ namespace ast {
 
 void
 ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
-  VariableNode *vn = dynamic_cast<VariableNode*>(variable);
-  assert(vn);
-  AssignNode::RegisterSymbolForAssignment(ctx, symbols, vn, false);
+  VariableNode *var = dynamic_cast<VariableNode*>(variable);
+  assert(var);
+
+  // don't allow an attr to overshadow any decl
+  // in a parent
+  if (symbols->isDefined(
+        var->getName(), SymbolTable::Any, SymbolTable::ClassParents)) {
+    throw SemanticViolationException(
+        "Name " + var->getName() + " already defined in parent");
+  }
+
+  if (symbols->isDefined(
+        var->getName(), SymbolTable::Any, SymbolTable::NoRecurse)) {
+    throw SemanticViolationException(
+        "Name " + var->getName() + " already defined in class");
+  }
+
+  InstantiatedType *itype = NULL;
+  if (var->getExplicitParameterizedTypeString()) {
+    itype = ctx->instantiateOrThrow(
+        symbols, var->getExplicitParameterizedTypeString());
+  }
+
+  symbols->createSymbol(var->getName(), itype);
 }
 
 void

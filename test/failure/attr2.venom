@@ -1,0 +1,6 @@
+class A
+  attr x::int
+end
+class B <- A
+  def x() -> string = "hi"; end
+end

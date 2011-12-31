@@ -85,6 +85,9 @@ FunctionCallNode::typeCheck(SemanticContext*  ctx,
     funcType = ctorSym->bind(ctx, t, InstantiatedTypeVec());
     assert(funcType->isFunction());
     isCtor = true;
+  } else if (!funcType->getType()->isFunction()) {
+    throw TypeViolationException(
+        "Type " + funcType->stringify() + " is not invocable");
   }
   assert(funcType->getType()->getParams() > 0); // return type is last param
   if ((funcType->getType()->getParams() - 1) != args.size()) {

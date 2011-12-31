@@ -1,0 +1,11 @@
+class A
+  def x() = print('hi'); end
+end
+class B <- A
+  def self(y::int) =
+    x = y;
+    z::int = x;
+    print(z);
+    x();
+  end
+end

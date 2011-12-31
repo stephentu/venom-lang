@@ -14,43 +14,6 @@ namespace venom {
 namespace ast {
 
 void
-AssignNode::RegisterSymbolForAssignment(SemanticContext* ctx,
-                                        SymbolTable*     symbols,
-                                        VariableNode*    var,
-                                        bool             allowLocDups) {
-  // check for duplicate definition
-  if (symbols->isDefined(
-        var->getName(), SymbolTable::Function | SymbolTable::Class,
-        SymbolTable::NoRecurse)) {
-    throw SemanticViolationException(
-        "Symbol " + var->getName() + " already defined");
-  }
-
-  if (symbols->isDefined(
-        var->getName(), SymbolTable::Location, SymbolTable::NoRecurse)) {
-    if (allowLocDups) {
-      if (var->getExplicitParameterizedTypeString()) {
-        throw SemanticViolationException(
-            "Cannot redeclare type of symbol " + var->getName());
-      }
-    } else {
-      throw SemanticViolationException(
-        "Symbol " + var->getName() + " already defined");
-    }
-  } else {
-    InstantiatedType *itype = NULL;
-    if (var->getExplicitParameterizedTypeString()) {
-      itype = ctx->instantiateOrThrow(
-          symbols, var->getExplicitParameterizedTypeString());
-    }
-
-    symbols->createSymbol(var->getName(), itype);
-    assert(symbols->isDefined(
-          var->getName(), SymbolTable::Location, SymbolTable::NoRecurse));
-  }
-}
-
-void
 AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
                                 SymbolTable*       symbols,
                                 ASTExpressionNode* variable,
@@ -73,8 +36,59 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
 
 void
 AssignNode::registerSymbol(SemanticContext* ctx) {
-  VariableNode *vn = dynamic_cast<VariableNode*>(variable);
-  if (vn) RegisterSymbolForAssignment(ctx, symbols, vn, true);
+  VariableNode *var = dynamic_cast<VariableNode*>(variable);
+  if (var) {
+    // check for duplicate definition (as a function or class)
+    if (symbols->isDefined(
+          var->getName(), SymbolTable::Function | SymbolTable::Class,
+          SymbolTable::NoRecurse)) {
+      throw SemanticViolationException(
+          "Symbol " + var->getName() + " already defined");
+    }
+
+    if (var->getExplicitParameterizedTypeString()) {
+      // if there is an explicit type string, treat it as
+      // explicitly declaring a new symbol
+      if (symbols->isDefined(
+            var->getName(), SymbolTable::Location, SymbolTable::NoRecurse)) {
+        throw SemanticViolationException(
+            "Cannot redeclare symbol " + var->getName());
+      }
+      InstantiatedType *itype = ctx->instantiateOrThrow(
+            symbols, var->getExplicitParameterizedTypeString());
+      symbols->createSymbol(var->getName(), itype);
+    } else {
+      // if there is no type string, then only create a new
+      // declaration if the symbol doesn't exist anywhere in the scope
+      // (current or parents) as a location type
+      //
+      // for example, consider case 1:
+      // class A
+      //   attr x::int
+      // end
+      // class B <- A
+      //   def self(y::int) =
+      //     x = y; # does *NOT* declare a new symbol
+      //   end
+      // end
+      //
+      // versus:
+      //
+      // class A
+      //   def x() = print('hi'); end
+      // end
+      // class B <- A
+      //   def self(y::int) =
+      //     x = y; # *does* declare a new symbol
+      //   end
+      // end
+      if (!symbols->isDefined(
+            var->getName(), SymbolTable::Location,
+            SymbolTable::AllowCurrentScope)) {
+        symbols->createSymbol(var->getName(), NULL);
+      }
+    }
+  }
 }
 
 void

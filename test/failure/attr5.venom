@@ -1,0 +1,4 @@
+class Foo
+  attr x::int
+  attr x::int
+end

@@ -40,9 +40,19 @@ struct itype_functor {
 };
 
 void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
+  // check current symbol to see if the symbol name is already taken
   if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
     throw SemanticViolationException(
-        "Function/Method " + name + " already defined");
+        "Name " + name + " already defined");
+  }
+
+  // don't allow a function to overshadow an attribute/class decl
+  // in a parent
+  if (symbols->isDefined(
+        name, SymbolTable::Location | SymbolTable::Class,
+        SymbolTable::ClassParents)) {
+    throw SemanticViolationException(
+        "Name " + name + " already defined in parent");
   }
 
   // check duplicate param names

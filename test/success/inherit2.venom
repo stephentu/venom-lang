@@ -1,0 +1,12 @@
+class A{T}
+  attr x::map{string, T}
+end
+class B <- A{int}
+  def self(elems::list{string}) =
+    x = {};
+    for elem <- elems do
+      x[elem] = 10;
+    end
+  end
+end
+print(B(['hello', 'goodbye']).x);
