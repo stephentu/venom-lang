@@ -163,9 +163,10 @@ protected:
   ModuleSymbol(const std::string& name,
                SymbolTable* table, /* defined */
                SymbolTable* moduleTable, /* module's root table */
-               Type *moduleType)
+               Type *moduleType,
+               SemanticContext* origCtx)
     : BaseSymbol(name, table), moduleTable(moduleTable),
-      moduleType(moduleType) {}
+      moduleType(moduleType), origCtx(origCtx) {}
 
 public:
   inline SymbolTable*
@@ -180,6 +181,7 @@ public:
 private:
   SymbolTable* moduleTable;
   Type* moduleType;
+  SemanticContext* origCtx;
 };
 
 }

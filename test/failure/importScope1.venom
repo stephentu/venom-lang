@@ -1,0 +1,2 @@
+import foo.file1
+print(file1.file2.A());

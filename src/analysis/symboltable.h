@@ -133,7 +133,7 @@ public:
 
   ModuleSymbol*
   createModuleSymbol(const std::string& name, SymbolTable* moduleTable,
-                     Type* moduleType);
+                     Type* moduleType, SemanticContext* origCtx);
 
 private:
   /** WARNING: while a SymbolTable can have multiple parents, only

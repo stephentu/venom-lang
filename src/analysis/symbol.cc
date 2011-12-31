@@ -87,6 +87,10 @@ ClassSymbol::isTopLevelClass() const {
 InstantiatedType*
 ModuleSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                    const InstantiatedTypeVec& params) {
+  if (origCtx != ctx) {
+    throw TypeViolationException(
+        "Cannot access imported modules of another module");
+  }
   return t.translate(ctx, moduleType->instantiate(ctx, params));
 }
 

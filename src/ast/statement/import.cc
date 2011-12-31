@@ -65,7 +65,7 @@ ImportStmtNode::registerSymbol(SemanticContext* ctx) {
   // create the module symbol (to make the module visible to this scope)
   symbols->createModuleSymbol(
         names.back(),
-        mctx->getModuleRoot()->getSymbolTable(), moduleType);
+        mctx->getModuleRoot()->getSymbolTable(), moduleType, ctx);
 }
 
 }
