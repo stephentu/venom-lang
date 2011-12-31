@@ -17,8 +17,15 @@ ALLOBJFILES := $(sort $(OBJFILES) $(GENOBJFILES))
 all: venom
 
 .PHONY: test
-test: test/venom-test
+test: test-compile test-bytecode
+
+.PHONY: test-compile
+test-compile: test/venom-test
 	test/venom-test
+
+.PHONY: test-bytecode
+test-bytecode: test/venom-bytecode-test
+	test/venom-bytecode-test
 
 # Generate scanner and parser
 
@@ -38,14 +45,20 @@ parser/scanner.cc: parser/scanner.ll
 venom: $(GENOBJFILES) $(ALLOBJFILES) venom.o
 	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) venom.o 
 
+# TODO: Only link in the necessary obj files
+# TODO: Better way of generating executables (very manual now)
+
 test/venom-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-test.o
 	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-test.o
+
+test/venom-bytecode-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-bytecode-test.o
+	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-bytecode-test.o
 
 GENFILES = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
 GENERATED = $(addprefix parser/,$(GENFILES))
 
 clean:
-	rm -f $(ALLOBJFILES) venom.o test/venom-test.o
+	rm -f $(ALLOBJFILES) venom.o test/venom-test.o test/venom-bytecode-test.o
 	rm -f $(GENERATED)
 	rm -f venom
 	rm -f test/venom-test
