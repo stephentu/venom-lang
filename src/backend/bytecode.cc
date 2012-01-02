@@ -1,5 +1,6 @@
 #include <backend/bytecode.h>
 #include <backend/vm.h>
+#include <util/macros.h>
 
 using namespace std;
 using namespace venom::runtime;
@@ -11,7 +12,7 @@ bool Instruction::execute(ExecutionContext& ctx) {
   switch (opcode) {
 
 #define HANDLE_ZERO(a) \
-    case a:  return a ## _impl(ctx);
+    case a: return a ## _impl(ctx);
 
 #define HANDLE_ONE(a) \
     case a: { \
@@ -41,35 +42,35 @@ bool Instruction::execute(ExecutionContext& ctx) {
 template <typename Inst>
 static inline Inst* asFormatInst(Instruction* i) {
   assert(i);
-  Inst *ii = venom_pointer_cast<Inst*>(i);
-  assert(ii);
-  return ii;
+  return static_cast<Inst*>(i);
 }
 
-static inline InstFormatA* asFormatA(Instruction* i) {
-  return asFormatInst<InstFormatA>(i);
-}
-static inline InstFormatB* asFormatB(Instruction* i) {
-  return asFormatInst<InstFormatB>(i);
-}
-static inline InstFormatC* asFormatC(Instruction* i) {
-  return asFormatInst<InstFormatC>(i);
-}
+InstFormatU32*
+Instruction::asFormatU32() { return asFormatInst<InstFormatU32>(this); }
+
+InstFormatI32*
+Instruction::asFormatI32() { return asFormatInst<InstFormatI32>(this); }
+
+InstFormatU32U32*
+Instruction::asFormatU32U32() { return asFormatInst<InstFormatU32U32>(this); }
+
+InstFormatC*
+Instruction::asFormatC() { return asFormatInst<InstFormatC>(this); }
 
 bool Instruction::PUSH_CELL_INT_impl(ExecutionContext& ctx) {
-  InstFormatC *self = asFormatC(this);
+  InstFormatC *self = asFormatC();
   ctx.program_stack.push(venom_cell(self->data.int_value));
   return true;
 }
 
 bool Instruction::PUSH_CELL_FLOAT_impl(ExecutionContext& ctx) {
-  InstFormatC *self = asFormatC(this);
+  InstFormatC *self = asFormatC();
   ctx.program_stack.push(venom_cell(self->data.double_value));
   return true;
 }
 
 bool Instruction::PUSH_CELL_BOOL_impl(ExecutionContext& ctx) {
-  InstFormatC *self = asFormatC(this);
+  InstFormatC *self = asFormatC();
   ctx.program_stack.push(venom_cell(self->data.bool_value));
   return true;
 }
@@ -80,13 +81,13 @@ bool Instruction::PUSH_CELL_NIL_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
-  InstFormatA *self = asFormatA(this);
-  ctx.program_stack.push(ctx.local_variables.at(self->N0));
+  InstFormatU32 *self = asFormatU32();
+  ctx.program_stack.push(ctx.local_variables().at(self->N0));
   return true;
 }
 
 bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
-  InstFormatA *self = asFormatA(this);
+  InstFormatU32 *self = asFormatU32();
   size_t s = venom_object::venom_object_sizeof(self->N0);
   venom_object *obj = (venom_object *) operator new (s);
   new (obj) venom_object(self->N0);
@@ -95,7 +96,21 @@ bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::CALL_impl(ExecutionContext& ctx) {
-  VENOM_UNIMPLEMENTED;
+  InstFormatU32 *self = asFormatU32();
+  // push ret address
+  ctx.program_stack.push(venom_cell(int64_t(ctx.program_counter + 1)));
+  // create new local variable frame
+  ctx.new_frame();
+  // set PC
+  ctx.program_counter = reinterpret_cast<Instruction**>(self->N0);
+  return false;
+}
+
+bool Instruction::JUMP_impl(ExecutionContext& ctx) {
+  InstFormatI32 *self = asFormatI32();
+  // set PC
+  ctx.program_counter = ctx.program_counter + 1 + self->N0;
+  return false;
 }
 
 bool Instruction::POP_CELL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
@@ -103,8 +118,10 @@ bool Instruction::POP_CELL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  InstFormatA *self = asFormatA(this);
-  ctx.local_variables.at(self->N0) = opnd0;
+  InstFormatU32 *self = asFormatU32();
+  vector<venom_cell> &vars = ctx.local_variables();
+  if (self->N0 >= vars.size()) vars.resize(self->N0 + 1);
+  vars.at(self->N0) = opnd0;
   return true;
 }
 
@@ -139,15 +156,25 @@ bool Instruction::UNOP_BIT_NOT_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::BRANCH_Z_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  VENOM_UNIMPLEMENTED;
+  if (!opnd0.truthTest()) {
+    InstFormatI32 *self = asFormatI32();
+    ctx.program_counter = ctx.program_counter + 1 + self->N0;
+    return false;
+  }
+  return true;
 }
 
 bool Instruction::BRANCH_NZ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  VENOM_UNIMPLEMENTED;
+  if (opnd0.truthTest()) {
+    InstFormatI32 *self = asFormatI32();
+    ctx.program_counter = ctx.program_counter + 1 + self->N0;
+    return false;
+  }
+  return true;
 }
 
 bool Instruction::GET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  InstFormatA *self = asFormatA(this);
+  InstFormatU32 *self = asFormatU32();
   ctx.program_stack.push(opnd0.asRawObject()->cell(self->N0));
   return true;
 }
@@ -156,12 +183,8 @@ bool Instruction::GET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0
   VENOM_UNIMPLEMENTED;
 }
 
-bool Instruction::RET_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  VENOM_UNIMPLEMENTED;
-}
-
 bool Instruction::DUP_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  InstFormatA *self = asFormatA(this);
+  InstFormatU32 *self = asFormatU32();
   for (size_t i = 0; i < self->N0 + 1; i++) {
     ctx.program_stack.push(venom_cell(opnd0));
   }
@@ -287,13 +310,19 @@ bool Instruction::BINOP_BIT_RSHIFT_impl(ExecutionContext& ctx, venom_cell& opnd0
 #undef IMPL_BINOP_TRUTH
 
 bool Instruction::SET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
-  InstFormatA *self = asFormatA(this);
+  InstFormatU32 *self = asFormatU32();
   opnd0.asRawObject()->cell(self->N0) = opnd1;
   return true;
 }
 
 bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
   VENOM_UNIMPLEMENTED;
+}
+
+bool Instruction::RET_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
+  ctx.program_counter = reinterpret_cast<Instruction**>(opnd0.asInt());
+  ctx.program_stack.push(opnd1);
+  return false;
 }
 
 }

@@ -20,20 +20,26 @@ public:
     assert(program_counter);
   }
 
-  runtime::venom_cell& execute() {
-    assert(*program_counter);
-    while (true) {
-      if ((*program_counter)->execute(*this)) program_counter++;
-      if (!(*program_counter)) return program_stack.top();
-    }
-  }
+  runtime::venom_cell execute();
 
 protected:
+  inline std::vector<runtime::venom_cell>& local_variables() {
+    return local_variables_stack.top();
+  }
+  inline const std::vector<runtime::venom_cell>& local_variables() const {
+    return local_variables_stack.top();
+  }
+
+  inline void new_frame() {
+    local_variables_stack.push(std::vector<runtime::venom_cell>());
+  }
+  inline void pop_frame() { local_variables_stack.pop(); }
+
   Instruction** program_counter;
   Instruction** label_map;
 
   std::stack<runtime::venom_cell> program_stack;
-  std::vector<runtime::venom_cell> local_variables;
+  std::stack< std::vector<runtime::venom_cell> > local_variables_stack;
 };
 
 }

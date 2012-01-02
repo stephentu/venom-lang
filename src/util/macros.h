@@ -1,6 +1,7 @@
 #ifndef VENOM_UTIL_MACROS_H
 #define VENOM_UTIL_MACROS_H
 
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -61,5 +62,7 @@
 #else
   #define venom_pointer_cast static_cast
 #endif
+
+#define VENOM_TRACE(e) std::cerr << "TRACE: " << (e) << std::endl
 
 #endif /* VENOM_UTIL_MACROS_H */

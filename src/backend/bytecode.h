@@ -12,6 +12,10 @@ namespace backend {
 
 /** Forward decl */
 class ExecutionContext;
+class InstFormatU32;
+class InstFormatI32;
+class InstFormatU32U32;
+class InstFormatC;
 
 class Instruction {
 public:
@@ -49,7 +53,10 @@ public:
    *      -> variables[N0]
    *   ALLOC_OBJ N0
    *      -> obj
-   *   CALL
+   *   CALL N0
+   *      -> ret_pc ; pc = N0
+   *   JUMP N0
+   *      -> ; pc = next_pc + N0
    *
    * One operand instructions:
    *
@@ -69,12 +76,13 @@ public:
    *     opnd0 -> !opnd0
    *   UNOP_BIT_NOT
    *     opnd0 -> ~opnd0
-   *   BRANCH_Z
-   *   BRANCH_NZ
+   *   BRANCH_Z N0
+   *     opnd0 -> ; if (opnd) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_NZ N0
+   *     opnd0 -> ; if (!opnd) pc = next_pc + N0 else pc = next_pc
    *   GET_ATTR_OBJ N0
    *     opnd0 -> opnd0.attr[N0]
    *   GET_ARRAY_ACCESS
-   *   RET
    *   DUP N0
    *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances)
    *
@@ -125,6 +133,8 @@ public:
    *   SET_ATTR_OBJ N0
    *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1
    *   SET_ARRAY_ACCESS
+   *   RET
+   *     opnd0, opnd1 -> opnd1 ; PC = opnd0
    */
 
 #define OPCODE_DEFINER_ZERO(x) \
@@ -135,6 +145,7 @@ public:
     x(LOAD_LOCAL_VAR) \
     x(ALLOC_OBJ) \
     x(CALL) \
+    x(JUMP) \
 
 #define OPCODE_DEFINER_ONE(x) \
     x(POP_CELL) \
@@ -149,7 +160,6 @@ public:
     x(BRANCH_NZ) \
     x(GET_ATTR_OBJ) \
     x(GET_ARRAY_ACCESS) \
-    x(RET) \
     x(DUP) \
 
 #define OPCODE_DEFINER_TWO(x) \
@@ -176,6 +186,7 @@ public:
     x(BINOP_BIT_RSHIFT) \
     x(SET_ATTR_OBJ) \
     x(SET_ARRAY_ACCESS) \
+    x(RET) \
 
 #define OPCODE_DEFINER(x) \
     OPCODE_DEFINER_ZERO(x) \
@@ -227,6 +238,11 @@ private:
 #undef DECL_ONE
 #undef DECL_TWO
 
+ InstFormatU32* asFormatU32();
+ InstFormatI32* asFormatI32();
+ InstFormatU32U32* asFormatU32U32();
+ InstFormatC* asFormatC();
+
 };
 
 /**
@@ -235,13 +251,28 @@ private:
  *
  * Where N0 is an unsigned int type
  */
-class InstFormatA : public Instruction {
+class InstFormatU32 : public Instruction {
   friend class Instruction;
 public:
-  InstFormatA(Opcode opcode, size_t N0) :
+  InstFormatU32(Opcode opcode, uint32_t N0) :
     Instruction(opcode), N0(N0) {}
 private:
-  size_t N0;
+  unsigned int N0;
+};
+
+/**
+ * An instruction which contains
+ *   opcode N0
+ *
+ * Where N0 is an int type
+ */
+class InstFormatI32 : public Instruction {
+  friend class Instruction;
+public:
+  InstFormatI32(Opcode opcode, int32_t N0) :
+    Instruction(opcode), N0(N0) {}
+private:
+  int32_t N0;
 };
 
 /**
@@ -250,14 +281,14 @@ private:
  *
  * Where N0 and N1 are unsigned int types
  */
-class InstFormatB : public Instruction {
+class InstFormatU32U32 : public Instruction {
   friend class Instruction;
 public:
-  InstFormatB(Opcode opcode, size_t N0, size_t N1) :
+  InstFormatU32U32(Opcode opcode, uint32_t N0, uint32_t N1) :
     Instruction(opcode), N0(N0), N1(N1) {}
 private:
-  size_t N0;
-  size_t N1;
+  uint32_t N0;
+  uint32_t N1;
 };
 
 /**

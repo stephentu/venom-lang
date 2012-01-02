@@ -83,9 +83,9 @@ public:
   bool operator op (const venom_cell& that) const { \
     assert(isInitialized()); \
     switch (type) { \
-    case IntType: return data.int_value op that.asInt(); \
-    case DoubleType: return data.double_value op that.asDouble(); \
-    case BoolType: return data.bool_value op that.asBool(); \
+    case IntType: return that.isInt() ? data.int_value op that.asInt() : false; \
+    case DoubleType: return that.isDouble() ? data.double_value op that.asDouble() : false; \
+    case BoolType: return that.isBool() ? data.bool_value op that.asBool() : false; \
     default: VENOM_NOT_REACHED; \
     } \
   } \
@@ -104,7 +104,7 @@ public:
     switch (type) {
     case IntType: return util::stringify(data.int_value);
     case DoubleType: return util::stringify(data.double_value);
-    case BoolType: return util::stringify(data.bool_value);
+    case BoolType: return data.bool_value ? "True" : "False";
     // TODO: implement obj stringify
     case ObjType: return !data.obj ? "Nil" : "Obj";
     default: VENOM_NOT_REACHED;
