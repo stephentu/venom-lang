@@ -11,16 +11,16 @@
     size_t _n = VENOM_NELEMS((array)); \
     size_t _i = static_cast<size_t>((idx)); \
     if (_i < _n) return (array)[_i]; \
-    throw std::out_of_range(__func__); \
+    throw std::out_of_range(__PRETTY_FUNCTION__); \
   } while (0)
 
 #define VENOM_UNIMPLEMENTED \
   (throw std::runtime_error( \
-      std::string("Unimplemented: ") + std::string(__func__)))
+      std::string("Unimplemented: ") + std::string(__PRETTY_FUNCTION__)))
 
 #define VENOM_NOT_REACHED \
   (throw std::runtime_error( \
-      std::string("Should not be reached: ") + std::string(__func__)))
+      std::string("Should not be reached: ") + std::string(__PRETTY_FUNCTION__)))
 
 /**
  * Use forchild as such:

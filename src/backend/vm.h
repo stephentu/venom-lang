@@ -33,6 +33,7 @@ protected:
   Instruction** label_map;
 
   std::stack<runtime::venom_cell> program_stack;
+  std::vector<runtime::venom_cell> local_variables;
 };
 
 }

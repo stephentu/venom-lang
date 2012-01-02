@@ -16,13 +16,129 @@ class ExecutionContext;
 class Instruction {
 public:
 
+  /**
+   * Venom Bytecode Opcodes
+   *
+   * Desc format is: [stack before] -> [stack after] ; [side effects]
+   *
+   * In [stack before], the right hand side represents the top of the stack
+   *
+   * In the handler functions, the operands are passed in left to right
+   * as specified in [stack before]. For example, for BINOP_ADD, the
+   * description is:
+   *
+   *   opnd0, opnd1 -> opnd0 + opnd1
+   *
+   * Both opnd1 and opnd0 are popped off the stack (in that order), opnd1 is at
+   * the top of the stack before the invocation, and opnd0 + opnd1 is pushed
+   * onto the stack. The BINOP_ADD handler will be invoked as:
+   *
+   *   BINOP_ADD_impl(opnd0, opnd1)
+   *
+   * Zero operand instructions:
+   *
+   *   PUSH_CELL_INT i64
+   *     -> i64
+   *   PUSH_CELL_FLOAT double
+   *     -> double
+   *   PUSH_CELL_BOOL bool
+   *     -> bool
+   *   PUSH_CELL_NIL
+   *     -> Nil
+   *   LOAD_LOCAL_VAR N0
+   *      -> variables[N0]
+   *   ALLOC_OBJ N0
+   *      -> obj
+   *   CALL
+   *
+   * One operand instructions:
+   *
+   *   POP_CELL
+   *     opnd0 ->
+   *   STORE_LOCAL_VAR N0
+   *     opnd0 -> ; variables[N0] = opnd0
+   *   UNOP_PLUS
+   *     opnd0 -> +opnd0
+   *   UNOP_PLUS_FLOAT
+   *     opnd0 -> +opnd0
+   *   UNOP_MINUS
+   *     opnd0 -> -opnd0
+   *   UNOP_MINUS_FLOAT
+   *     opnd0 -> -opnd0
+   *   UNOP_CMP_NOT
+   *     opnd0 -> !opnd0
+   *   UNOP_BIT_NOT
+   *     opnd0 -> ~opnd0
+   *   BRANCH_Z
+   *   BRANCH_NZ
+   *   GET_ATTR_OBJ N0
+   *     opnd0 -> opnd0.attr[N0]
+   *   GET_ARRAY_ACCESS
+   *   RET
+   *   DUP N0
+   *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances)
+   *
+   * Two operand instructions:
+   *
+   *   BINOP_ADD
+   *     opnd0, opnd1 -> opnd0 + opnd1
+   *   BINOP_ADD_FLOAT
+   *     opnd0, opnd1 -> opnd0 + opnd1
+   *   BINOP_SUB
+   *     opnd0, opnd1 -> opnd0 - opnd1
+   *   BINOP_SUB_FLOAT
+   *     opnd0, opnd1 -> opnd0 - opnd1
+   *   BINOP_MULT
+   *     opnd0, opnd1 -> opnd0 * opnd1
+   *   BINOP_MULT_FLOAT
+   *     opnd0, opnd1 -> opnd0 * opnd1
+   *   BINOP_DIV
+   *     opnd0, opnd1 -> opnd0 / opnd1
+   *   BINOP_DIV_FLOAT
+   *     opnd0, opnd1 -> opnd0 / opnd1
+   *   BINOP_CMP_AND
+   *     opnd0, opnd1 -> opnd0 && opnd1
+   *   BINOP_CMP_OR
+   *     opnd0, opnd1 -> opnd0 || opnd1
+   *   BINOP_CMP_LT
+   *     opnd0, opnd1 -> opnd0 < opnd1
+   *   BINOP_CMP_LE
+   *     opnd0, opnd1 -> opnd0 <= opnd1
+   *   BINOP_CMP_GT
+   *     opnd0, opnd1 -> opnd0 > opnd1
+   *   BINOP_CMP_GE
+   *     opnd0, opnd1 -> opnd0 >= opnd1
+   *   BINOP_CMP_EQ
+   *     opnd0, opnd1 -> opnd0 == opnd1
+   *   BINOP_CMP_NEQ
+   *     opnd0, opnd1 -> opnd0 != opnd1
+   *   BINOP_BIT_AND
+   *     opnd0, opnd1 -> opnd0 & opnd1
+   *   BINOP_BIT_OR
+   *     opnd0, opnd1 -> opnd0 | opnd1
+   *   BINOP_BIT_XOR
+   *     opnd0, opnd1 -> opnd0 ^ opnd1
+   *   BINOP_BIT_LSHIFT
+   *     opnd0, opnd1 -> opnd0 << opnd1
+   *   BINOP_BIT_RSHIFT
+   *     opnd0, opnd1 -> opnd0 >> opnd1
+   *   SET_ATTR_OBJ N0
+   *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1
+   *   SET_ARRAY_ACCESS
+   */
+
 #define OPCODE_DEFINER_ZERO(x) \
-    x(POP_CELL) \
-    x(PUSH_CELL) \
+    x(PUSH_CELL_INT) \
+    x(PUSH_CELL_FLOAT) \
+    x(PUSH_CELL_BOOL) \
+    x(PUSH_CELL_NIL) \
+    x(LOAD_LOCAL_VAR) \
     x(ALLOC_OBJ) \
     x(CALL) \
 
 #define OPCODE_DEFINER_ONE(x) \
+    x(POP_CELL) \
+    x(STORE_LOCAL_VAR) \
     x(UNOP_PLUS) \
     x(UNOP_PLUS_FLOAT) \
     x(UNOP_MINUS) \
@@ -31,8 +147,10 @@ public:
     x(UNOP_BIT_NOT) \
     x(BRANCH_Z) \
     x(BRANCH_NZ) \
-    x(ATTR_OBJ) \
+    x(GET_ATTR_OBJ) \
+    x(GET_ARRAY_ACCESS) \
     x(RET) \
+    x(DUP) \
 
 #define OPCODE_DEFINER_TWO(x) \
     x(BINOP_ADD) \
@@ -56,11 +174,13 @@ public:
     x(BINOP_BIT_XOR) \
     x(BINOP_BIT_LSHIFT) \
     x(BINOP_BIT_RSHIFT) \
+    x(SET_ATTR_OBJ) \
+    x(SET_ARRAY_ACCESS) \
 
 #define OPCODE_DEFINER(x) \
-  OPCODE_DEFINER_ZERO(x) \
-  OPCODE_DEFINER_ONE(x) \
-  OPCODE_DEFINER_TWO(x) \
+    OPCODE_DEFINER_ZERO(x) \
+    OPCODE_DEFINER_ONE(x) \
+    OPCODE_DEFINER_TWO(x) \
 
   enum Opcode {
 #define OPND(a) a,
@@ -142,17 +262,35 @@ private:
 
 /**
  * An instruct which contains
- *   opcode primitive_cell
+ *   opcode [i64|double|bool]
  */
 class InstFormatC : public Instruction {
   friend class Instruction;
 public:
-  InstFormatC(Opcode opcode, const runtime::venom_cell& cell) :
-    Instruction(opcode), cell(cell) {
-    assert(cell.isPrimitive());
-  }
+  InstFormatC(Opcode opcode, int64_t int_value) :
+    Instruction(opcode), data(int_value) {}
+  InstFormatC(Opcode opcode, int int_value) :
+    Instruction(opcode), data(int_value) {}
+  InstFormatC(Opcode opcode, double double_value) :
+    Instruction(opcode), data(double_value) {}
+  InstFormatC(Opcode opcode, float double_value) :
+    Instruction(opcode), data(double_value) {}
+  InstFormatC(Opcode opcode, bool bool_value) :
+    Instruction(opcode), data(bool_value) {}
 private:
-  runtime::venom_cell cell;
+  union types {
+    /** Primitives */
+    int64_t int_value;
+    double double_value;
+    bool bool_value;
+
+    /** union type constructors */
+    types(int64_t int_value) : int_value(int_value) {}
+    types(int int_value) : int_value(int_value) {}
+    types(double double_value) : double_value(double_value) {}
+    types(float double_value) : double_value(double_value) {}
+    types(bool bool_value) : bool_value(bool_value) {}
+  } data;
 };
 
 }

@@ -13,6 +13,7 @@ namespace runtime {
 class venom_countable {
 public:
   venom_countable() : count(0) {}
+  ~venom_countable() { assert(!count); }
   inline void incRef() const { count++; }
   uint32_t decRef() const { assert(count > 0); return --count; }
 protected:

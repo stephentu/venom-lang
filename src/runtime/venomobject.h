@@ -43,8 +43,11 @@ public:
   venom_cell(bool bool_value)
     : data(bool_value), type(BoolType) {}
   venom_cell(venom_object* obj);
+  venom_cell(const venom_cell& that);
 
   ~venom_cell();
+
+  venom_cell& operator=(const venom_cell& that);
 
   inline bool isInitialized() const { return type; }
   inline bool isPrimitive() const { return type && type < ObjType; }
@@ -57,25 +60,48 @@ public:
   inline int64_t asInt() const { assert(isInt()); return data.int_value; }
   inline double asDouble() const { assert(isDouble()); return data.double_value; }
   inline bool asBool() const { assert(isBool()); return data.bool_value; }
+  inline venom_object* asRawObject() const { assert(isObject()); return data.obj; }
 
-  bool operator==(const venom_cell& that) const {
+  bool truthTest() const {
+    assert(isInitialized());
     switch (type) {
-    case NoneType: return that.type == NoneType;
-    case IntType: return data.int_value == that.data.int_value;
-    case DoubleType: return data.double_value == that.data.double_value;
-    case BoolType: return data.bool_value == that.data.bool_value;
-    // TODO: implement obj equality (not just pointer equality)
-    case ObjType: return data.obj == that.data.obj;
+    case IntType: return data.int_value;
+    case DoubleType: return data.double_value;
+    case BoolType: return data.bool_value;
+    case ObjType: return data.obj;
     default: VENOM_NOT_REACHED;
     }
   }
-  inline bool operator!=(const venom_cell& that) const {
-    return !operator==(that);
-  }
+  inline bool falseTest() const { return !truthTest(); }
+
+  /** Operator overloads */
+  // NOTE: obj operator overload is implemented by invoking the object's
+  // operator method, instead of using a C++ operator overload.
+  // The C++ operator overloads are to be used for primitive types only.
+
+#define IMPL_OPERATOR_OVERLOAD(op) \
+  bool operator op (const venom_cell& that) const { \
+    assert(isInitialized()); \
+    switch (type) { \
+    case IntType: return data.int_value op that.asInt(); \
+    case DoubleType: return data.double_value op that.asDouble(); \
+    case BoolType: return data.bool_value op that.asBool(); \
+    default: VENOM_NOT_REACHED; \
+    } \
+  } \
+
+  IMPL_OPERATOR_OVERLOAD(==)
+  IMPL_OPERATOR_OVERLOAD(!=)
+  IMPL_OPERATOR_OVERLOAD(<)
+  IMPL_OPERATOR_OVERLOAD(<=)
+  IMPL_OPERATOR_OVERLOAD(>)
+  IMPL_OPERATOR_OVERLOAD(>=)
+
+#undef IMPL_OPERATOR_OVERLOAD
 
   std::string stringify() const {
+    assert(isInitialized());
     switch (type) {
-    case NoneType: return "Uninit";
     case IntType: return util::stringify(data.int_value);
     case DoubleType: return util::stringify(data.double_value);
     case BoolType: return util::stringify(data.bool_value);
@@ -83,10 +109,9 @@ public:
     case ObjType: return !data.obj ? "Nil" : "Obj";
     default: VENOM_NOT_REACHED;
     }
-
   }
 
-private:
+protected:
   union types {
     /** Primitives */
     int64_t int_value;
@@ -123,7 +148,8 @@ inline std::ostream& operator<<(std::ostream& o, const venom_cell& cell) {
  * To allocate a venom_object of N cells:
  *
  *   // allocate the memory
- *   venom_object *obj = (venom_object *) operator new (venom_object_sizeof(N));
+ *   venom_object *obj =
+ *     (venom_object *) operator new (venom_object::venom_object_sizeof(N));
  *   // call constructor via placement new
  *   new (obj) venom_object(N);
  *
@@ -136,6 +162,8 @@ public:
   static inline size_t venom_object_sizeof(size_t n_cells) {
     return sizeof(venom_object) + n_cells * sizeof(venom_cell);
   }
+
+  static venom_object* Nil;
 
   venom_object(size_t n_cells) : n_cells(n_cells) {
     // this is equivalent to looping over each of the
@@ -163,7 +191,7 @@ private:
   inline venom_cell* cell_ptr(size_t n) {
     assert(n < n_cells);
     char *p = (char *) this;
-    return (venom_cell *)(p + sizeof(venom_object));
+    return (venom_cell *)(p + sizeof(venom_object) + n * sizeof(venom_cell));
   }
 
   venom_class_object* class_obj;
