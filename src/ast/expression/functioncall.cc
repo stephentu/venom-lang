@@ -44,9 +44,9 @@ struct param_functor_t {
 } param_functor;
 
 InstantiatedType*
-FunctionCallNode::typeCheck(SemanticContext*  ctx,
-                            InstantiatedType* expected,
-                            const InstantiatedTypeVec& typeParamArgs) {
+FunctionCallNode::typeCheckImpl(SemanticContext*  ctx,
+                                InstantiatedType* expected,
+                                const InstantiatedTypeVec& typeParamArgs) {
   assert(typeParamArgs.empty());
 
   // instantiate type parameters

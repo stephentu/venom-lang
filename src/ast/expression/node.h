@@ -45,17 +45,31 @@ class ASTExpressionNode : public ASTNode {
 public:
   ASTExpressionNode() {}
 
+  inline analysis::InstantiatedType*
+    getStaticType() { return staticType; }
+  inline const analysis::InstantiatedType*
+    getStaticType() const { return staticType; }
+
   /** Do type-checking on this node recursively.
    *  expected is what you expect this node to type-check to, if it matters
    *    (is NULL in most cases)
    *  typeParamArgs is a list of type parameter arguments, if it matters
    *    (is empty in most cases)
    */
-  virtual analysis::InstantiatedType*
+  analysis::InstantiatedType*
     typeCheck(analysis::SemanticContext* ctx,
               analysis::InstantiatedType* expected = NULL,
               const analysis::InstantiatedTypeVec& typeParamArgs
-                = analysis::InstantiatedTypeVec()) = 0;
+                = analysis::InstantiatedTypeVec()) {
+    return staticType = typeCheckImpl(ctx, expected, typeParamArgs);
+  }
+protected:
+  virtual analysis::InstantiatedType*
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs) = 0;
+
+  analysis::InstantiatedType* staticType;
 };
 
 typedef std::vector<ASTExpressionNode *> ExprNodeVec;

@@ -9,7 +9,6 @@ namespace ast {
 
 class ArrayLiteralNode : public ASTExpressionNode {
 public:
-
   /** Takes ownership of the nodes in values */
   ArrayLiteralNode(const ExprNodeVec& values)
     : values(values) {}
@@ -24,12 +23,13 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+protected:
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext* ctx,
-              analysis::InstantiatedType* expected = NULL,
-              const analysis::InstantiatedTypeVec& typeParamArgs
-                = analysis::InstantiatedTypeVec());
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs);
 
+public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(arrayliteral ";
     PrintExprNodeVec(o, values, indent);

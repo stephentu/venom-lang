@@ -22,9 +22,9 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
 }
 
 InstantiatedType*
-VariableNode::typeCheck(SemanticContext* ctx,
-                        InstantiatedType* expected,
-                        const InstantiatedTypeVec& typeParamArgs) {
+VariableNode::typeCheckImpl(SemanticContext* ctx,
+                            InstantiatedType* expected,
+                            const InstantiatedTypeVec& typeParamArgs) {
   TypeTranslator t;
   BaseSymbol *sym =
     symbols->findBaseSymbol(
@@ -43,9 +43,9 @@ VariableSelfNode::registerSymbol(SemanticContext* ctx) {
 }
 
 InstantiatedType*
-VariableSelfNode::typeCheck(SemanticContext* ctx,
-                            InstantiatedType* expected,
-                            const InstantiatedTypeVec& typeParamArgs) {
+VariableSelfNode::typeCheckImpl(SemanticContext* ctx,
+                                InstantiatedType* expected,
+                                const InstantiatedTypeVec& typeParamArgs) {
   ClassDeclNode *cdn = getEnclosingClassNode();
   assert(cdn);
   TypeTranslator t;
@@ -66,9 +66,9 @@ VariableSuperNode::registerSymbol(SemanticContext* ctx) {
 }
 
 InstantiatedType*
-VariableSuperNode::typeCheck(SemanticContext* ctx,
-                             InstantiatedType* expected,
-                             const InstantiatedTypeVec& typeParamArgs) {
+VariableSuperNode::typeCheckImpl(SemanticContext* ctx,
+                                 InstantiatedType* expected,
+                                 const InstantiatedTypeVec& typeParamArgs) {
   ClassDeclNode *cdn = getEnclosingClassNode();
   assert(cdn);
   TypeTranslator t;

@@ -38,12 +38,13 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+protected:
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext* ctx,
-              analysis::InstantiatedType* expected = NULL,
-              const analysis::InstantiatedTypeVec& typeParamArgs
-                = analysis::InstantiatedTypeVec());
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs);
 
+public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;
     if (explicit_type) o << " " << *explicit_type;
@@ -62,12 +63,13 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+protected:
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext* ctx,
-              analysis::InstantiatedType* expected = NULL,
-              const analysis::InstantiatedTypeVec& typeParamArgs
-                = analysis::InstantiatedTypeVec());
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs);
 
+public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(self)";
   }
@@ -80,12 +82,13 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+protected:
   virtual analysis::InstantiatedType*
-    typeCheck(analysis::SemanticContext* ctx,
-              analysis::InstantiatedType* expected = NULL,
-              const analysis::InstantiatedTypeVec& typeParamArgs
-                = analysis::InstantiatedTypeVec());
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs);
 
+public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(super)";
   }

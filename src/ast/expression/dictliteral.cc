@@ -33,9 +33,9 @@ struct fold_functor {
 };
 
 InstantiatedType*
-DictLiteralNode::typeCheck(SemanticContext* ctx,
-                           InstantiatedType* expected,
-                           const InstantiatedTypeVec& typeParamArgs) {
+DictLiteralNode::typeCheckImpl(SemanticContext* ctx,
+                               InstantiatedType* expected,
+                               const InstantiatedTypeVec& typeParamArgs) {
   if (pairs.empty()) {
     if (expected && expected->getType()->equals(*Type::MapType)) {
       return expected;

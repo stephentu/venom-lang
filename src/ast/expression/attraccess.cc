@@ -12,9 +12,9 @@ namespace venom {
 namespace ast {
 
 InstantiatedType*
-AttrAccessNode::typeCheck(SemanticContext* ctx,
-                          InstantiatedType* expected,
-                          const InstantiatedTypeVec& typeParamArgs) {
+AttrAccessNode::typeCheckImpl(SemanticContext* ctx,
+                              InstantiatedType* expected,
+                              const InstantiatedTypeVec& typeParamArgs) {
   InstantiatedType *obj = primary->typeCheck(ctx);
   TypeTranslator t;
   BaseSymbol *attrSym =

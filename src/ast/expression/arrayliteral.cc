@@ -29,9 +29,9 @@ struct reduce_functor_t {
 } reduce_functor;
 
 InstantiatedType*
-ArrayLiteralNode::typeCheck(SemanticContext* ctx,
-                            InstantiatedType* expected,
-                            const InstantiatedTypeVec& typeParamArgs) {
+ArrayLiteralNode::typeCheckImpl(SemanticContext* ctx,
+                                InstantiatedType* expected,
+                                const InstantiatedTypeVec& typeParamArgs) {
   if (values.empty()) {
     if (expected && expected->getType()->equals(*Type::ListType)) {
       return expected;
