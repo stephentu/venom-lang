@@ -7,6 +7,7 @@
 #include <backend/bytecode.h>
 #include <backend/vm.h>
 #include <runtime/venomobject.h>
+#include <runtime/venomstring.h>
 
 class venom_test_check_fail : public std::runtime_error {
 public:
@@ -37,19 +38,39 @@ struct eq_check {
   venom_cell expect;
 };
 
+static venom_class_object* ClassObjPool[] = {
+  &venom_object::ObjClassTable,
+  &venom_string::StringClassTable,
+  new venom_class_object("test_obj", sizeof(venom_object), 2,
+                         venom_object::ObjClassTable.vtable),
+};
+
+template <typename Functor>
+class TestCallback : public ExecutionContext::Callback {
+public:
+  TestCallback(const string& name, Functor functor)
+    : name(name), functor(functor) {}
+  virtual void handleResult(venom_cell& result) {
+    try {
+      functor.check(result);
+      cout << "Test " << name << " passed" << endl;
+    } catch (venom_test_check_fail& ex) {
+      cout << "Test " << name << " failed: " << ex.what() << endl;
+    } catch (exception& ex) {
+      cout << "Test " << name << " failed with uncaught exception: "
+        << ex.what() << endl;
+    }
+  }
+private:
+  const string name;
+  Functor functor;
+};
+
 template <typename Functor>
 void run_test_success_op(const string& name, Instruction** istream, Functor f) {
-  ExecutionContext ctx(istream, NULL);
-  venom_cell actual = ctx.execute();
-  try {
-    f.check(actual);
-    cout << "Test " << name << " passed" << endl;
-  } catch (venom_test_check_fail& ex) {
-    cout << "Test " << name << " failed: " << ex.what() << endl;
-  } catch (exception& ex) {
-    cout << "Test " << name << " failed with uncaught exception: "
-      << ex.what() << endl;
-  }
+  TestCallback<Functor> callback(name, f);
+  ExecutionContext ctx(istream, NULL, ClassObjPool);
+  ctx.execute(callback);
 }
 
 void run_test_success(const string& name, Instruction** istream,
@@ -70,7 +91,7 @@ struct alloc_obj_check {
 int main(int argc, char **argv) {
   {
     Instruction *istream[] = {
-      new InstFormatU32(Instruction::ALLOC_OBJ, 2),
+      new InstFormatU32(Instruction::ALLOC_OBJ, 2 /* test_obj */),
       new InstFormatU32(Instruction::DUP, 2),
       new InstFormatC(Instruction::PUSH_CELL_INT, 100),
       new InstFormatU32(Instruction::SET_ATTR_OBJ, 0),
@@ -92,7 +113,6 @@ int main(int argc, char **argv) {
   }
 
   {
-
     Instruction *istream[] = {
       // C code:
       //

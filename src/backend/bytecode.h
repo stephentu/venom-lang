@@ -55,6 +55,8 @@ public:
    *      -> obj
    *   CALL N0
    *      -> ret_pc ; pc = N0
+   *   CALL_NATIVE N0
+   *      -> ret_value ; N0()
    *   JUMP N0
    *      -> ; pc = next_pc + N0
    *
@@ -145,6 +147,7 @@ public:
     x(LOAD_LOCAL_VAR) \
     x(ALLOC_OBJ) \
     x(CALL) \
+    x(CALL_NATIVE) \
     x(JUMP) \
 
 #define OPCODE_DEFINER_ONE(x) \

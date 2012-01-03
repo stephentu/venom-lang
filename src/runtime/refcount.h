@@ -60,6 +60,17 @@ protected:
   Ptr* ptr;
 };
 
+/** Does NOT do any automatic object destruction, even if ref
+ * count goes to zero */
+template <typename Ptr>
+class scoped_ref_counter {
+public:
+  scoped_ref_counter(Ptr *ptr) : ptr(ptr) { ptr->incRef(); }
+  ~scoped_ref_counter() { ptr->decRef(); }
+private:
+  Ptr* ptr;
+};
+
 }
 }
 

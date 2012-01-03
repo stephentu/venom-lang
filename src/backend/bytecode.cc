@@ -40,21 +40,18 @@ bool Instruction::execute(ExecutionContext& ctx) {
 }
 
 template <typename Inst>
-static inline Inst* asFormatInst(Instruction* i) {
-  assert(i);
-  return static_cast<Inst*>(i);
-}
+static inline Inst* asFormatInst(Instruction* i) { return static_cast<Inst*>(i); }
 
-InstFormatU32*
+inline InstFormatU32*
 Instruction::asFormatU32() { return asFormatInst<InstFormatU32>(this); }
 
-InstFormatI32*
+inline InstFormatI32*
 Instruction::asFormatI32() { return asFormatInst<InstFormatI32>(this); }
 
-InstFormatU32U32*
+inline InstFormatU32U32*
 Instruction::asFormatU32U32() { return asFormatInst<InstFormatU32U32>(this); }
 
-InstFormatC*
+inline InstFormatC*
 Instruction::asFormatC() { return asFormatInst<InstFormatC>(this); }
 
 bool Instruction::PUSH_CELL_INT_impl(ExecutionContext& ctx) {
@@ -88,9 +85,15 @@ bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
 
 bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
-  size_t s = venom_object::venom_object_sizeof(self->N0);
+  venom_class_object* class_obj = ctx.class_obj_pool[self->N0];
+  assert(class_obj);
+
+  size_t s =
+    venom_object::venom_object_sizeof(
+        class_obj->sizeof_obj_base, class_obj->n_cells);
+
   venom_object *obj = (venom_object *) operator new (s);
-  new (obj) venom_object(self->N0);
+  new (obj) venom_object(class_obj);
   ctx.program_stack.push(venom_cell(obj));
   return true;
 }
@@ -104,6 +107,14 @@ bool Instruction::CALL_impl(ExecutionContext& ctx) {
   // set PC
   ctx.program_counter = reinterpret_cast<Instruction**>(self->N0);
   return false;
+}
+
+bool Instruction::CALL_NATIVE_impl(ExecutionContext& ctx) {
+  InstFormatU32 *self = asFormatU32();
+  FunctionDescriptor *desc = reinterpret_cast<FunctionDescriptor*>(self->N0);
+  assert(desc->isNative());
+  desc->dispatch(&ctx);
+  return true;
 }
 
 bool Instruction::JUMP_impl(ExecutionContext& ctx) {
@@ -322,6 +333,7 @@ bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0
 bool Instruction::RET_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
   ctx.program_counter = reinterpret_cast<Instruction**>(opnd0.asInt());
   ctx.program_stack.push(opnd1);
+  ctx.pop_frame();
   return false;
 }
 
