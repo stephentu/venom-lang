@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <backend/vm.h>
+#include <runtime/box.h>
 #include <runtime/venomobject.h>
 #include <runtime/venomstring.h>
 #include <util/stl.h>
@@ -45,6 +46,22 @@ venom_cell& venom_cell::operator=(const venom_cell& that) {
   // do an incRef if we are now an object
   if (type == ObjType && data.obj) data.obj->incRef();
   return *this;
+}
+
+ref_ptr<venom_object> venom_cell::asObject() const {
+  assert(isObject());
+  return ref_ptr<venom_object>(data.obj);
+}
+
+ref_ptr<venom_object> venom_cell::box() const {
+  assert(isInitialized());
+  switch (type) {
+  case IntType: return ref_ptr<venom_object>(new venom_integer(data.int_value));
+  case DoubleType: return ref_ptr<venom_object>(new venom_double(data.double_value));
+  case BoolType: return ref_ptr<venom_object>(new venom_boolean(data.bool_value));
+  case ObjType: return ref_ptr<venom_object>(data.obj);
+  default: VENOM_NOT_REACHED;
+  }
 }
 
 string venom_cell::stringifyNativeOnly() const {
@@ -156,9 +173,9 @@ ref_ptr<venom_object>
 venom_object::virtualDispatch(ExecutionContext* ctx, size_t index) {
   ctx->resumeExecution(this, index);
   venom_cell ret = ctx->program_stack.top();
-  // TODO: box instead of asserting object
-  assert(ret.isObject());
-  return ref_ptr<venom_object>(ret.asRawObject());
+  ref_ptr<venom_object> box = ret.box();
+  ctx->program_stack.pop();
+  return box;
 }
 
 }

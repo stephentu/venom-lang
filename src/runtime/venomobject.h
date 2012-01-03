@@ -70,6 +70,9 @@ public:
   inline bool asBool() const { assert(isBool()); return data.bool_value; }
   inline venom_object* asRawObject() const { assert(isObject()); return data.obj; }
 
+  ref_ptr<venom_object> asObject() const;
+  ref_ptr<venom_object> box() const;
+
   bool truthTest() const {
     assert(isInitialized());
     switch (type) {

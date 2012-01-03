@@ -14,6 +14,7 @@ namespace backend {
 class ExecutionContext;
 class InstFormatU32;
 class InstFormatI32;
+class InstFormatIPtr;
 class InstFormatU32U32;
 class InstFormatC;
 
@@ -243,6 +244,7 @@ private:
 
  InstFormatU32* asFormatU32();
  InstFormatI32* asFormatI32();
+ InstFormatIPtr* asFormatIPtr();
  InstFormatU32U32* asFormatU32U32();
  InstFormatC* asFormatC();
 
@@ -276,6 +278,21 @@ public:
     Instruction(opcode), N0(N0) {}
 private:
   int32_t N0;
+};
+
+/**
+ * An instruction which contains
+ *   opcode N0
+ *
+ * Where N0 is a ptr type
+ */
+class InstFormatIPtr : public Instruction {
+  friend class Instruction;
+public:
+  InstFormatIPtr(Opcode opcode, intptr_t N0) :
+    Instruction(opcode), N0(N0) {}
+private:
+  intptr_t N0;
 };
 
 /**

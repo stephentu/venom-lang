@@ -48,6 +48,9 @@ Instruction::asFormatU32() { return asFormatInst<InstFormatU32>(this); }
 inline InstFormatI32*
 Instruction::asFormatI32() { return asFormatInst<InstFormatI32>(this); }
 
+inline InstFormatIPtr*
+Instruction::asFormatIPtr() { return asFormatInst<InstFormatIPtr>(this); }
+
 inline InstFormatU32U32*
 Instruction::asFormatU32U32() { return asFormatInst<InstFormatU32U32>(this); }
 
@@ -99,7 +102,7 @@ bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::CALL_impl(ExecutionContext& ctx) {
-  InstFormatU32 *self = asFormatU32();
+  InstFormatIPtr *self = asFormatIPtr();
   // push ret address
   ctx.program_stack.push(venom_cell(int64_t(ctx.program_counter + 1)));
   // create new local variable frame
@@ -110,7 +113,7 @@ bool Instruction::CALL_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::CALL_NATIVE_impl(ExecutionContext& ctx) {
-  InstFormatU32 *self = asFormatU32();
+  InstFormatIPtr *self = asFormatIPtr();
   FunctionDescriptor *desc = reinterpret_cast<FunctionDescriptor*>(self->N0);
   assert(desc->isNative());
   desc->dispatch(&ctx);

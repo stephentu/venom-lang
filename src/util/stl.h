@@ -180,6 +180,15 @@ inline std::string stringify(const T& t) {
   return buf.str();
 }
 
+class cout_redirector {
+public:
+  cout_redirector(std::streambuf* sb)
+    : save(std::cout.rdbuf()) { std::cout.rdbuf(sb); }
+  ~cout_redirector() { std::cout.rdbuf(save); }
+private:
+  std::streambuf* save;
+};
+
 /** Useful Typedefs **/
 typedef std::vector<std::string>       StrVec;
 typedef const std::vector<std::string> ConstStrVec;

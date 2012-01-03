@@ -6,8 +6,12 @@
 
 #include <backend/bytecode.h>
 #include <backend/vm.h>
+
+#include <runtime/builtin.h>
 #include <runtime/venomobject.h>
 #include <runtime/venomstring.h>
+
+#include <util/stl.h>
 
 class venom_test_check_fail : public std::runtime_error {
 public:
@@ -27,12 +31,19 @@ public:
   } while (0)
 
 using namespace std;
+using namespace venom;
 using namespace venom::backend;
 using namespace venom::runtime;
 
-struct eq_check {
+struct base_check {
+  void beforeTest() {}
+  void check(const venom_cell& actual) {}
+  void afterTest() {}
+};
+
+struct eq_check : public base_check {
   eq_check(const venom_cell& expect) : expect(expect) {}
-  void check(const venom_cell& actual) const {
+  void check(const venom_cell& actual) {
     VENOM_TEST_CHECK_EQ(actual, expect);
   }
   venom_cell expect;
@@ -51,6 +62,7 @@ public:
   TestCallback(const string& name, Functor functor)
     : name(name), functor(functor) {}
   virtual void handleResult(venom_cell& result) {
+    functor.afterTest();
     try {
       functor.check(result);
       cout << "Test " << name << " passed" << endl;
@@ -70,6 +82,7 @@ template <typename Functor>
 void run_test_success_op(const string& name, Instruction** istream, Functor f) {
   TestCallback<Functor> callback(name, f);
   ExecutionContext ctx(istream, NULL, ClassObjPool);
+  f.beforeTest();
   ctx.execute(callback);
 }
 
@@ -78,7 +91,7 @@ void run_test_success(const string& name, Instruction** istream,
   run_test_success_op(name, istream, eq_check(expect));
 }
 
-struct alloc_obj_check {
+struct alloc_obj_check : public base_check {
   void check(const venom_cell& actual) const {
     VENOM_TEST_CHECK(actual.isObject());
     VENOM_TEST_CHECK(actual.asRawObject());
@@ -86,6 +99,20 @@ struct alloc_obj_check {
     VENOM_TEST_CHECK(actual.asRawObject()->cell(1).isObject());
     VENOM_TEST_CHECK(!actual.asRawObject()->cell(1).asRawObject());
   }
+};
+
+struct print_check : public base_check {
+  print_check(stringstream* sb) : sb(sb) {}
+  void beforeTest() {
+    save = venom_stdout.rdbuf();
+    venom_stdout.rdbuf(sb->rdbuf());
+  }
+  void check(const venom_cell& actual) const {
+    VENOM_TEST_CHECK_EQ(sb->str(), "1337\n");
+  }
+  void afterTest() { venom_stdout.rdbuf(save); }
+  stringstream* sb;
+  streambuf* save;
 };
 
 int main(int argc, char **argv) {
@@ -181,6 +208,17 @@ int main(int argc, char **argv) {
       NULL
     };
     run_test_success("fibn", istream, venom_cell(5 /* fib(5) */));
+  }
+
+  {
+    Instruction *istream[] = {
+      new InstFormatC(Instruction::PUSH_CELL_INT, 1337),
+      new InstFormatIPtr(Instruction::CALL_NATIVE,
+                         intptr_t(BuiltinPrintDescriptor)),
+      NULL,
+    };
+    stringstream sb;
+    run_test_success_op("print", istream, print_check(&sb));
   }
 
   return 0;

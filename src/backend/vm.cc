@@ -70,7 +70,7 @@ void FunctionDescriptor::dispatch(ExecutionContext* ctx) {
     case 1: {
       F1 f = reinterpret_cast<F1>(function_ptr);
       venom_cell arg0 = ctx->program_stack.top(); ctx->program_stack.pop();
-      venom_object_ptr ret = f(ctx, venom_object_ptr(arg0.asRawObject()));
+      venom_object_ptr ret = f(ctx, arg0.box());
       ctx->program_stack.push(venom_cell(ret.get()));
       break;
     }
