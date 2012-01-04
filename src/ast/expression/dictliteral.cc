@@ -3,6 +3,7 @@
 
 #include <ast/expression/dictliteral.h>
 #include <analysis/type.h>
+#include <backend/codegenerator.h>
 #include <util/stl.h>
 
 using namespace std;

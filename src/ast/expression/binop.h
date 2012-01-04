@@ -48,6 +48,8 @@ public:
     delete right;
   }
 
+  bool isShortCircuitOp() const;
+
   virtual size_t getNumKids() const { return 2; }
 
   virtual ASTNode* getNthKid(size_t kid) {
@@ -64,6 +66,8 @@ protected:
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
 public:
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     // TODO: stringify the type
     o << "(binop " << int(type) << " ";

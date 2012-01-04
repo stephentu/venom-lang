@@ -1,3 +1,4 @@
+#include <sstream>
 #include <stdexcept>
 
 #include <ast/statement/classdecl.h>
@@ -12,6 +13,14 @@ using namespace venom::ast;
 
 namespace venom {
 namespace analysis {
+
+string
+BaseSymbol::getFullName() const {
+  stringstream buf;
+  buf << getDefinedSymbolTable()->getSemanticContext()->getFullModuleName();
+  buf << "." << getName();
+  return buf.str();
+}
 
 InstantiatedType*
 Symbol::bind(SemanticContext* ctx, TypeTranslator& t,

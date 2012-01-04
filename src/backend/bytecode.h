@@ -15,9 +15,19 @@ class ExecutionContext;
 class InstFormatU32;
 class InstFormatI32;
 class InstFormatIPtr;
-class InstFormatU32U32;
+//class InstFormatU32U32;
 class InstFormatC;
 
+/**
+ * Instruction is the actual executable instruction in the venom vm.
+ * A sequence of instructions forms an executable venom program.
+ *
+ * Note that the CodeGenerator does not generate Instruction instances
+ * directly- rather, an Instruction stream is generated after the linking
+ * phase.  The reason for this is mainly a time/space efficiency concern;
+ * Instruction instances are more compact than their symbolic counterparts and
+ * have all references resolved (avoiding un-necessary runtime symbol lookups).
+ */
 class Instruction {
 public:
 
@@ -50,6 +60,8 @@ public:
    *     -> bool
    *   PUSH_CELL_NIL
    *     -> Nil
+   *   PUSH_CONST N0
+   *     -> const[N0]
    *   LOAD_LOCAL_VAR N0
    *      -> variables[N0]
    *   ALLOC_OBJ N0
@@ -57,7 +69,7 @@ public:
    *   CALL N0
    *      -> ret_pc ; pc = N0
    *   CALL_NATIVE N0
-   *      -> ret_value ; N0()
+   *      [aN, aN-1, ..., a1, a0] -> ret_value ; N0(a0, a1, ..., aN-1, aN)
    *   JUMP N0
    *      -> ; pc = next_pc + N0
    *
@@ -67,6 +79,8 @@ public:
    *     opnd0 ->
    *   STORE_LOCAL_VAR N0
    *     opnd0 -> ; variables[N0] = opnd0
+   *   INT_TO_FLOAT
+   *     opnd0 -> float(opnd0)
    *   UNOP_PLUS
    *     opnd0 -> +opnd0
    *   UNOP_PLUS_FLOAT
@@ -88,6 +102,8 @@ public:
    *   GET_ARRAY_ACCESS
    *   DUP N0
    *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances)
+   *   CALL_VIRTUAL N0
+   *     obj -> ret_value ; PC = obj.vtable[N0]
    *
    * Two operand instructions:
    *
@@ -145,6 +161,7 @@ public:
     x(PUSH_CELL_FLOAT) \
     x(PUSH_CELL_BOOL) \
     x(PUSH_CELL_NIL) \
+    x(PUSH_CONST) \
     x(LOAD_LOCAL_VAR) \
     x(ALLOC_OBJ) \
     x(CALL) \
@@ -154,6 +171,7 @@ public:
 #define OPCODE_DEFINER_ONE(x) \
     x(POP_CELL) \
     x(STORE_LOCAL_VAR) \
+    x(INT_TO_FLOAT) \
     x(UNOP_PLUS) \
     x(UNOP_PLUS_FLOAT) \
     x(UNOP_MINUS) \
@@ -165,6 +183,7 @@ public:
     x(GET_ATTR_OBJ) \
     x(GET_ARRAY_ACCESS) \
     x(DUP) \
+    x(CALL_VIRTUAL) \
 
 #define OPCODE_DEFINER_TWO(x) \
     x(BINOP_ADD) \
@@ -245,7 +264,7 @@ private:
  InstFormatU32* asFormatU32();
  InstFormatI32* asFormatI32();
  InstFormatIPtr* asFormatIPtr();
- InstFormatU32U32* asFormatU32U32();
+ //InstFormatU32U32* asFormatU32U32();
  InstFormatC* asFormatC();
 
 };
@@ -301,15 +320,15 @@ private:
  *
  * Where N0 and N1 are unsigned int types
  */
-class InstFormatU32U32 : public Instruction {
-  friend class Instruction;
-public:
-  InstFormatU32U32(Opcode opcode, uint32_t N0, uint32_t N1) :
-    Instruction(opcode), N0(N0), N1(N1) {}
-private:
-  uint32_t N0;
-  uint32_t N1;
-};
+//class InstFormatU32U32 : public Instruction {
+//  friend class Instruction;
+//public:
+//  InstFormatU32U32(Opcode opcode, uint32_t N0, uint32_t N1) :
+//    Instruction(opcode), N0(N0), N1(N1) {}
+//private:
+//  uint32_t N0;
+//  uint32_t N1;
+//};
 
 /**
  * An instruct which contains

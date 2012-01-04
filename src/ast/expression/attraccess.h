@@ -28,6 +28,8 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return false; }
 
+  virtual analysis::BaseSymbol* getSymbol();
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

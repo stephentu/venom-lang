@@ -4,8 +4,11 @@
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -33,6 +36,13 @@ string BinopNode::StringifyType(Type type) {
   default: assert(false);
   }
   return "";
+}
+
+bool BinopNode::isShortCircuitOp() const {
+  switch (type) {
+  case CMP_AND: case CMP_OR: return true;
+  default: return false;
+  }
 }
 
 InstantiatedType*
@@ -126,6 +136,67 @@ BinopNode::typeCheckImpl(SemanticContext* ctx,
     assert(false);
   }
   return NULL;
+}
+
+void
+BinopNode::codeGen(CodeGenerator& cg) {
+  left->codeGen(cg);
+  switch (type) {
+  case ADD: {
+    if (left->getStaticType()->getType()->isString()) {
+      // TODO: str concat
+      VENOM_UNIMPLEMENTED;
+    }
+  }
+  case SUB: case MULT: case DIV: {
+    bool leftIsFloat = left->getStaticType()->getType()->isFloat();
+    bool rightIsFloat = right->getStaticType()->getType()->isFloat();
+    bool promote = leftIsFloat || rightIsFloat;
+    if (promote && !leftIsFloat) {
+      cg.emitInst(Instruction::INT_TO_FLOAT);
+    }
+    right->codeGen(cg);
+    if (promote && !rightIsFloat) {
+      cg.emitInst(Instruction::INT_TO_FLOAT);
+    }
+    switch (type) {
+    case ADD:
+      cg.emitInst(!promote ? Instruction::BINOP_ADD :
+                             Instruction::BINOP_ADD_FLOAT);
+      break;
+    case SUB:
+      cg.emitInst(!promote ? Instruction::BINOP_SUB :
+                             Instruction::BINOP_SUB_FLOAT);
+      break;
+    case MULT:
+      cg.emitInst(!promote ? Instruction::BINOP_MULT :
+                             Instruction::BINOP_MULT_FLOAT);
+      break;
+    case DIV:
+      cg.emitInst(!promote ? Instruction::BINOP_DIV :
+                             Instruction::BINOP_DIV_FLOAT);
+      break;
+    default: assert(false);
+    }
+    break;
+  }
+  // TODO: implement remaining instructions
+  //case MOD:
+  //case CMP_AND:
+  //case CMP_OR:
+  //case CMP_LT:
+  //case CMP_LE:
+  //case CMP_GT:
+  //case CMP_GE:
+  //case CMP_EQ:
+  //case CMP_NEQ:
+  //case BIT_AND:
+  //case BIT_OR:
+  //case BIT_XOR:
+  //case BIT_LSHIFT:
+  //case BIT_RSHIFT:
+  default: assert(false);
+  }
 }
 
 }

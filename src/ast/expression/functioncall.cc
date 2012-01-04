@@ -7,8 +7,11 @@
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 using namespace venom::util;
 
 namespace venom {
@@ -116,6 +119,39 @@ FunctionCallNode::typeCheckImpl(SemanticContext*  ctx,
   }
 
   return isCtor ? classType : funcType->getParams().back();
+}
+
+void
+FunctionCallNode::codeGen(CodeGenerator& cg) {
+  InstantiatedType *funcType = primary->getStaticType();
+  if (funcType->getType()->isClassType()) {
+    VENOM_UNIMPLEMENTED;
+  } else {
+    // push arguments onto stack in reverse order
+    for (ExprNodeVec::reverse_iterator it = args.rbegin();
+         it != args.rend(); ++it) {
+      (*it)->codeGen(cg);
+    }
+    // emit call
+    BaseSymbol *bs = primary->getSymbol();
+    if (!bs) {
+      // TODO: implement calling of function objects
+      VENOM_UNIMPLEMENTED;
+    }
+    FuncSymbol *fs = dynamic_cast<FuncSymbol*>(bs);
+    assert(fs);
+    size_t fidx = cg.enterFunction(fs);
+    if (fs->isMethod()) {
+      // emit the "this" pointer
+      primary->codeGen(cg);
+      // TODO: lookup the method index in the vtable
+      VENOM_UNIMPLEMENTED;
+    } else {
+      cg.emitInstU32(
+          !fs->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,
+          fidx);
+    }
+  }
 }
 
 }

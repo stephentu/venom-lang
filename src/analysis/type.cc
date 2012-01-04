@@ -142,9 +142,12 @@ Type::~Type() {
   if (itype) delete itype;
 }
 
-bool Type::isNumeric() const {
-  return equals(*IntType) || equals(*FloatType);
-}
+bool Type::isInt() const { return equals(*IntType); }
+bool Type::isFloat() const { return equals(*FloatType); }
+bool Type::isString() const { return equals(*StringType); }
+bool Type::isBool() const { return equals(*BoolType); }
+
+bool Type::isNumeric() const { return isInt() || isFloat(); }
 
 bool Type::isFunction() const {
   for (vector<Type*>::const_iterator it = FuncTypes.begin();

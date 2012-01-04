@@ -21,6 +21,11 @@ SemanticContext::~SemanticContext() {
   }
 }
 
+string SemanticContext::getFullModuleName() const {
+  // TODO: implement me
+  return moduleName;
+}
+
 SemanticContext* SemanticContext::findModule(const util::StrVec& names) {
   if (names.empty()) return this;
   map<string, SemanticContext*>::iterator it = childrenMap.find(names[0]);

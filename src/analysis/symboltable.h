@@ -41,11 +41,33 @@ class SymbolTable {
   friend class ast::ClassDeclNode;
 private:
   /** Create a child symbol table */
-  SymbolTable(SymbolTable* parent, const TypeMap& typeMap, ast::ASTNode* owner);
+  SymbolTable(SemanticContext* ctx, SymbolTable* parent,
+              const TypeMap& typeMap, ast::ASTNode* owner);
 
 protected:
-  inline void addParent(SymbolTable* parent, const TypeMap& typeMap) {
+  inline void addClassParent(SymbolTable* parent, const TypeMap& typeMap) {
+    // assert we already have a primary parent
+    assert(getPrimaryParent());
+
+    // assert we aren't adding garbage
     assert(parent);
+
+    // assert the containers already have a parent
+    assert(!symbolContainer.parents.empty());
+    assert(!funcContainer.parents.empty());
+    assert(!classContainer.parents.empty());
+
+    // assert the containers are consistent with themselves
+    assert(symbolContainer.parents.size() == symbolContainer.maps.size());
+    assert(funcContainer.parents.size() == funcContainer.maps.size());
+    assert(classContainer.parents.size() == classContainer.maps.size());
+
+    // assert the containers are consistent with each other
+    assert(symbolContainer.parents.size() == funcContainer.parents.size());
+    assert(funcContainer.parents.size() == classContainer.parents.size());
+
+    // finally, add the class parent
+
     symbolContainer.parents.push_back(&parent->symbolContainer);
     symbolContainer.maps.push_back(typeMap);
 
@@ -57,22 +79,32 @@ protected:
   }
 
 public:
-  /** Create the root symbol table */
-  SymbolTable()
-    : owner(NULL) {}
+  /** Create the root symbol table. Does *NOT* take ownership of ctx */
+  SymbolTable(SemanticContext *ctx) : ctx(ctx), owner(NULL), parent(NULL) {}
 
   ~SymbolTable() {
     // delete children
     util::delete_pointers(children.begin(), children.end());
   }
 
+  inline SemanticContext* getSemanticContext() { return ctx; }
+  inline const SemanticContext* getSemanticContext() const { return ctx; }
+
   inline ast::ASTNode* getOwner() { return owner; }
   inline const ast::ASTNode* getOwner() const { return owner; }
 
-  inline SymbolTable* newChildScope(ast::ASTNode* owner) {
-    SymbolTable *child = new SymbolTable(this, TypeMap(), owner);
+  inline SymbolTable* getPrimaryParent() { return parent; }
+  inline const SymbolTable* getPrimaryParent() const { return parent; }
+
+  inline SymbolTable*
+  newChildScope(SemanticContext* ctx, ast::ASTNode* owner) {
+    SymbolTable *child = new SymbolTable(ctx, this, TypeMap(), owner);
     children.push_back(child);
     return child;
+  }
+
+  inline SymbolTable* newChildScope(ast::ASTNode* owner) {
+    return newChildScope(ctx, owner);
   }
 
   enum RecurseMode {
@@ -91,6 +123,16 @@ public:
     Any      = (unsigned)-1,
   };
 
+  /**
+   * Is this symbol table a primary child of parent?  In other words, is parent
+   * a primary ancestor of this table?
+   */
+  bool belongsTo(const SymbolTable* parent) const;
+
+  /**
+   * Is this symbol visible from this symbol table? In other words, is the
+   * symbol either defined in this table or in some parent of this table?
+   */
   bool canSee(BaseSymbol *sym);
 
   bool isDefined(const std::string& name, unsigned int type, RecurseMode mode);
@@ -111,7 +153,8 @@ public:
   createFuncSymbol(const std::string&                    name,
                    const std::vector<InstantiatedType*>& typeParams,
                    const std::vector<InstantiatedType*>& params,
-                   InstantiatedType*                     returnType);
+                   InstantiatedType*                     returnType,
+                   bool                                  native = false);
 
   FuncSymbol*
   findFuncSymbol(const std::string& name, RecurseMode mode,
@@ -136,10 +179,16 @@ public:
                      Type* moduleType, SemanticContext* origCtx);
 
 private:
+  /** The module (context) this symbol table belongs to */
+  SemanticContext*          ctx;
+
+  /** The AST node which "owns" this scope. Can be NULL if none */
+  ast::ASTNode*             owner;
+
   /** WARNING: while a SymbolTable can have multiple parents, only
    * one of its parents can have it as a child. This allows us to
    * prevent double-deletes when calling the destructor */
-  ast::ASTNode*             owner;
+  SymbolTable*              parent;
   std::vector<SymbolTable*> children;
 
   static inline void AssertValidRecurseMode(RecurseMode mode) {

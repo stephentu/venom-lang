@@ -112,6 +112,11 @@ public:
 
   virtual std::string stringifyTypename() const { return name; }
 
+  bool isInt() const;
+  bool isFloat() const;
+  bool isString() const;
+  bool isBool() const;
+
   bool isNumeric() const;
   bool isFunction() const;
   bool isClassType() const;

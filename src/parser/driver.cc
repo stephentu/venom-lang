@@ -11,6 +11,7 @@
 
 #include <analysis/semanticcontext.h>
 #include <ast/include.h>
+#include <backend/codegenerator.h>
 #include <bootstrap/analysis.h>
 
 using namespace std;
@@ -81,6 +82,9 @@ unsafe_compile(const string& fname, fstream& infile,
   pctx.stmts->initSymbolTable(ctx.getRootSymbolTable()->newChildScope(NULL));
   pctx.stmts->semanticCheck(&ctx);
   pctx.stmts->typeCheck(&ctx);
+  //backend::CodeGenerator cg(&ctx);
+  //pctx.stmts->codeGen(cg);
+  //cg.printDebugStream();
   return pctx.stmts;
 }
 

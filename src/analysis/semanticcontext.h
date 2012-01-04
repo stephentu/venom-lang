@@ -79,11 +79,10 @@ class SemanticContext {
       const std::string&, std::fstream&, SemanticContext&);
 private:
   SemanticContext(const std::string& moduleName,
-                  SymbolTable* rootSymbols,
                   SemanticContext* parent,
                   SemanticContext* programRoot)
     : moduleName(moduleName), moduleRoot(NULL), parent(parent),
-      programRoot(programRoot), rootSymbols(rootSymbols) {}
+      programRoot(programRoot), rootSymbols(NULL) {}
 
 protected:
   /** Takes ownership */
@@ -103,6 +102,8 @@ public:
   inline std::string& getModuleName() { return moduleName; }
   inline const std::string& getModuleName() const { return moduleName; }
 
+  std::string getFullModuleName() const;
+
   inline SemanticContext*
     getProgramRoot() { return programRoot; }
   inline const SemanticContext*
@@ -121,8 +122,9 @@ public:
 
   SemanticContext* newChildContext(const std::string& moduleName) {
     SemanticContext *child =
-      new SemanticContext(moduleName, rootSymbols->newChildScope(NULL),
-                          this, isRootContext() ? this : programRoot);
+      new SemanticContext(moduleName, this,
+                          isRootContext() ? this : programRoot);
+    child->setRootSymbolTable(rootSymbols->newChildScope(child, NULL));
     childrenMap[moduleName] = child;
     children.push_back(child);
     return child;

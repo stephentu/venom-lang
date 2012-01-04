@@ -51,8 +51,11 @@ void TypeTranslator::bind(InstantiatedType* type) {
   map.insert(map.end(), tmap.begin(), tmap.end());
 }
 
-SymbolTable::SymbolTable(SymbolTable* parent, const TypeMap& map, ASTNode* owner)
-  : owner(owner),
+SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* parent,
+                         const TypeMap& map, ASTNode* owner)
+  : ctx(ctx),
+    owner(owner),
+    parent(parent),
     symbolContainer(
         parent ?
           util::vec1(&parent->symbolContainer) :
@@ -82,6 +85,16 @@ SymbolTable::SymbolTable(SymbolTable* parent, const TypeMap& map, ASTNode* owner
           util::vec1(map) :
           vector<TypeMap>()) {
   assert(parent || map.empty());
+}
+
+bool
+SymbolTable::belongsTo(const SymbolTable* parent) const {
+  const SymbolTable* cur = getPrimaryParent();
+  while (cur) {
+    if (cur == parent) return true;
+    cur = cur->getPrimaryParent();
+  }
+  return false;
 }
 
 bool
@@ -157,9 +170,10 @@ FuncSymbol*
 SymbolTable::createFuncSymbol(const string&                    name,
                               const vector<InstantiatedType*>& typeParams,
                               const vector<InstantiatedType*>& params,
-                              InstantiatedType*                returnType) {
+                              InstantiatedType*                returnType,
+                              bool                             native) {
   FuncSymbol *sym =
-    new FuncSymbol(name, typeParams, this, params, returnType);
+    new FuncSymbol(name, typeParams, this, params, returnType, native);
   funcContainer.insert(name, sym);
   return sym;
 }

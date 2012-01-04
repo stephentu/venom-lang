@@ -21,7 +21,7 @@ createTypeParams(SemanticContext* ctx, size_t n) {
 
 SymbolTable*
 NewBootstrapSymbolTable(SemanticContext* ctx) {
-  SymbolTable* root = new SymbolTable;
+  SymbolTable* root = new SymbolTable(ctx);
   ctx->setRootSymbolTable(root);
 
   // class symbols
@@ -69,7 +69,8 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
   SymbolTable *objSymTab = root->newChildScope(NULL);
   objSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              InstantiatedTypeVec(), InstantiatedType::VoidType);
+                              InstantiatedTypeVec(),
+                              InstantiatedType::VoidType, true);
   root->createClassSymbol("object", objSymTab, Type::ObjectType);
 
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
@@ -83,7 +84,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // func symbols
   root->createFuncSymbol("print", InstantiatedTypeVec(),
                          util::vec1(InstantiatedType::AnyType),
-                         InstantiatedType::VoidType);
+                         InstantiatedType::VoidType, true);
 
   return root;
 }

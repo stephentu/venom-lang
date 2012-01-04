@@ -28,6 +28,8 @@ protected:
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
 public:
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stringlit '" << value << "')";
   }

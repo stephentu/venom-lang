@@ -6,6 +6,8 @@
 #include <ast/statement/funcdecl.h>
 #include <ast/node.h>
 
+#include <backend/codegenerator.h>
+
 #include <util/macros.h>
 
 namespace venom {
@@ -66,6 +68,14 @@ ASTNode::semanticCheckImpl(analysis::SemanticContext* ctx, bool doRegister) {
   forchild (kid) {
     if (!kid) continue;
     kid->semanticCheckImpl(ctx, true);
+  } endfor
+}
+
+void
+ASTNode::codeGen(backend::CodeGenerator& cg) {
+  forchild (kid) {
+    if (!kid) continue;
+    kid->codeGen(cg);
   } endfor
 }
 

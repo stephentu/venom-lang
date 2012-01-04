@@ -51,8 +51,8 @@ Instruction::asFormatI32() { return asFormatInst<InstFormatI32>(this); }
 inline InstFormatIPtr*
 Instruction::asFormatIPtr() { return asFormatInst<InstFormatIPtr>(this); }
 
-inline InstFormatU32U32*
-Instruction::asFormatU32U32() { return asFormatInst<InstFormatU32U32>(this); }
+//inline InstFormatU32U32*
+//Instruction::asFormatU32U32() { return asFormatInst<InstFormatU32U32>(this); }
 
 inline InstFormatC*
 Instruction::asFormatC() { return asFormatInst<InstFormatC>(this); }
@@ -80,6 +80,15 @@ bool Instruction::PUSH_CELL_NIL_impl(ExecutionContext& ctx) {
   return true;
 }
 
+bool Instruction::PUSH_CONST_impl(ExecutionContext& ctx) {
+  // TODO: consider storing the pointer in the inst...
+  InstFormatU32 *self = asFormatU32();
+  venom_cell* konst = ctx.constant_pool[self->N0];
+  assert(konst);
+  ctx.program_stack.push(*konst);
+  return true;
+}
+
 bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
   ctx.program_stack.push(ctx.local_variables().at(self->N0));
@@ -87,6 +96,7 @@ bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
+  // TODO: consider storing the pointer in the inst...
   InstFormatU32 *self = asFormatU32();
   venom_class_object* class_obj = ctx.class_obj_pool[self->N0];
   assert(class_obj);
@@ -136,6 +146,11 @@ bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0)
   vector<venom_cell> &vars = ctx.local_variables();
   if (self->N0 >= vars.size()) vars.resize(self->N0 + 1);
   vars.at(self->N0) = opnd0;
+  return true;
+}
+
+bool Instruction::INT_TO_FLOAT_impl(ExecutionContext& ctx, venom_cell& opnd0) {
+  ctx.program_stack.push(venom_cell(double(opnd0.asInt())));
   return true;
 }
 
@@ -203,6 +218,31 @@ bool Instruction::DUP_impl(ExecutionContext& ctx, venom_cell& opnd0) {
     ctx.program_stack.push(venom_cell(opnd0));
   }
   return true;
+}
+
+bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
+  InstFormatU32 *self = asFormatU32();
+  FunctionDescriptor *desc =
+    opnd0.asRawObject()->getClassObj()->vtable.at(self->N0);
+  assert(desc);
+
+  // push "this" pointer
+  ctx.program_stack.push(opnd0);
+
+  if (desc->isNative()) {
+    // use native dispatch
+    desc->dispatch(&ctx);
+    return true;
+  } else {
+    // push ret address
+    ctx.program_stack.push(venom_cell(int64_t(ctx.program_counter + 1)));
+    // create new local variable frame
+    ctx.new_frame();
+    // set PC
+    ctx.program_counter =
+      reinterpret_cast<Instruction**>(desc->getFunctionPtr());
+    return false;
+  }
 }
 
 #define IMPL_BINOP0(transform, op) \

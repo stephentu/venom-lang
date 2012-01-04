@@ -91,7 +91,7 @@ void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
                                  (*it)->getParams()[i]));
       }
     }
-    stmts->getSymbolTable()->addParent(
+    stmts->getSymbolTable()->addClassParent(
         (*it)->getClassSymbolTable(), map);
   }
 }

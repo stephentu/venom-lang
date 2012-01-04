@@ -22,6 +22,8 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  std::string getFullName() const;
+
   inline SymbolTable* getDefinedSymbolTable() { return table; }
   inline const SymbolTable* getDefinedSymbolTable() const { return table; }
 
@@ -75,9 +77,10 @@ protected:
              const InstantiatedTypeVec& typeParams,
              SymbolTable*               table,
              const InstantiatedTypeVec& params,
-             InstantiatedType*          returnType)
+             InstantiatedType*          returnType,
+             bool                       native)
     : BaseSymbol(name, table), typeParams(typeParams),
-      params(params), returnType(returnType) {}
+      params(params), returnType(returnType), native(native) {}
 
 public:
 
@@ -96,6 +99,8 @@ public:
   inline const InstantiatedType*
     getReturnType() const { return returnType; }
 
+  inline bool isNative() const { return native; }
+
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
@@ -108,6 +113,7 @@ private:
   InstantiatedTypeVec typeParams;
   InstantiatedTypeVec params;
   InstantiatedType*   returnType;
+  bool                native;
 };
 
 /**
@@ -164,7 +170,7 @@ protected:
                SymbolTable* table, /* defined */
                SymbolTable* moduleTable, /* module's root table */
                Type *moduleType,
-               SemanticContext* origCtx)
+               SemanticContext* origCtx /* the module which imported */)
     : BaseSymbol(name, table), moduleTable(moduleTable),
       moduleType(moduleType), origCtx(origCtx) {}
 
@@ -174,6 +180,9 @@ public:
   inline const SymbolTable*
     getModuleSymbolTable() const { return moduleTable; }
 
+  /** This symbol should only be visible when the current ctx equals the
+   * original (importing) context. This is to prevent seeing all of an
+   * imported module's imports in the scope of the imported module. */
   inline SemanticContext*
     getOriginalContext() { return origCtx; }
   inline const SemanticContext*

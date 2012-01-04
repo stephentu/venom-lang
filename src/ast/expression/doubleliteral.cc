@@ -2,7 +2,10 @@
 
 #include <analysis/type.h>
 
+#include <backend/codegenerator.h>
+
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -12,6 +15,11 @@ DoubleLiteralNode::typeCheckImpl(SemanticContext*  ctx,
                                  InstantiatedType* expected,
                                  const InstantiatedTypeVec& typeParamArgs) {
   return InstantiatedType::FloatType;
+}
+
+void
+DoubleLiteralNode::codeGen(CodeGenerator& cg) {
+  cg.emitInstDouble(Instruction::PUSH_CELL_FLOAT, value);
 }
 
 }

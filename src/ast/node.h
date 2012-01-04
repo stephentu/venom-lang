@@ -3,12 +3,20 @@
 
 #include <iostream>
 
+#include <util/macros.h>
+
 namespace venom {
 
 namespace analysis {
   /** Forward decls **/
+  class BaseSymbol;
   class SemanticContext;
   class SymbolTable;
+}
+
+namespace backend {
+  /** Forward decls **/
+  class CodeGenerator;
 }
 
 namespace ast {
@@ -58,6 +66,9 @@ public:
    * NOTE: ASTNodes do NOT take ownership of symbols */
   void initSymbolTable(analysis::SymbolTable* symbols);
 
+  /** Cannot call until after type-checking has completed */
+  virtual analysis::BaseSymbol* getSymbol() { VENOM_UNIMPLEMENTED; }
+
   /**
    * Perform semantic checks on this node (recursively)
    */
@@ -79,6 +90,15 @@ public:
    * TODO: declare as protected, with appropriate friends
    */
   virtual void registerSymbol(analysis::SemanticContext* ctx) {}
+
+  /** Code Generation **/
+
+  /**
+   * Generate code for this node recursively. If this node is an expression,
+   * then leave the value of the expression at the top of the stack. If this
+   * node is a statement, leave the stack intact (after computation).
+   */
+  virtual void codeGen(backend::CodeGenerator& cg);
 
   /** Debugging helpers **/
 

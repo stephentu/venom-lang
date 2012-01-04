@@ -12,6 +12,13 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+BaseSymbol*
+VariableNode::getSymbol() {
+  TypeTranslator t;
+  return symbols->findBaseSymbol(
+      name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
+}
+
 void
 VariableNode::registerSymbol(SemanticContext* ctx) {
   if (!symbols->isDefined(

@@ -2,7 +2,10 @@
 
 #include <analysis/type.h>
 
+#include <backend/codegenerator.h>
+
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -15,6 +18,11 @@ NilLiteralNode::typeCheckImpl(SemanticContext* ctx,
     return expected;
   }
   return InstantiatedType::ObjectType;
+}
+
+void
+NilLiteralNode::codeGen(CodeGenerator& cg) {
+  cg.emitInst(Instruction::PUSH_CELL_NIL);
 }
 
 }
