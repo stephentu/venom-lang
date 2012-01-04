@@ -1,3 +1,4 @@
+#include <ast/statement/node.h>
 #include <backend/codegenerator.h>
 
 using namespace std;
@@ -26,40 +27,46 @@ CodeGenerator::createConstant(const string& constant) {
 size_t
 CodeGenerator::enterLocalClass(ClassSymbol* symbol) {
   // assert local class
-  assert(symbol->getDefinedSymbolTable()->getSemanticContext() == ctx);
+  assert(symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()));
   return class_reference_table.createLocal(symbol);
 }
 
 size_t
 CodeGenerator::enterExternalClass(ClassSymbol* symbol) {
   // assert external class
-  assert(symbol->getDefinedSymbolTable()->getSemanticContext() != ctx);
+  assert(!symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()));
   return class_reference_table.createExternal(symbol);
 }
 
 size_t
 CodeGenerator::enterClass(ClassSymbol* symbol) {
-  return symbol->getDefinedSymbolTable()->getSemanticContext() == ctx ?
+  return symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()) ?
      enterLocalClass(symbol) : enterExternalClass(symbol);
 }
 
 size_t
 CodeGenerator::enterLocalFunction(FuncSymbol* symbol) {
   // assert local function
-  assert(symbol->getDefinedSymbolTable()->getSemanticContext() == ctx);
+  assert(symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()));
   return func_reference_table.createLocal(symbol);
 }
 
 size_t
 CodeGenerator::enterExternalFunction(FuncSymbol* symbol) {
   // assert external function
-  assert(symbol->getDefinedSymbolTable()->getSemanticContext() != ctx);
+  assert(!symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()));
   return func_reference_table.createExternal(symbol);
 }
 
 size_t
 CodeGenerator::enterFunction(FuncSymbol* symbol) {
-  return symbol->getDefinedSymbolTable()->getSemanticContext() == ctx ?
+  return symbol->getDefinedSymbolTable()->belongsTo(
+         ctx->getModuleRoot()->getSymbolTable()) ?
      enterLocalFunction(symbol) : enterExternalFunction(symbol);
 }
 
@@ -107,6 +114,40 @@ CodeGenerator::emitInstBool(SymbolicInstruction::Opcode opcode, bool n0) {
 
 void
 CodeGenerator::printDebugStream() {
+  cerr << "; venom bytecode v0.1" << endl;
+  cerr << "; module: " << ctx->getFullModuleName() << endl << endl;
+
+  cerr << "; constant pool" << endl;
+  for (size_t i = 0; i < constant_pool.vec.size(); i++) {
+    // TODO: escape string
+    cerr << ".const" << i << " \"" << constant_pool.vec[i] << "\"" << endl;
+  }
+  cerr << endl;
+
+  cerr << "; class pool" << endl;
+  // TODO: implement me
+  cerr << endl;
+
+  cerr << "; class reference table" << endl;
+  // TODO: implement me
+  cerr << endl;
+
+  cerr << "; function pool" << endl;
+  // TODO: implement me
+  cerr << endl;
+
+  cerr << "; function reference table" << endl;
+  for (size_t i = 0; i < func_reference_table.vec.size(); i++) {
+    cerr << ".funcref ";
+    SymbolReference& sref = func_reference_table.vec[i];
+    if (sref.isLocal()) {
+      cerr << ".local " << sref.getLocalIndex() << endl;
+    } else {
+      cerr << ".extern " << sref.getFullName() << endl;
+    }
+  }
+  cerr << endl;
+
   for (vector<SymbolicInstruction*>::iterator it = instructions.begin();
        it != instructions.end(); ++it) {
     (*it)->printDebug(cerr);

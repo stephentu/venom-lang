@@ -9,11 +9,11 @@
 namespace venom {
 namespace util {
 
-struct listfiles_default_filter_t {
+struct listfiles_default_filter {
   inline bool operator()(const std::string& name) const {
     return true;
   }
-} listfiles_default_filter;
+};
 
 struct listfiles_ext_filter {
   /** ext w/o the . */
@@ -29,7 +29,7 @@ struct listfiles_ext_filter {
 template <typename Filter>
 bool listfiles(const std::string& dirname,
                std::vector<std::string>& files,
-               Filter filter = listfiles_default_filter,
+               Filter filter = listfiles_default_filter(),
                bool append_dirname = false) {
   DIR *dir = opendir(dirname.c_str());
   if (!dir) return false;
@@ -46,6 +46,12 @@ bool listfiles(const std::string& dirname,
   }
   closedir(dir);
   return true;
+}
+
+inline std::string strip_extension(const std::string& filename) {
+  size_t p = filename.rfind('.');
+  if (p == std::string::npos) return filename;
+  return filename.substr(0, p);
 }
 
 }

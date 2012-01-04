@@ -1,6 +1,7 @@
 #ifndef VENOM_BACKEND_CODE_GENERATOR_H
 #define VENOM_BACKEND_CODE_GENERATOR_H
 
+#include <cassert>
 #include <map>
 #include <string>
 #include <vector>
@@ -35,6 +36,13 @@ public:
     local(true), local_index(local_index) {}
   SymbolReference(const std::string& full_name) :
     local(false), full_name(full_name) {}
+
+  inline bool isLocal() const { return local; }
+  inline size_t getLocalIndex() const {
+    assert(isLocal()); return local_index;
+  }
+  inline std::string& getFullName() { return full_name; }
+  inline const std::string& getFullName() const { return full_name; }
 private:
   bool local;
   size_t local_index;

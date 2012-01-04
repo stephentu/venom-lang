@@ -13,6 +13,7 @@
 #include <ast/include.h>
 #include <backend/codegenerator.h>
 #include <bootstrap/analysis.h>
+#include <util/filesystem.h>
 
 using namespace std;
 
@@ -93,11 +94,13 @@ bool compile(const string& fname, compile_result& result) {
   if (!infile.good()) {
     throw invalid_argument("Invalid filename: " + fname);
   }
-  analysis::SemanticContext ctx("<main>");
-  // bootstrap- ctx takes ownership of root symbols
+  analysis::SemanticContext ctx("<prelude>");
+  // ctx takes ownership of root symbols
   bootstrap::NewBootstrapSymbolTable(&ctx);
   try {
-    unsafe_compile(fname, infile, ctx);
+    analysis::SemanticContext *mainCtx =
+      ctx.newChildContext(util::strip_extension(fname));
+    unsafe_compile(fname, infile, *mainCtx);
   } catch (analysis::ParseErrorException& e) {
     result.result  = compile_result::InvalidSyntax;
     result.message = string("Syntax Error: ") + e.what();
