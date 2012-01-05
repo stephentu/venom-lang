@@ -24,12 +24,14 @@ class ObjectCode;
 class Label {
   friend class CodeGenerator;
 protected:
+  Label() : index(-1) {}
   Label(int64_t index) : index(index) {}
 public:
   inline int64_t getIndex() const { return index; }
-  inline int64_t calcOffset(const Label& that) const {
-    return index - that.index;
+  inline int64_t calcOffset(size_t that) const {
+    return index - that;
   }
+  inline bool isBound() const { return index >= 0; }
 protected:
   int64_t index;
 };
@@ -75,9 +77,16 @@ public:
     }
   }
 
-  /** Returns a new label which points to the current place in
-   * the instruction stream */
+  /** Returns a new, unbound label */
   Label* newLabel();
+
+  void bindLabel(Label *label);
+
+  inline Label* newBoundLabel() {
+    Label *label = newLabel();
+    bindLabel(label);
+    return label;
+  }
 
   /** Returns an index used to reference into the local variable table */
   size_t createLocalVariable(analysis::Symbol* symbol);

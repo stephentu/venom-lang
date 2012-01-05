@@ -12,9 +12,15 @@ namespace backend {
 
 Label*
 CodeGenerator::newLabel() {
-  Label *ret = new Label(instructions.size());
+  Label *ret = new Label;
   labels.push_back(ret);
   return ret;
+}
+
+void
+CodeGenerator::bindLabel(Label* label) {
+  assert(!label->isBound());
+  label->index = instructions.size();
 }
 
 size_t

@@ -10,12 +10,12 @@ using namespace std;
 namespace venom {
 namespace backend {
 
-Instruction* SymbolicInstruction::resolve(ResolutionTable& resTable) {
+Instruction* SymbolicInstruction::resolve(size_t pos, ResolutionTable& resTable) {
   // TODO: assert that the opcode is valid for this type
   return new Instruction(opcode);
 }
 
-Instruction* SInstU32::resolve(ResolutionTable& resTable) {
+Instruction* SInstU32::resolve(size_t pos, ResolutionTable& resTable) {
   switch (opcode) {
   case Instruction::PUSH_CONST:
     return new InstFormatU32(opcode, resTable.getConstantTable()[value]);
@@ -37,28 +37,28 @@ Instruction* SInstU32::resolve(ResolutionTable& resTable) {
   VENOM_NOT_REACHED;
 }
 
-Instruction* SInstLabel::resolve(ResolutionTable& resTable) {
+Instruction* SInstLabel::resolve(size_t pos, ResolutionTable& resTable) {
   switch (opcode) {
   case Instruction::JUMP:
   case Instruction::BRANCH_Z:
   case Instruction::BRANCH_NZ:
-    VENOM_UNIMPLEMENTED;
+    return new InstFormatI32(opcode, value->calcOffset(pos) - 1);
   default: assert(false);
   }
   VENOM_NOT_REACHED;
 }
 
-Instruction* SInstI64::resolve(ResolutionTable& resTable) {
+Instruction* SInstI64::resolve(size_t pos, ResolutionTable& resTable) {
   assert(opcode == Instruction::PUSH_CELL_INT);
   return new InstFormatC(opcode, value);
 }
 
-Instruction* SInstDouble::resolve(ResolutionTable& resTable) {
+Instruction* SInstDouble::resolve(size_t pos, ResolutionTable& resTable) {
   assert(opcode == Instruction::PUSH_CELL_FLOAT);
   return new InstFormatC(opcode, value);
 }
 
-Instruction* SInstBool::resolve(ResolutionTable& resTable) {
+Instruction* SInstBool::resolve(size_t pos, ResolutionTable& resTable) {
   assert(opcode == Instruction::PUSH_CELL_BOOL);
   return new InstFormatC(opcode, value);
 }

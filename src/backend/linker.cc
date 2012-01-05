@@ -55,11 +55,13 @@ struct func_table_functor {
 };
 
 struct inst_resolver_functor {
-  inst_resolver_functor(ResolutionTable* resTable) : resTable(resTable) {}
+  inst_resolver_functor(ResolutionTable* resTable)
+    : resTable(resTable), pos(0) {}
   inline Instruction* operator()(SymbolicInstruction* i) {
-    return i->resolve(*resTable);
+    return i->resolve(pos++, *resTable);
   }
   ResolutionTable* resTable;
+  size_t pos;
 };
 
 struct inst_sum_functor {

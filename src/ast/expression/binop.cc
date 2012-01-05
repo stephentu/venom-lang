@@ -180,21 +180,55 @@ BinopNode::codeGen(CodeGenerator& cg) {
     }
     break;
   }
-  // TODO: implement remaining instructions
-  //case MOD:
-  //case CMP_AND:
-  //case CMP_OR:
-  //case CMP_LT:
-  //case CMP_LE:
-  //case CMP_GT:
-  //case CMP_GE:
-  //case CMP_EQ:
-  //case CMP_NEQ:
-  //case BIT_AND:
-  //case BIT_OR:
-  //case BIT_XOR:
-  //case BIT_LSHIFT:
-  //case BIT_RSHIFT:
+  case MOD:
+  case CMP_LT:
+  case CMP_LE:
+  case CMP_GT:
+  case CMP_GE:
+  case CMP_EQ:
+  case CMP_NEQ:
+  case BIT_AND:
+  case BIT_OR:
+  case BIT_XOR:
+  case BIT_LSHIFT:
+  case BIT_RSHIFT: {
+    right->codeGen(cg);
+    Instruction::Opcode op;
+#define OP_CASE(m) case m: op = Instruction::BINOP_ ## m; break;
+    switch (type) {
+      OP_CASE(MOD)
+      OP_CASE(CMP_LT)
+      OP_CASE(CMP_LE)
+      OP_CASE(CMP_GT)
+      OP_CASE(CMP_GE)
+      OP_CASE(CMP_EQ)
+      OP_CASE(CMP_NEQ)
+      OP_CASE(BIT_AND)
+      OP_CASE(BIT_OR)
+      OP_CASE(BIT_XOR)
+      OP_CASE(BIT_LSHIFT)
+      OP_CASE(BIT_RSHIFT)
+      default: assert(false);
+    }
+#undef OP_CASE
+    cg.emitInst(op);
+    break;
+  }
+  case CMP_AND:
+  case CMP_OR: {
+    Label *shortCircuit = cg.newLabel();
+    Label *done = cg.newLabel();
+    cg.emitInstLabel(
+        type == CMP_AND ? Instruction::BRANCH_Z : Instruction::BRANCH_NZ,
+        shortCircuit);
+    right->codeGen(cg);
+    cg.emitInst(Instruction::TEST);
+    cg.emitInstLabel(Instruction::JUMP, done);
+    cg.bindLabel(shortCircuit);
+    cg.emitInstBool(Instruction::PUSH_CELL_BOOL, type == CMP_OR);
+    cg.bindLabel(done);
+    break;
+  }
   default: assert(false);
   }
 }

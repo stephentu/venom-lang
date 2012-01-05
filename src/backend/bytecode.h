@@ -97,6 +97,8 @@ public:
    *     opnd0 -> ; if (opnd) pc = next_pc + N0 else pc = next_pc
    *   BRANCH_NZ N0
    *     opnd0 -> ; if (!opnd) pc = next_pc + N0 else pc = next_pc
+   *   TEST
+   *     opnd0 -> bool(opnd0)
    *   GET_ATTR_OBJ N0
    *     opnd0 -> opnd0.attr[N0]
    *   GET_ARRAY_ACCESS
@@ -123,6 +125,8 @@ public:
    *     opnd0, opnd1 -> opnd0 / opnd1
    *   BINOP_DIV_FLOAT
    *     opnd0, opnd1 -> opnd0 / opnd1
+   *   BINOP_MOD
+   *     opnd0, opnd1 -> opnd0 & opnd1
    *   BINOP_CMP_AND
    *     opnd0, opnd1 -> opnd0 && opnd1
    *   BINOP_CMP_OR
@@ -180,6 +184,7 @@ public:
     x(UNOP_BIT_NOT) \
     x(BRANCH_Z) \
     x(BRANCH_NZ) \
+    x(TEST) \
     x(GET_ATTR_OBJ) \
     x(GET_ARRAY_ACCESS) \
     x(DUP) \
@@ -194,6 +199,7 @@ public:
     x(BINOP_MULT_FLOAT) \
     x(BINOP_DIV) \
     x(BINOP_DIV_FLOAT) \
+    x(BINOP_MOD) \
     x(BINOP_CMP_AND) \
     x(BINOP_CMP_OR) \
     x(BINOP_CMP_LT) \

@@ -62,7 +62,7 @@ public:
 
   virtual ~SymbolicInstruction() {}
 
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 
   /** Debug helper */
   virtual void printDebug(std::ostream& o) {
@@ -95,7 +95,7 @@ protected:
   SInstU32(Opcode opcode, uint32_t value) :
     SInstBase<uint32_t>(opcode, value) {}
 public:
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 };
 
 //class SInstI32 : public SInstBase<int32_t> {
@@ -104,7 +104,7 @@ public:
 //  SInstI32(Opcode opcode, int32_t value) :
 //    SInstBase<int32_t>(opcode, value) {}
 //public:
-//  virtual Instruction* resolve(ResolutionTable& resTable);
+//  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 //};
 
 class SInstLabel : public SInstBase<Label*> {
@@ -113,7 +113,7 @@ protected:
   SInstLabel(Opcode opcode, Label* value) :
     SInstBase<Label*>(opcode, value) {}
 public:
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
   virtual void printDebug(std::ostream& o);
 };
 
@@ -123,7 +123,7 @@ protected:
   SInstI64(Opcode opcode, int64_t value) :
     SInstBase<int64_t>(opcode, value) {}
 public:
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 };
 
 class SInstDouble : public SInstBase<double> {
@@ -132,7 +132,7 @@ protected:
   SInstDouble(Opcode opcode, double value) :
     SInstBase<double>(opcode, value) {}
 public:
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 };
 
 class SInstBool : public SInstBase<bool> {
@@ -141,7 +141,7 @@ protected:
   SInstBool(Opcode opcode, bool value) :
     SInstBase<bool>(opcode, value) {}
 public:
-  virtual Instruction* resolve(ResolutionTable& resTable);
+  virtual Instruction* resolve(size_t pos, ResolutionTable& resTable);
 };
 
 }

@@ -202,6 +202,11 @@ bool Instruction::BRANCH_NZ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
   return true;
 }
 
+bool Instruction::TEST_impl(ExecutionContext& ctx, venom_cell& opnd0) {
+  ctx.program_stack.push(opnd0.truthTest());
+  return true;
+}
+
 bool Instruction::GET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
   InstFormatU32 *self = asFormatU32();
   ctx.program_stack.push(opnd0.asRawObject()->cell(self->N0));
@@ -289,6 +294,11 @@ bool Instruction::BINOP_DIV_impl(ExecutionContext& ctx, venom_cell& opnd0, venom
 
 bool Instruction::BINOP_DIV_FLOAT_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
   IMPL_BINOP_FLOAT(/);
+  return true;
+}
+
+bool Instruction::BINOP_MOD_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
+  IMPL_BINOP_INT(%);
   return true;
 }
 
