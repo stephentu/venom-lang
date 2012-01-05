@@ -3,9 +3,15 @@
 
 #include <cassert>
 #include <stack>
+#include <vector>
 
 #include <backend/bytecode.h>
+#include <backend/linker.h>
+
 #include <runtime/venomobject.h>
+
+#include <util/container.h>
+#include <util/stl.h>
 
 namespace venom {
 namespace backend {
@@ -31,17 +37,46 @@ public:
     virtual void handleResult(runtime::venom_cell& result) = 0;
   };
 
-  /** Does *not* take ownership of program_counter or constant_pool */
-  ExecutionContext(Instruction** program_counter,
-                   runtime::venom_cell** constant_pool,
-                   runtime::venom_class_object** class_obj_pool)
-    : program_counter(program_counter), constant_pool(constant_pool),
-      class_obj_pool(class_obj_pool), is_executing(false) {}
+  class DefaultCallback : public Callback {
+  public:
+    virtual void handleResult(runtime::venom_cell& result) {};
+  };
+
+  /** Does *not* take ownership of executable */
+  ExecutionContext(Executable* code)
+    : code(code),
+      program_counter(code->instructions.begin()),
+      constant_pool(NULL),
+      class_obj_pool(code->class_obj_pool.begin()),
+      is_executing(false) {}
+
+  ~ExecutionContext() { assert(!constant_pool); }
 
   void execute(Callback& callback);
 
   /** Returns the currently executing context in the current thread */
   inline static ExecutionContext* current_context() { return _current; }
+
+private:
+  struct scoped_constants {
+    scoped_constants(ExecutionContext* ctx)
+      : ctx(ctx) { ctx->initConstants(); }
+    ~scoped_constants() { ctx->releaseConstants(); }
+    ExecutionContext* ctx;
+  };
+
+  void initConstants();
+  void releaseConstants();
+
+  struct state_cleaner {
+    state_cleaner(ExecutionContext* ctx) : ctx(ctx) {}
+    ~state_cleaner() {
+      util::stack_clear(ctx->program_stack);
+      util::stack_clear(ctx->local_variables_stack);
+    }
+    ExecutionContext* ctx;
+  };
+
 protected:
 
   /**
@@ -83,6 +118,9 @@ protected:
     local_variables_stack.push(std::vector<runtime::venom_cell>());
   }
   inline void pop_frame() { local_variables_stack.pop(); }
+
+  /** Linked program */
+  Executable* code;
 
   /** Complete linked program instruction stream */
   Instruction** program_counter;
@@ -148,6 +186,8 @@ private:
   size_t num_args;
   bool native;
 };
+
+typedef std::vector<FunctionDescriptor*> FuncDescVec;
 
 }
 }

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <vector>
 #include <utility>
@@ -132,6 +133,10 @@ Iter1 binpred_find_if(Iter1 first1, Iter1 last1, Iter2 first2, BinaryPredicate p
   return first1;
 }
 
+/**
+ * This is actually std::accumulate
+ * TODO: replace?
+ */
 template <typename Iter, typename Accum, typename BinaryFunctor>
 Accum foldl(Iter begin, Iter end, Accum start, BinaryFunctor f) {
   Accum cur = start;
@@ -171,6 +176,12 @@ inline OutputIter zip(InputIter1 first1, InputIter1 last1,
     *output++ = std::make_pair(*first1++, *first2++);
   }
   return output;
+}
+
+template <typename T>
+inline void stack_clear(std::stack<T>& s) {
+  while (!s.empty()) s.pop();
+  assert(s.empty());
 }
 
 template <typename T>

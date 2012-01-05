@@ -234,6 +234,13 @@ public:
 
   Instruction(Opcode opcode) : opcode(opcode) {}
 
+  /** NOTE: we do *not* need a virtual destructor here,
+   * even though we will delete Instruction* pointers which
+   * point to subclasses. This is because all subclasses
+   * only contain primitive data, so we don't need to call any
+   * special destructors */
+  ~Instruction() {}
+
   /** Execute this instruction given the execution context.  Returns true if
    * the ExecutionContext can simply move on to the next bytecode instruction
    * after execution, or false if this instruction's execution modifies the
@@ -268,6 +275,14 @@ private:
  InstFormatC* asFormatC();
 
 };
+
+/**
+ * WARNING: Subclasses *cannot* contain non-primitive data (anything with
+ * a destructor), since we do not have a virtual destructor for
+ * Instruction
+ *
+ * TODO: can we assert this at compile time somehow?
+ */
 
 /**
  * An instruction which contains

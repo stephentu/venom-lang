@@ -1,4 +1,7 @@
+#include <algorithm>
+
 #include <backend/vm.h>
+#include <runtime/venomstring.h>
 #include <util/scopehelpers.h>
 
 using namespace std;
@@ -12,9 +15,11 @@ void ExecutionContext::execute(Callback& callback) {
   util::ScopedBoolean sb(is_executing);
   util::ScopedVariable<ExecutionContext*> sv(_current, this);
   new_frame();
+  scoped_constants sc(this);
+  state_cleaner cleaner(this);
   while (true) {
     if ((*program_counter)->execute(*this)) program_counter++;
-    if (!(*program_counter)) {
+    if (program_counter == code->instructions.end()) {
       // end of stream
       venom_cell ret = program_stack.top();
       program_stack.pop();
@@ -25,9 +30,31 @@ void ExecutionContext::execute(Callback& callback) {
   }
 }
 
+struct const_init_functor {
+  inline venom_cell* operator()(const string& s) const {
+    return new venom_cell(new venom_string(s));
+  }
+};
+
+void ExecutionContext::initConstants() {
+  assert(!constant_pool);
+  constant_pool = new venom_cell* [code->constant_pool.size()];
+  transform(code->constant_pool.begin(), code->constant_pool.end(),
+            constant_pool, const_init_functor());
+}
+
+void ExecutionContext::releaseConstants() {
+  assert(constant_pool);
+  util::delete_pointers(
+      constant_pool, constant_pool + code->constant_pool.size());
+  delete [] constant_pool;
+  constant_pool = NULL;
+}
+
 void ExecutionContext::resumeExecution(Instruction** pc) {
   assert(pc);
   assert(is_executing);
+  assert(constant_pool);
   // push the current pc as the ret addr
   program_stack.push(venom_cell(int64_t(program_counter)));
   // new frame

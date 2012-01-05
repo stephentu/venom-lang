@@ -5,12 +5,14 @@
 #include <vector>
 
 #include <backend/bytecode.h>
+#include <backend/linker.h>
 #include <backend/vm.h>
 
 #include <runtime/builtin.h>
 #include <runtime/venomobject.h>
 #include <runtime/venomstring.h>
 
+#include <util/container.h>
 #include <util/stl.h>
 
 class venom_test_check_fail : public std::runtime_error {
@@ -49,7 +51,7 @@ struct eq_check : public base_check {
   venom_cell expect;
 };
 
-static venom_class_object* ClassObjPool[] = {
+static venom_class_object* obj_pool[] = {
   &venom_object::ObjClassTable,
   &venom_string::StringClassTable,
   new venom_class_object("test_obj", sizeof(venom_object), 2,
@@ -78,15 +80,21 @@ private:
   Functor functor;
 };
 
+typedef Executable::ConstPool ConstPool;
+typedef Executable::IStream IStream;
+typedef Executable::ClassObjPool ClassObjPool;
+
 template <typename Functor>
-void run_test_success_op(const string& name, Instruction** istream, Functor f) {
+void run_test_success_op(const string& name, const IStream& istream, Functor f) {
   TestCallback<Functor> callback(name, f);
-  ExecutionContext ctx(istream, NULL, ClassObjPool);
+  Executable exec(
+      ConstPool(), ClassObjPool(obj_pool, VENOM_NELEMS(obj_pool)), istream);
+  ExecutionContext ctx(&exec);
   f.beforeTest();
   ctx.execute(callback);
 }
 
-void run_test_success(const string& name, Instruction** istream,
+void run_test_success(const string& name, const IStream& istream,
                       const venom_cell& expect) {
   run_test_success_op(name, istream, eq_check(expect));
 }
@@ -115,6 +123,12 @@ struct print_check : public base_check {
   streambuf* save;
 };
 
+static IStream makeIStream(Instruction **istream, size_t n_elems) {
+  Instruction **i = new Instruction* [n_elems];
+  memcpy(i, istream, n_elems * sizeof(Instruction*));
+  return IStream(i, n_elems);
+}
+
 int main(int argc, char **argv) {
   {
     Instruction *istream[] = {
@@ -124,9 +138,10 @@ int main(int argc, char **argv) {
       new InstFormatU32(Instruction::SET_ATTR_OBJ, 0),
       new Instruction(Instruction::PUSH_CELL_NIL),
       new InstFormatU32(Instruction::SET_ATTR_OBJ, 1),
-      NULL
     };
-    run_test_success_op("ALLOC_OBJ", istream, alloc_obj_check());
+    run_test_success_op("ALLOC_OBJ",
+                        makeIStream(istream, VENOM_NELEMS(istream)),
+                        alloc_obj_check());
   }
 
   {
@@ -134,9 +149,10 @@ int main(int argc, char **argv) {
       new InstFormatC(Instruction::PUSH_CELL_INT, 32),
       new InstFormatC(Instruction::PUSH_CELL_INT, 64),
       new Instruction(Instruction::BINOP_ADD),
-      NULL
     };
-    run_test_success("BINOP_ADD", istream, venom_cell(32 + 64));
+    run_test_success("BINOP_ADD",
+                     makeIStream(istream, VENOM_NELEMS(istream)),
+                     venom_cell(32 + 64));
   }
 
   {
@@ -205,9 +221,10 @@ int main(int argc, char **argv) {
       new InstFormatI32(Instruction::JUMP, -15 /* loop */),
 
       new InstFormatU32(Instruction::LOAD_LOCAL_VAR, 1),
-      NULL
     };
-    run_test_success("fibn", istream, venom_cell(5 /* fib(5) */));
+    run_test_success("fibn",
+                     makeIStream(istream, VENOM_NELEMS(istream)),
+                     venom_cell(5 /* fib(5) */));
   }
 
   {
@@ -215,10 +232,11 @@ int main(int argc, char **argv) {
       new InstFormatC(Instruction::PUSH_CELL_INT, 1337),
       new InstFormatIPtr(Instruction::CALL_NATIVE,
                          intptr_t(BuiltinPrintDescriptor)),
-      NULL,
     };
     stringstream sb;
-    run_test_success_op("print", istream, print_check(&sb));
+    run_test_success_op("print",
+                        makeIStream(istream, VENOM_NELEMS(istream)),
+                        print_check(&sb));
   }
 
   return 0;

@@ -1,9 +1,12 @@
 #include <analysis/type.h>
 #include <bootstrap/analysis.h>
+#include <runtime/builtin.h>
 #include <util/stl.h>
 
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
+using namespace venom::runtime;
 
 namespace venom {
 namespace bootstrap {
@@ -87,6 +90,13 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                          InstantiatedType::VoidType, true);
 
   return root;
+}
+
+Linker::FuncDescMap GetBuiltinFunctionMap() {
+  Linker::FuncDescMap ret;
+  // TODO: dynamically load this stuff, instead of hardcode
+  ret["<prelude>.print"] = BuiltinPrintDescriptor;
+  return ret;
 }
 
 }

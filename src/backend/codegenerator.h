@@ -12,10 +12,14 @@
 
 #include <backend/symbolicbytecode.h>
 
+#include <util/container.h>
 #include <util/stl.h>
 
 namespace venom {
 namespace backend {
+
+/** Forward decl */
+class ObjectCode;
 
 class Label {
   friend class CodeGenerator;
@@ -105,7 +109,7 @@ public:
 
   void emitInstU32(Instruction::Opcode opcode, uint32_t n0);
 
-  void emitInstI32(Instruction::Opcode opcode, int32_t n0);
+  //void emitInstI32(Instruction::Opcode opcode, int32_t n0);
 
   void emitInstLabel(Instruction::Opcode opcode, Label* label);
 
@@ -114,6 +118,9 @@ public:
   void emitInstDouble(Instruction::Opcode opcode, double n0);
 
   void emitInstBool(Instruction::Opcode opcode, bool n0);
+
+  /** Create object code representation */
+  ObjectCode* createObjectCode();
 
   /** Debug helpers */
   void printDebugStream();
@@ -128,50 +135,14 @@ private:
   /** Instruction stream */
   std::vector<SymbolicInstruction*> instructions;
 
-  template <typename SearchType, typename StoreType>
-  struct container_base {
-    typedef std::vector<StoreType> vec_type;
-    typedef std::map<SearchType, size_t> map_type;
-
-    vec_type vec;
-    map_type map;
-
-    template <typename Functor>
-    size_t createImpl(const SearchType& t, Functor f) {
-      typename map_type::iterator it = map.find(t);
-      if (it == map.end()) {
-        size_t ret = vec.size();
-        vec.push_back(f(t));
-        map[t] = ret;
-        return ret;
-      } else {
-        return it->second;
-      }
-    }
-  };
-
-  template <typename SearchType>
-  struct container_pool_functor {
-    inline SearchType operator()(const SearchType& t) const {
-      return t;
-    }
-  };
-
-  template <typename SearchType>
-  struct container_pool : public container_base<SearchType, SearchType> {
-    inline size_t create(const SearchType& t) {
-      return createImpl(t, container_pool_functor<SearchType>());
-    }
-  };
-
   template <typename SearchType>
   struct container_table_local_functor {
-    container_table_local_functor(container_pool<SearchType>* pool)
+    container_table_local_functor(util::container_pool<SearchType>* pool)
       : pool(pool) {}
     inline SymbolReference operator()(const SearchType& t) {
       return SymbolReference(pool->create(t));
     }
-    container_pool<SearchType>* pool;
+    util::container_pool<SearchType>* pool;
   };
 
   template <typename SearchType>
@@ -182,32 +153,33 @@ private:
   };
 
   template <typename SearchType>
-  struct container_table : public container_base<SearchType, SymbolReference> {
-    container_table(container_pool<SearchType>* pool): pool(pool) {}
+  struct container_table :
+  public util::container_base<SearchType, SymbolReference> {
+    container_table(util::container_pool<SearchType>* pool): pool(pool) {}
     inline size_t createLocal(const SearchType& t) {
       return createImpl(t, container_table_local_functor<SearchType>(pool));
     }
     inline size_t createExternal(const SearchType& t) {
       return createImpl(t, container_table_external_functor<SearchType>());
     }
-    container_pool<SearchType>* pool;
+    util::container_pool<SearchType>* pool;
   };
 
   /** Local variables */
-  container_pool<analysis::Symbol*> local_variable_pool;
+  util::container_pool<analysis::Symbol*> local_variable_pool;
 
   /** Constant pool */
-  container_pool<std::string> constant_pool;
+  util::container_pool<std::string> constant_pool;
 
   /** Class pool - this is where the classes defined in this module
    * are organized */
-  container_pool<analysis::ClassSymbol*> class_pool;
+  util::container_pool<analysis::ClassSymbol*> class_pool;
 
   /** Class reference table */
   container_table<analysis::ClassSymbol*> class_reference_table;
 
   /** Function pool */
-  container_pool<analysis::FuncSymbol*> func_pool;
+  util::container_pool<analysis::FuncSymbol*> func_pool;
 
   /** Function reference table */
   container_table<analysis::FuncSymbol*> func_reference_table;

@@ -1,7 +1,10 @@
 #ifndef VENOM_RUNTIME_STRING_H
 #define VENOM_RUNTIME_STRING_H
 
+#include <cassert>
+#include <cstdlib>
 #include <string>
+
 #include <runtime/venomobject.h>
 
 namespace venom {
@@ -11,33 +14,53 @@ class venom_string : public venom_object {
 public:
   /** This constructor is not invocable from user code */
   venom_string(const char *data, size_t n)
-    : venom_object(&StringClassTable), data(data, n) {}
+    : venom_object(&StringClassTable) { initData(data, n); }
 
   /** This constructor is not invocable from user code */
   venom_string(const std::string& data)
-    : venom_object(&StringClassTable), data(data) {}
+    : venom_object(&StringClassTable) { initData(data.data(), data.size()); }
+
+protected:
+  ~venom_string() { releaseData(); }
 
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 
+  inline void initData(const char *data, size_t n) {
+    this->data = (char *) malloc(n);
+    this->size = n;
+    assert(this->data);
+    memcpy(this->data, data, n);
+  }
+
+  inline void releaseData() {
+    if (data) {
+      free(data);
+      data = NULL;
+      size = 0;
+    }
+  }
 public:
   static venom_class_object StringClassTable;
 
-  inline std::string& getData() { return data; }
-  inline const std::string& getData() const { return data; }
+  inline std::string getData() const {
+    return data ? std::string(data, size) : "";
+  }
 
   static venom_object_ptr
   init(backend::ExecutionContext* ctx, venom_object_ptr self) {
-    new (&(static_cast<venom_string*>(self.get())->data)) std::string();
+    venom_string* s = static_cast<venom_string*>(self.get());
+    s->data = NULL;
+    s->size = 0;
     return venom_object::NilPtr;
   }
 
   static venom_object_ptr
   release(backend::ExecutionContext* ctx, venom_object_ptr self) {
-    using namespace std;
-    static_cast<venom_string*>(self.get())->data.~string();
+    venom_string* s = static_cast<venom_string*>(self.get());
+    s->releaseData();
     return venom_object::NilPtr;
   }
 
@@ -47,7 +70,8 @@ public:
   }
 
 private:
-  std::string data;
+  char* data;
+  size_t size;
 };
 
 }

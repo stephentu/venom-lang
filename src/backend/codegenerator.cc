@@ -1,5 +1,6 @@
 #include <ast/statement/node.h>
 #include <backend/codegenerator.h>
+#include <backend/linker.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -82,11 +83,11 @@ CodeGenerator::emitInstU32(SymbolicInstruction::Opcode opcode, uint32_t n0) {
   instructions.push_back(inst);
 }
 
-void
-CodeGenerator::emitInstI32(SymbolicInstruction::Opcode opcode, int32_t n0) {
-  SInstI32 *inst = new SInstI32(opcode, n0);
-  instructions.push_back(inst);
-}
+//void
+//CodeGenerator::emitInstI32(SymbolicInstruction::Opcode opcode, int32_t n0) {
+//  SInstI32 *inst = new SInstI32(opcode, n0);
+//  instructions.push_back(inst);
+//}
 
 void
 CodeGenerator::emitInstLabel(SymbolicInstruction::Opcode opcode, Label* label) {
@@ -110,6 +111,15 @@ void
 CodeGenerator::emitInstBool(SymbolicInstruction::Opcode opcode, bool n0) {
   SInstBool *inst = new SInstBool(opcode, n0);
   instructions.push_back(inst);
+}
+
+ObjectCode*
+CodeGenerator::createObjectCode() {
+  return new ObjectCode(
+      constant_pool.vec,
+      class_reference_table.vec,
+      func_reference_table.vec,
+      instructions);
 }
 
 void

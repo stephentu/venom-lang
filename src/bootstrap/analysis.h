@@ -4,6 +4,8 @@
 #include <analysis/semanticcontext.h>
 #include <analysis/symboltable.h>
 
+#include <backend/linker.h>
+
 namespace venom {
 namespace bootstrap {
 
@@ -17,6 +19,8 @@ namespace bootstrap {
  */
 analysis::SymbolTable*
 NewBootstrapSymbolTable(analysis::SemanticContext* ctx);
+
+backend::Linker::FuncDescMap GetBuiltinFunctionMap();
 
 }
 }

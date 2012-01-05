@@ -2,15 +2,49 @@
 #define VENOM_BACKEND_SYMBOLIC_BYTECODE_H
 
 #include <iostream>
+#include <vector>
 
 #include <backend/bytecode.h>
 #include <backend/codegenerator.h>
+#include <runtime/venomobject.h>
 
 namespace venom {
 namespace backend {
 
 /** Forward decl */
 class Label;
+class FunctionDescriptor;
+
+class ResolutionTable {
+public:
+  typedef std::vector<size_t> ConstTbl;
+  typedef std::vector<size_t> ClassRefTbl;
+  typedef std::vector<FunctionDescriptor*> FuncRefTbl;
+
+  /** Does NOT take ownership of arguments */
+  ResolutionTable(ConstTbl* constant_table,
+                  ClassRefTbl* class_ref_table,
+                  FuncRefTbl* func_ref_table) :
+    constant_table(constant_table),
+    class_ref_table(class_ref_table),
+    func_ref_table(func_ref_table) {}
+
+  inline ConstTbl& getConstantTable() { return *constant_table; }
+  inline const ConstTbl& getConstantTable() const { return *constant_table; }
+
+  inline ClassRefTbl& getClassRefTable() { return *class_ref_table; }
+  inline const ClassRefTbl& getClassRefTable() const {
+    return *class_ref_table;
+  }
+
+  inline FuncRefTbl& getFuncRefTable() { return *func_ref_table; }
+  inline const FuncRefTbl& getFuncRefTable() const { return *func_ref_table; }
+
+private:
+  ConstTbl* constant_table;
+  ClassRefTbl* class_ref_table;
+  FuncRefTbl* func_ref_table;
+};
 
 /**
  * A SymbolicInstruction is the type of instruction generated
@@ -26,13 +60,14 @@ class SymbolicInstruction {
 public:
   typedef Instruction::Opcode Opcode;
 
+  virtual ~SymbolicInstruction() {}
+
+  virtual Instruction* resolve(ResolutionTable& resTable);
+
   /** Debug helper */
   virtual void printDebug(std::ostream& o) {
     o << Instruction::stringify(opcode) << std::endl;
   }
-
-  virtual ~SymbolicInstruction() {}
-
 protected:
   SymbolicInstruction(Opcode opcode) : opcode(opcode) {}
 
@@ -59,14 +94,18 @@ class SInstU32 : public SInstBase<uint32_t> {
 protected:
   SInstU32(Opcode opcode, uint32_t value) :
     SInstBase<uint32_t>(opcode, value) {}
+public:
+  virtual Instruction* resolve(ResolutionTable& resTable);
 };
 
-class SInstI32 : public SInstBase<int32_t> {
-  friend class CodeGenerator;
-protected:
-  SInstI32(Opcode opcode, int32_t value) :
-    SInstBase<int32_t>(opcode, value) {}
-};
+//class SInstI32 : public SInstBase<int32_t> {
+//  friend class CodeGenerator;
+//protected:
+//  SInstI32(Opcode opcode, int32_t value) :
+//    SInstBase<int32_t>(opcode, value) {}
+//public:
+//  virtual Instruction* resolve(ResolutionTable& resTable);
+//};
 
 class SInstLabel : public SInstBase<Label*> {
   friend class CodeGenerator;
@@ -74,6 +113,7 @@ protected:
   SInstLabel(Opcode opcode, Label* value) :
     SInstBase<Label*>(opcode, value) {}
 public:
+  virtual Instruction* resolve(ResolutionTable& resTable);
   virtual void printDebug(std::ostream& o);
 };
 
@@ -82,6 +122,8 @@ class SInstI64 : public SInstBase<int64_t> {
 protected:
   SInstI64(Opcode opcode, int64_t value) :
     SInstBase<int64_t>(opcode, value) {}
+public:
+  virtual Instruction* resolve(ResolutionTable& resTable);
 };
 
 class SInstDouble : public SInstBase<double> {
@@ -89,6 +131,8 @@ class SInstDouble : public SInstBase<double> {
 protected:
   SInstDouble(Opcode opcode, double value) :
     SInstBase<double>(opcode, value) {}
+public:
+  virtual Instruction* resolve(ResolutionTable& resTable);
 };
 
 class SInstBool : public SInstBase<bool> {
@@ -96,6 +140,8 @@ class SInstBool : public SInstBase<bool> {
 protected:
   SInstBool(Opcode opcode, bool value) :
     SInstBase<bool>(opcode, value) {}
+public:
+  virtual Instruction* resolve(ResolutionTable& resTable);
 };
 
 }

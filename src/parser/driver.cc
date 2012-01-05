@@ -10,9 +10,14 @@
 #include <parser/scanner.h>
 
 #include <analysis/semanticcontext.h>
+
 #include <ast/include.h>
+
 #include <backend/codegenerator.h>
+#include <backend/vm.h>
+
 #include <bootstrap/analysis.h>
+
 #include <util/filesystem.h>
 
 using namespace std;
@@ -83,9 +88,18 @@ unsafe_compile(const string& fname, fstream& infile,
   pctx.stmts->initSymbolTable(ctx.getRootSymbolTable()->newChildScope(NULL));
   pctx.stmts->semanticCheck(&ctx);
   pctx.stmts->typeCheck(&ctx);
+
   //backend::CodeGenerator cg(&ctx);
   //pctx.stmts->codeGen(cg);
   //cg.printDebugStream();
+  //backend::ObjectCode *objCode = cg.createObjectCode();
+
+  // TODO: move this out of unsafe_compile()
+  //backend::Linker linker(bootstrap::GetBuiltinFunctionMap());
+  //backend::Executable *exec = linker.link(util::vec1(objCode));
+  //backend::ExecutionContext execCtx(exec);
+  //backend::ExecutionContext::DefaultCallback callback;
+  //execCtx.execute(callback);
   return pctx.stmts;
 }
 
