@@ -88,8 +88,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     InstantiatedType::VoidType;
 
   if (!isCtor() && (locCtx & ASTNode::TopLevelClassBody)) {
-    ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(symbols->getOwner());
-    assert(cdn);
+    assert(dynamic_cast<ClassDeclNode*>(symbols->getOwner()));
 
     // check that type-signature matches for overrides
     TypeTranslator t;

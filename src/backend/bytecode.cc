@@ -91,7 +91,7 @@ bool Instruction::PUSH_CONST_impl(ExecutionContext& ctx) {
 
 bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
-  ctx.program_stack.push(ctx.local_variables().at(self->N0));
+  ctx.program_stack.push(ctx.local_variables()[self->N0]);
   return true;
 }
 
@@ -145,7 +145,7 @@ bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0)
   InstFormatU32 *self = asFormatU32();
   vector<venom_cell> &vars = ctx.local_variables();
   if (self->N0 >= vars.size()) vars.resize(self->N0 + 1);
-  vars.at(self->N0) = opnd0;
+  vars[self->N0] = opnd0;
   return true;
 }
 

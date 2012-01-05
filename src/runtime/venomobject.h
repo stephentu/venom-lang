@@ -73,15 +73,17 @@ public:
   ref_ptr<venom_object> asObject() const;
   ref_ptr<venom_object> box() const;
 
-  bool truthTest() const {
+  inline bool truthTest() const {
     assert(isInitialized());
+    if (VENOM_LIKELY(type == BoolType)) return data.bool_value;
     switch (type) {
     case IntType: return data.int_value;
     case DoubleType: return data.double_value;
-    case BoolType: return data.bool_value;
+    // TODO: watch out for boxed primitives...
     case ObjType: return data.obj;
-    default: VENOM_NOT_REACHED;
+    default: assert(false);
     }
+    return false;
   }
   inline bool falseTest() const { return !truthTest(); }
 
