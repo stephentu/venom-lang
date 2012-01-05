@@ -21,6 +21,9 @@
 #include <util/filesystem.h>
 
 using namespace std;
+using namespace venom::analysis;
+using namespace venom::backend;
+using namespace venom::bootstrap;
 
 namespace venom {
 
@@ -67,9 +70,9 @@ void Driver::error(const string& m)
     cerr << m << endl;
 }
 
-ast::ASTStatementNode*
+void
 unsafe_compile(const string& fname, fstream& infile,
-               analysis::SemanticContext& ctx) {
+               SemanticContext& ctx) {
   ParseContext pctx;
   Driver driver(pctx);
   if (global_compile_opts.trace_lex)   driver.trace_scanning = true;
@@ -77,7 +80,7 @@ unsafe_compile(const string& fname, fstream& infile,
   bool validSyntax = driver.parse_stream(infile, fname);
   if (!validSyntax) {
     // TODO better error message
-    throw analysis::ParseErrorException("Invalid syntax");
+    throw ParseErrorException("Invalid syntax");
   }
   assert(pctx.stmts);
   ctx.setModuleRoot(pctx.stmts);
@@ -89,41 +92,53 @@ unsafe_compile(const string& fname, fstream& infile,
   pctx.stmts->semanticCheck(&ctx);
   pctx.stmts->typeCheck(&ctx);
 
-  //backend::CodeGenerator cg(&ctx);
-  //pctx.stmts->codeGen(cg);
-  //cg.printDebugStream();
-  //backend::ObjectCode *objCode = cg.createObjectCode();
+  if (global_compile_opts.semantic_check_only) return;
 
-  // TODO: move this out of unsafe_compile()
-  //backend::Linker linker(bootstrap::GetBuiltinFunctionMap());
-  //backend::Executable *exec = linker.link(util::vec1(objCode));
-  //backend::ExecutionContext execCtx(exec);
-  //backend::ExecutionContext::DefaultCallback callback;
-  //execCtx.execute(callback);
-  return pctx.stmts;
+  CodeGenerator cg(&ctx);
+  pctx.stmts->codeGen(cg);
+  if (global_compile_opts.print_bytecode) cg.printDebugStream();
+  ctx.setObjectCode(cg.createObjectCode());
 }
 
-bool compile(const string& fname, compile_result& result) {
+static void exec(SemanticContext& ctx) {
+  Linker linker(GetBuiltinFunctionMap());
+  vector<ObjectCode*> objs;
+  ctx.collectObjectCode(objs);
+  Executable *exec = linker.link(objs);
+  ExecutionContext execCtx(exec);
+  ExecutionContext::DefaultCallback callback;
+  execCtx.execute(callback);
+  delete exec;
+}
+
+bool compile_and_exec(const string& fname, compile_result& result) {
+  result.result  = compile_result::Success;
+  result.message = "";
+
   fstream infile(fname.c_str());
   if (!infile.good()) {
     throw invalid_argument("Invalid filename: " + fname);
   }
-  analysis::SemanticContext ctx("<prelude>");
+
+  SemanticContext ctx("<prelude>");
   // ctx takes ownership of root symbols
-  bootstrap::NewBootstrapSymbolTable(&ctx);
+  NewBootstrapSymbolTable(&ctx);
+
   try {
-    analysis::SemanticContext *mainCtx =
+    SemanticContext *mainCtx =
       ctx.newChildContext(util::strip_extension(fname));
     unsafe_compile(fname, infile, *mainCtx);
-  } catch (analysis::ParseErrorException& e) {
+    if (global_compile_opts.semantic_check_only) return true;
+    exec(*mainCtx);
+  } catch (ParseErrorException& e) {
     result.result  = compile_result::InvalidSyntax;
     result.message = string("Syntax Error: ") + e.what();
     return false;
-  } catch (analysis::SemanticViolationException& e) {
+  } catch (SemanticViolationException& e) {
     result.result  = compile_result::SemanticError;
     result.message = string("Semantic Violation: ") + e.what();
     return false;
-  } catch (analysis::TypeViolationException& e) {
+  } catch (TypeViolationException& e) {
     result.result  = compile_result::TypeError;
     result.message = string("Typecheck Violation: ") + e.what();
     return false;
@@ -132,8 +147,6 @@ bool compile(const string& fname, compile_result& result) {
     result.message = string("Uncaught Exception: ") + e.what();
     return false;
   }
-  result.result  = compile_result::Success;
-  result.message = "";
   return true;
 }
 

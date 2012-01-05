@@ -90,10 +90,13 @@ public:
 struct compile_opts {
   compile_opts()
     : trace_lex(false), trace_parse(false),
-      print_ast(false), venom_import_path(".") {}
+      print_ast(false), print_bytecode(false),
+      semantic_check_only(false), venom_import_path(".") {}
   bool trace_lex;
   bool trace_parse;
   bool print_ast;
+  bool print_bytecode;
+  bool semantic_check_only;
   std::string venom_import_path;
 };
 extern compile_opts global_compile_opts;
@@ -111,12 +114,12 @@ struct compile_result {
 };
 
 /** Used internally */
-ast::ASTStatementNode*
+void
 unsafe_compile(const std::string& fname, std::fstream& infile,
                analysis::SemanticContext& ctx);
 
 /** Reads from global_compile_opts */
-bool compile(const std::string& fname, compile_result& result);
+bool compile_and_exec(const std::string& fname, compile_result& result);
 
 } // namespace venom
 

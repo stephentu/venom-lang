@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
 
   if (!fname.empty()) {
     compile_result result;
-    if (compile(fname, result)) {
+    // TODO: exit code of program
+    if (compile_and_exec(fname, result)) {
       return 0;
     } else {
       cerr << result.message << endl;
@@ -29,6 +30,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  // TODO: build a real repl
   string line;
   while (cout << "input: " && getline(cin, line) && !line.empty()) {
     ParseContext pctx;

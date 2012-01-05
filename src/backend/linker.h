@@ -23,17 +23,25 @@ class ObjectCode {
 public:
   typedef std::vector<std::string> ConstPool;
   typedef std::vector<SymbolicInstruction*> IStream;
+  typedef std::vector<Label*> LabelVec;
   typedef std::vector<SymbolReference> RefTable;
 
-  /** does NOT take ownership of instructions */
+  /** takes ownership of instructions + labels */
   ObjectCode(const ConstPool& constant_pool,
              const RefTable& class_reference_table,
              const RefTable& func_reference_table,
-             const IStream& instructions) :
+             const IStream& instructions,
+             const LabelVec& labels) :
     constant_pool(constant_pool),
     class_reference_table(class_reference_table),
     func_reference_table(func_reference_table),
-    instructions(instructions) {}
+    instructions(instructions),
+    labels(labels) {}
+
+  ~ObjectCode() {
+    util::delete_pointers(labels.begin(), labels.end());
+    util::delete_pointers(instructions.begin(), instructions.end());
+  }
 
   inline ConstPool& getConstantPool() { return constant_pool; }
   inline const ConstPool& getConstantPool() const { return constant_pool; }
@@ -52,6 +60,7 @@ private:
   RefTable class_reference_table;
   RefTable func_reference_table;
   IStream instructions;
+  LabelVec labels;
 };
 
 class Executable {

@@ -3,16 +3,20 @@
 #include <analysis/semanticcontext.h>
 #include <ast/expression/node.h>
 #include <ast/statement/node.h>
+#include <backend/linker.h>
 
 using namespace std;
 using namespace venom::ast;
+using namespace venom::backend;
 
 namespace venom {
 namespace analysis {
 
 SemanticContext::~SemanticContext() {
-  // we have ownership of moduleRoot + children + types + rootSymbols
+  // we have ownership of:
+  // moduleRoot + objectCode + children + types + rootSymbols
   if (moduleRoot) delete moduleRoot;
+  if (objectCode) delete objectCode;
   util::delete_pointers(children.begin(), children.end());
   util::delete_pointers(types.begin(), types.end());
   if (!parent) {
@@ -24,6 +28,14 @@ SemanticContext::~SemanticContext() {
 string SemanticContext::getFullModuleName() const {
   // TODO: implement me
   return moduleName;
+}
+
+void SemanticContext::collectObjectCode(vector<ObjectCode*>& objCodes) {
+  if (objectCode) objCodes.push_back(objectCode);
+  for (vector<SemanticContext*>::iterator it = children.begin();
+       it != children.end(); ++it) {
+    collectObjectCode(objCodes);
+  }
 }
 
 SemanticContext* SemanticContext::findModule(const util::StrVec& names) {

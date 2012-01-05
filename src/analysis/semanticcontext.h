@@ -16,24 +16,20 @@ namespace venom {
 
 // TODO: clean up these forward declarations
 
-namespace analysis {
-  /** Forward decl for NewBootstrapSymbolTable forward decl */
-  class SemanticContext;
-}
+namespace analysis { class SemanticContext; }
 
 namespace ast {
-  /** Forward decl for SemanticContext::instantiateOrThrow */
   struct ParameterizedTypeString;
-
   struct ASTStatementNode;
 }
 
+namespace backend { class ObjectCode; }
+
 namespace bootstrap {
-  /** Forward decl for SemanticContext friend */
   analysis::SymbolTable* NewBootstrapSymbolTable(analysis::SemanticContext*);
 }
 
-ast::ASTStatementNode* unsafe_compile(
+void unsafe_compile(
     const std::string&, std::fstream&, analysis::SemanticContext&);
 
 namespace analysis {
@@ -75,14 +71,14 @@ public:
  */
 class SemanticContext {
   friend SymbolTable* bootstrap::NewBootstrapSymbolTable(SemanticContext*);
-  friend ast::ASTStatementNode* venom::unsafe_compile(
+  friend void venom::unsafe_compile(
       const std::string&, std::fstream&, SemanticContext&);
 private:
   SemanticContext(const std::string& moduleName,
                   SemanticContext* parent,
                   SemanticContext* programRoot)
-    : moduleName(moduleName), moduleRoot(NULL), parent(parent),
-      programRoot(programRoot), rootSymbols(NULL) {}
+    : moduleName(moduleName), moduleRoot(NULL), objectCode(NULL),
+      parent(parent), programRoot(programRoot), rootSymbols(NULL) {}
 
 protected:
   /** Takes ownership */
@@ -92,10 +88,17 @@ protected:
     this->moduleRoot = moduleRoot;
   }
 
+  /** Takes ownership */
+  inline void setObjectCode(backend::ObjectCode* objectCode) {
+    assert(objectCode);
+    assert(!this->objectCode);
+    this->objectCode = objectCode;
+  }
+
 public:
   SemanticContext(const std::string& moduleName)
-    : moduleName(moduleName), moduleRoot(NULL), parent(NULL),
-      programRoot(this), rootSymbols(NULL) {}
+    : moduleName(moduleName), moduleRoot(NULL), objectCode(NULL),
+      parent(NULL), programRoot(this), rootSymbols(NULL) {}
 
   ~SemanticContext();
 
@@ -113,6 +116,13 @@ public:
     getModuleRoot() { return moduleRoot; }
   inline const ast::ASTStatementNode*
     getModuleRoot() const { return moduleRoot; }
+
+  inline backend::ObjectCode*
+    getObjectCode() { return objectCode; }
+  inline const backend::ObjectCode*
+    getObjectCode() const { return objectCode; }
+
+  void collectObjectCode(std::vector<backend::ObjectCode*>& objCodes);
 
   /** Root symbol table of the *module* */
   inline SymbolTable* getRootSymbolTable() { return rootSymbols; }
@@ -164,6 +174,9 @@ private:
 
   /** Root AST node for the module */
   ast::ASTStatementNode* moduleRoot;
+
+  /** Compiled code for the module */
+  backend::ObjectCode* objectCode;
 
   /** Parent module (NULL if root) */
   SemanticContext* parent;

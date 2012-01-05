@@ -61,14 +61,18 @@ private:
  */
 class CodeGenerator {
 public:
+  /** does not take ownership of ctx */
   CodeGenerator(analysis::SemanticContext* ctx) :
     ctx(ctx),
+    ownership(true),
     class_reference_table(&class_pool),
     func_reference_table(&func_pool) {}
 
   ~CodeGenerator() {
-    util::delete_pointers(labels.begin(), labels.end());
-    util::delete_pointers(instructions.begin(), instructions.end());
+    if (ownership) {
+      util::delete_pointers(labels.begin(), labels.end());
+      util::delete_pointers(instructions.begin(), instructions.end());
+    }
   }
 
   /** Returns a new label which points to the current place in
@@ -119,7 +123,11 @@ public:
 
   void emitInstBool(Instruction::Opcode opcode, bool n0);
 
-  /** Create object code representation */
+  /**
+   * Create object code representation.
+   * Note this can only be called *once*, and doing so gives ownership
+   * of memory to ObjectCode
+   */
   ObjectCode* createObjectCode();
 
   /** Debug helpers */
@@ -134,6 +142,9 @@ private:
 
   /** Instruction stream */
   std::vector<SymbolicInstruction*> instructions;
+
+  /** Does this CodeGenerator own the labels/instructions? */
+  bool ownership;
 
   template <typename SearchType>
   struct container_table_local_functor {

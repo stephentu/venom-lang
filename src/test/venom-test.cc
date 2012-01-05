@@ -55,7 +55,7 @@ inline string pad(const string& orig, size_t s) {
 void run_test(bool success, const string& srcfile, size_t alignSize) {
   compile_result result;
   Timer t;
-  bool res = compile(srcfile, result);
+  bool res = compile_and_exec(srcfile, result);
   double exec_ms = t.lap_ms();
   cout.setf(ios::fixed, ios::floatfield);
   cout.precision(3);
@@ -83,6 +83,7 @@ struct max_size_functor_t {
 
 void run_tests(bool success, const vector<string>& srcfiles, const string& import_path) {
   global_compile_opts.venom_import_path = import_path;
+  global_compile_opts.semantic_check_only = true;
   vector<string>::const_iterator largest =
     max_element(srcfiles.begin(), srcfiles.end(), max_size_functor);
   for (vector<string>::const_iterator it = srcfiles.begin();

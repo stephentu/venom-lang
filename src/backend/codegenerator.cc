@@ -115,11 +115,14 @@ CodeGenerator::emitInstBool(SymbolicInstruction::Opcode opcode, bool n0) {
 
 ObjectCode*
 CodeGenerator::createObjectCode() {
+  assert(ownership);
+  ownership = false;
   return new ObjectCode(
       constant_pool.vec,
       class_reference_table.vec,
       func_reference_table.vec,
-      instructions);
+      instructions,
+      labels);
 }
 
 void
