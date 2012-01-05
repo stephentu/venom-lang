@@ -40,6 +40,8 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign ";
     variable->print(o, indent);

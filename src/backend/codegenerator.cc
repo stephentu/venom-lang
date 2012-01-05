@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include <ast/statement/node.h>
 #include <backend/codegenerator.h>
 #include <backend/linker.h>
@@ -18,6 +20,16 @@ CodeGenerator::newLabel() {
 size_t
 CodeGenerator::createLocalVariable(Symbol* symbol) {
   return local_variable_pool.create(symbol);
+}
+
+size_t
+CodeGenerator::getLocalVariable(Symbol* symbol) {
+  util::container_pool<Symbol*>::map_type::iterator it =
+    local_variable_pool.map.find(symbol);
+  if (it == local_variable_pool.map.end()) {
+    throw invalid_argument("No such symbol");
+  }
+  return it->second;
 }
 
 size_t

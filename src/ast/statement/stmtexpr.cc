@@ -7,13 +7,18 @@
 
 #include <ast/statement/stmtexpr.h>
 
+#include <backend/bytecode.h>
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
 
-void StmtExprNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
+void
+StmtExprNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   InstantiatedType *retType = expr->typeCheck(ctx);
   if (!expected) return;
   if (!retType->isSubtypeOf(*expected)) {
@@ -21,6 +26,12 @@ void StmtExprNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
         "Expected type " + expected->stringify() +
         ", got type " + retType->stringify());
   }
+}
+
+void
+StmtExprNode::codeGen(CodeGenerator& cg) {
+  expr->codeGen(cg);
+  cg.emitInst(Instruction::POP_CELL);
 }
 
 }

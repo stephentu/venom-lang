@@ -7,8 +7,12 @@
 #include <ast/expression/variable.h>
 #include <ast/statement/assign.h>
 
+#include <backend/bytecode.h>
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -111,6 +115,21 @@ AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   assert(value);
   TypeCheckAssignment(ctx, symbols, variable, value);
   checkExpectedType(expected);
+}
+
+void
+AssignNode::codeGen(CodeGenerator& cg) {
+  value->codeGen(cg);
+
+  // TODO: we need to check these conditions actually
+  // hold (during static analysis)
+  BaseSymbol* bs = variable->getSymbol();
+  assert(bs);
+  Symbol* sym = dynamic_cast<Symbol*>(bs);
+  assert(sym);
+
+  size_t idx = cg.createLocalVariable(sym);
+  cg.emitInstU32(Instruction::STORE_LOCAL_VAR, idx);
 }
 
 }

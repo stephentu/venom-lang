@@ -82,6 +82,9 @@ public:
   /** Returns an index used to reference into the local variable table */
   size_t createLocalVariable(analysis::Symbol* symbol);
 
+  /** throws error if local variable does not exist */
+  size_t getLocalVariable(analysis::Symbol* symbol);
+
   /** Returns an index used to reference into the constant pool */
   size_t createConstant(const std::string& constant);
 

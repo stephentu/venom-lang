@@ -14,15 +14,19 @@ void ExecutionContext::execute(Callback& callback) {
   assert(*program_counter);
   util::ScopedBoolean sb(is_executing);
   util::ScopedVariable<ExecutionContext*> sv(_current, this);
-  new_frame();
   scoped_constants sc(this);
   state_cleaner cleaner(this);
+
+  new_frame();
   while (true) {
     if ((*program_counter)->execute(*this)) program_counter++;
     if (program_counter == code->instructions.end()) {
       // end of stream
-      venom_cell ret = program_stack.top();
-      program_stack.pop();
+      venom_cell ret;
+      if (!program_stack.empty()) {
+        ret = program_stack.top();
+        program_stack.pop();
+      }
       pop_frame();
       callback.handleResult(ret);
       return;

@@ -6,8 +6,14 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <backend/bytecode.h>
+#include <backend/codegenerator.h>
+
+#include <util/macros.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -41,6 +47,20 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 void
+VariableNode::codeGen(CodeGenerator& cg) {
+  BaseSymbol *bs = getSymbol();
+  assert(bs);
+  if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
+    size_t idx = cg.getLocalVariable(sym);
+    cg.emitInstU32(Instruction::LOAD_LOCAL_VAR, idx);
+  } else {
+    // otherwise if we are referencing a module/class,
+    // then wait until the AttrAccess node to generate
+    // code
+  }
+}
+
+void
 VariableSelfNode::registerSymbol(SemanticContext* ctx) {
   ClassDeclNode *cdn = getEnclosingClassNode();
   if (!cdn) {
@@ -64,6 +84,11 @@ VariableSelfNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 void
+VariableSelfNode::codeGen(CodeGenerator& cg) {
+  VENOM_UNIMPLEMENTED;
+}
+
+void
 VariableSuperNode::registerSymbol(SemanticContext* ctx) {
   ClassDeclNode *cdn = getEnclosingClassNode();
   if (!cdn) {
@@ -84,6 +109,11 @@ VariableSuperNode::typeCheckImpl(SemanticContext* ctx,
         cdn->getName(), SymbolTable::NoRecurse, t);
   assert(cs);
   return cs->getType()->getParent();
+}
+
+void
+VariableSuperNode::codeGen(CodeGenerator& cg) {
+  VENOM_UNIMPLEMENTED;
 }
 
 }

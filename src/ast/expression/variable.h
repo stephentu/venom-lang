@@ -40,6 +40,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
@@ -65,6 +67,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
@@ -89,6 +93,8 @@ protected:
     typeCheckImpl(analysis::SemanticContext* ctx,
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs);
+
+  virtual void codeGen(backend::CodeGenerator& cg);
 
 public:
   virtual void print(std::ostream& o, size_t indent = 0) {

@@ -13,7 +13,11 @@ int main(int argc, char **argv) {
     if (argv[ai] == string ("-p")) {
       global_compile_opts.trace_parse = true;
     } else if (argv[ai] == string ("-s")) {
-      global_compile_opts.trace_lex   = true;
+      global_compile_opts.trace_lex = true;
+    } else if (argv[ai] == string ("--print-ast")) {
+      global_compile_opts.print_ast = true;
+    } else if (argv[ai] == string ("--print-bytecode")) {
+      global_compile_opts.print_bytecode = true;
     } else {
       fname = argv[ai];
     }
