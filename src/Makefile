@@ -14,6 +14,8 @@ OBJFILES := $(patsubst %.cc,%.o,$(subst ./,,$(SRCFILES)))
 GENOBJFILES = parser/parser.o parser/scanner.o
 ALLOBJFILES := $(sort $(OBJFILES) $(GENOBJFILES))
 
+DEPS := $(ALLOBJFILES:.o=.d)
+
 all: venom
 
 .PHONY: test
@@ -38,7 +40,9 @@ parser/scanner.cc: parser/scanner.ll
 # Implicit rule to compile c++ files
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -MD -c -o $@ $<
+
+-include $(DEPS)
 
 # Link executable
 
@@ -55,10 +59,14 @@ test/venom-bytecode-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-bytecode-test
 	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-bytecode-test.o
 
 GENFILES = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
-GENERATED = $(addprefix parser/,$(GENFILES))
+GENERATED_SRCS = $(addprefix parser/,$(GENFILES))
+
+BINARIES = venom test/venom-test test/venom-bytecode-test
+BINARIES_OBJ = $(addsuffix .o,$(BINARIES))
+BINARIES_DEPS = $(addsuffix .d,$(BINARIES))
 
 clean:
-	rm -f $(ALLOBJFILES) venom.o test/venom-test.o test/venom-bytecode-test.o
-	rm -f $(GENERATED)
-	rm -f venom
-	rm -f test/venom-test
+	rm -f $(ALLOBJFILES) $(BINARIES_OBJ)
+	rm -f $(GENERATED_SRCS)
+	rm -f $(DEPS) $(BINARIES_DEPS)
+	rm -f $(BINARIES)
