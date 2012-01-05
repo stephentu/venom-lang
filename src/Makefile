@@ -2,7 +2,15 @@ CXX = g++
 LEX = flex
 YACC = bison
 
-CXXFLAGS = -Wall -g -I$(PWD)
+-include conf/rules.mk
+
+ifdef DEBUG
+CXXFLAGS_REST = -g
+else
+CXXFLAGS_REST = -O3 -DNDEBUG
+endif
+
+CXXFLAGS = -Wall -Werror -I$(PWD) $(CXXFLAGS_REST) 
 LDFLAGS = 
 
 PWD := $(shell pwd)

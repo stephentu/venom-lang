@@ -1,6 +1,7 @@
 *.d
 *.o
 *.swp
+conf
 tags
 location.hh
 parser.cc
