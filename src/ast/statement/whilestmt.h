@@ -33,6 +33,8 @@ public:
 
   virtual bool needsNewScope(size_t k) const { return k == 1; }
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(while ";
     cond->print(o, indent);
