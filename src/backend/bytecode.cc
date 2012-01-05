@@ -144,7 +144,7 @@ bool Instruction::POP_CELL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0) {
   InstFormatU32 *self = asFormatU32();
   vector<venom_cell> &vars = ctx.local_variables();
-  if (self->N0 >= vars.size()) vars.resize(self->N0 + 1);
+  if (VENOM_UNLIKELY(self->N0 >= vars.size())) vars.resize(self->N0 + 1);
   vars[self->N0] = opnd0;
   return true;
 }
