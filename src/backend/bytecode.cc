@@ -14,6 +14,58 @@ static inline void CheckNullPointer(const venom_cell& cell) {
   }
 }
 
+// Don't be tempted to rewrite execute to use function pointers-
+// I tried it and it runs a bit slower
+/*
+typedef bool(Instruction::*FARG0)(ExecutionContext&);
+typedef bool(Instruction::*FARG1)(ExecutionContext&,venom_cell&);
+typedef bool(Instruction::*FARG2)(ExecutionContext&,venom_cell&,venom_cell&);
+
+bool Instruction::execute(ExecutionContext& ctx) {
+
+#define OP_HANDLER(a) &Instruction::a ## _impl,
+  static FARG0 FArg0Ptrs[] = {
+    OPCODE_DEFINER_ZERO(OP_HANDLER)
+  };
+  static FARG1 FArg1Ptrs[] = {
+    OPCODE_DEFINER_ONE(OP_HANDLER)
+  };
+  static FARG2 FArg2Ptrs[] = {
+    OPCODE_DEFINER_TWO(OP_HANDLER)
+  };
+#undef OP_HANDLER
+
+  size_t code = static_cast<size_t>(opcode);
+  if (code < VENOM_NELEMS(FArg0Ptrs)) {
+    // no args
+    FARG0 fcn = FArg0Ptrs[code];
+    return (this->*fcn)(ctx);
+  } else if (code < (VENOM_NELEMS(FArg0Ptrs) + VENOM_NELEMS(FArg1Ptrs))) {
+    // one arg
+    FARG1 fcn = FArg1Ptrs[opcode - VENOM_NELEMS(FArg0Ptrs)];
+    stack<venom_cell>& pstack = ctx.program_stack;
+    venom_cell opnd0 = pstack.top();
+    pstack.pop();
+    return (this->*fcn)(ctx, opnd0);
+  } else {
+    // two args
+    assert(
+        code <
+        (VENOM_NELEMS(FArg0Ptrs) +
+         VENOM_NELEMS(FArg1Ptrs) +
+         VENOM_NELEMS(FArg2Ptrs)));
+    FARG2 fcn =
+      FArg2Ptrs[code - (VENOM_NELEMS(FArg0Ptrs) + VENOM_NELEMS(FArg1Ptrs))];
+    stack<venom_cell>& pstack = ctx.program_stack;
+    venom_cell opnd1 = pstack.top();
+    pstack.pop();
+    venom_cell opnd0 = pstack.top();
+    pstack.pop();
+    return (this->*fcn)(ctx, opnd0, opnd1);
+  }
+}
+*/
+
 bool Instruction::execute(ExecutionContext& ctx) {
   switch (opcode) {
 
@@ -22,17 +74,19 @@ bool Instruction::execute(ExecutionContext& ctx) {
 
 #define HANDLE_ONE(a) \
     case a: { \
-      venom_cell opnd0 = ctx.program_stack.top(); \
-      ctx.program_stack.pop(); \
+      stack<venom_cell>& pstack = ctx.program_stack; \
+      venom_cell opnd0 = pstack.top(); \
+      pstack.pop(); \
       return a ## _impl(ctx, opnd0); \
     }
 
 #define HANDLE_TWO(a) \
     case a: { \
-      venom_cell opnd1 = ctx.program_stack.top(); \
-      ctx.program_stack.pop(); \
-      venom_cell opnd0 = ctx.program_stack.top(); \
-      ctx.program_stack.pop(); \
+      stack<venom_cell>& pstack = ctx.program_stack; \
+      venom_cell opnd1 = pstack.top(); \
+      pstack.pop(); \
+      venom_cell opnd0 = pstack.top(); \
+      pstack.pop(); \
       return a ## _impl(ctx, opnd0, opnd1); \
     }
 
@@ -40,9 +94,13 @@ bool Instruction::execute(ExecutionContext& ctx) {
     OPCODE_DEFINER_ONE(HANDLE_ONE)
     OPCODE_DEFINER_TWO(HANDLE_TWO)
 
-  default: break;
+#undef HANDLE_ZERO
+#undef HANDLE_ONE
+#undef HANDLE_TWO
+
+  default: assert(false);
   }
-  VENOM_NOT_REACHED;
+  return false;
 }
 
 template <typename Inst>
