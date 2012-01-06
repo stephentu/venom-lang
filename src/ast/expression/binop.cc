@@ -257,6 +257,7 @@ BinopNode::codeGen(CodeGenerator& cg) {
 #define DO_EMIT(expr_type) \
   cg.emitInst(type == CMP_EQ ? Instruction::BINOP_CMP_EQ_##expr_type : \
                                Instruction::BINOP_CMP_NEQ_##expr_type)
+
       if (left->getStaticType()->isInt()) {
         DO_EMIT(INT);
       } else if (left->getStaticType()->isFloat()) {
@@ -266,6 +267,7 @@ BinopNode::codeGen(CodeGenerator& cg) {
       } else {
         DO_EMIT(REF);
       }
+
 #undef DO_EMIT
     } else {
       // TODO: fix this implementation limitation for now...

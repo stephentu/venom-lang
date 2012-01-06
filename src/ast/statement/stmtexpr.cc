@@ -31,7 +31,8 @@ StmtExprNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 void
 StmtExprNode::codeGen(CodeGenerator& cg) {
   expr->codeGen(cg);
-  cg.emitInst(Instruction::POP_CELL);
+  cg.emitInst(expr->getStaticType()->isRefCounted() ?
+      Instruction::POP_CELL_REF : Instruction::POP_CELL);
 }
 
 }
