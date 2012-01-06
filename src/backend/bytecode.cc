@@ -8,6 +8,12 @@ using namespace venom::runtime;
 namespace venom {
 namespace backend {
 
+static inline void CheckNullPointer(const venom_cell& cell) {
+  if (VENOM_UNLIKELY(!cell.asRawObject())) {
+    throw VenomRuntimeException("Null pointer dereferenced");
+  }
+}
+
 bool Instruction::execute(ExecutionContext& ctx) {
   switch (opcode) {
 
@@ -99,7 +105,7 @@ bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
 bool Instruction::LOAD_LOCAL_VAR_REF_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
   venom_cell &cell = ctx.local_variables()[self->N0];
-  venom_cell::AssertNonZeroRef(cell);
+  venom_cell::AssertNonZeroRefCount(cell);
   cell.incRef();
   ctx.program_stack.push(cell);
   return true;
@@ -153,22 +159,51 @@ bool Instruction::POP_CELL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::POP_CELL_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   opnd0.decRef();
   return true;
 }
 
 bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0) {
+  assert(ctx.local_variables().size() == ctx.local_variables_ref_info().size());
+
   InstFormatU32 *self = asFormatU32();
   vector<venom_cell> &vars = ctx.local_variables();
-  if (VENOM_UNLIKELY(self->N0 >= vars.size())) vars.resize(self->N0 + 1);
+  if (VENOM_UNLIKELY(self->N0 >= vars.size())) {
+    vars.resize(self->N0 + 1);
+    vector<bool> &refInfo = ctx.local_variables_ref_info();
+    refInfo.resize(self->N0 + 1, false);
+  }
+
+  assert(!ctx.local_variables_ref_info()[self->N0]);
   vars[self->N0] = opnd0;
   return true;
 }
 
 bool Instruction::STORE_LOCAL_VAR_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
-  return STORE_LOCAL_VAR_impl(ctx, opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+  assert(ctx.local_variables().size() == ctx.local_variables_ref_info().size());
+
+  InstFormatU32 *self = asFormatU32();
+  vector<venom_cell> &vars = ctx.local_variables();
+  vector<bool> &refInfo = ctx.local_variables_ref_info();
+  if (VENOM_UNLIKELY(self->N0 >= vars.size())) {
+    vars.resize(self->N0 + 1);
+    refInfo.resize(self->N0 + 1, false);
+  }
+
+  venom_cell& old = vars[self->N0];
+  if (refInfo[self->N0]) {
+#ifndef NDEBUG
+    if (old.asRawObject() == opnd0.asRawObject()) {
+      // self assignment should *not* be a problem
+      assert(!opnd0.asRawObject() || opnd0.asRawObject()->getCount() > 1);
+    }
+#endif
+    old.decRef();
+  }
+  old = opnd0;
+  return true;
 }
 
 bool Instruction::INT_TO_FLOAT_impl(ExecutionContext& ctx, venom_cell& opnd0) {
@@ -191,7 +226,7 @@ bool Instruction::FLOAT_TO_INT_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 #define IMPL_UNOP_BOOL_1(op)  IMPL_UNOP_1(.asBool(),      op)
 #define IMPL_UNOP_REF_1(op) \
   do { \
-    venom_cell::AssertNonZeroRef(opnd0); \
+    venom_cell::AssertNonZeroRefCount(opnd0); \
     IMPL_UNOP_1(.asRawObject(), op); \
     opnd0.decRef(); \
   } while (0);
@@ -201,7 +236,7 @@ bool Instruction::FLOAT_TO_INT_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 #define IMPL_UNOP_BOOL_2(op0, op1)  IMPL_UNOP_2(.asBool(),   op0, op1)
 #define IMPL_UNOP_REF_2(op0, op1) \
   do { \
-    venom_cell::AssertNonZeroRef(opnd0); \
+    venom_cell::AssertNonZeroRefCount(opnd0); \
     IMPL_UNOP_2(.asRawObject(), op0, op1); \
     opnd0.decRef(); \
   } while (0);
@@ -282,7 +317,7 @@ bool Instruction::BRANCH_Z_BOOL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::BRANCH_Z_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   IMPL_BRANCH_Z_ACT(RawObject, opnd0.decRef());
 }
 
@@ -299,7 +334,7 @@ bool Instruction::BRANCH_NZ_BOOL_impl(ExecutionContext& ctx, venom_cell& opnd0) 
 }
 
 bool Instruction::BRANCH_NZ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   IMPL_BRANCH_NZ_ACT(RawObject, opnd0.decRef());
 }
 
@@ -331,10 +366,11 @@ bool Instruction::GET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::GET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
   venom_cell& cell = opnd0.asRawObject()->cell(self->N0);
-  venom_cell::AssertNonZeroRef(cell);
+  venom_cell::AssertNonZeroRefCount(cell);
   cell.incRef();
   ctx.program_stack.push(cell);
   opnd0.decRef();
@@ -354,7 +390,7 @@ bool Instruction::DUP_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::DUP_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
   for (size_t i = 0; i < self->N0 + 1; i++) {
     ctx.program_stack.push(opnd0);
@@ -364,7 +400,8 @@ bool Instruction::DUP_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
   FunctionDescriptor *desc =
     opnd0.asRawObject()->getClassObj()->vtable.at(self->N0);
@@ -376,7 +413,6 @@ bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
   if (desc->isNative()) {
     // use native dispatch
     desc->dispatch(&ctx);
-    opnd0.decRef();
     return true;
   } else {
     // push ret address
@@ -386,7 +422,6 @@ bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
     // set PC
     ctx.program_counter =
       reinterpret_cast<Instruction**>(desc->getFunctionPtr());
-    opnd0.decRef();
     return false;
   }
 }
@@ -405,8 +440,8 @@ bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 #define IMPL_BINOP_BOOL(op)  IMPL_BINOP0(.asBool(),      op)
 #define IMPL_BINOP_REF(op) \
   do { \
-    venom_cell::AssertNonZeroRef(opnd0); \
-    venom_cell::AssertNonZeroRef(opnd1); \
+    venom_cell::AssertNonZeroRefCount(opnd0); \
+    venom_cell::AssertNonZeroRefCount(opnd1); \
     IMPL_BINOP0(.asRawObject(), op); \
     opnd0.decRef(); \
     opnd1.decRef(); \
@@ -540,18 +575,38 @@ bool Instruction::BINOP_BIT_RSHIFT_INT_impl(ExecutionContext& ctx, venom_cell& o
 #undef IMPL_BINOP_REF
 
 bool Instruction::SET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
-  venom_cell::AssertNonZeroRef(opnd0);
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
+#ifndef NDEBUG
+  // make sure the obj's cell is actually meant for primitives
+  assert(!(opnd0.asRawObject()->getClassObj()->ref_cell_bitmap
+        & (0x1 << self->N0)));
+#endif
   opnd0.asRawObject()->cell(self->N0) = opnd1;
   opnd0.decRef();
   return true;
 }
 
 bool Instruction::SET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
-  venom_cell::AssertNonZeroRef(opnd0);
-  venom_cell::AssertNonZeroRef(opnd1);
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd1);
   InstFormatU32 *self = asFormatU32();
-  opnd0.asRawObject()->cell(self->N0) = opnd1;
+#ifndef NDEBUG
+  // make sure the obj's cell is actually meant for references
+  assert(opnd0.asRawObject()->getClassObj()->ref_cell_bitmap
+        & (0x1 << self->N0));
+#endif
+  venom_cell& old = opnd0.asRawObject()->cell(self->N0);
+#ifndef NDEBUG
+  if (old.asRawObject() == opnd1.asRawObject()) {
+    // self assignment should *not* be a problem
+    assert(!opnd1.asRawObject() || opnd1.asRawObject()->getCount() > 1);
+  }
+#endif
+  old.decRef();
+  old = opnd1;
   opnd0.decRef();
   return true;
 }

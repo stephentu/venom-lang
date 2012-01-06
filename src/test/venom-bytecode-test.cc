@@ -33,6 +33,8 @@ public:
     } \
   } while (0)
 
+#define VENOM_TEST_FAIL VENOM_TEST_CHECK(false)
+
 using namespace std;
 using namespace venom;
 using namespace venom::backend;
@@ -40,16 +42,18 @@ using namespace venom::runtime;
 
 struct base_check {
   void beforeTest() {}
-  void check(const venom_cell& actual) {}
+  void check(venom_cell& actual) {}
+  void checkNoResult(venom_cell& actual) {}
   void afterTest() {}
 };
 
 #define EQ_CHECK_IMPL(lowername, uppername, type) \
   struct eq_check_##lowername : public base_check { \
     eq_check_##lowername(type expect) : expect(expect) {} \
-    void check(const venom_cell& actual) { \
+    void check(venom_cell& actual) { \
       VENOM_TEST_CHECK_EQ(actual.as ## uppername (), expect); \
     } \
+    void checkNoResult() const { VENOM_TEST_FAIL; } \
     type expect; \
   };
 
@@ -73,6 +77,18 @@ public:
     functor.afterTest();
     try {
       functor.check(result);
+      cout << "Test " << name << " passed" << endl;
+    } catch (venom_test_check_fail& ex) {
+      cout << "Test " << name << " failed: " << ex.what() << endl;
+    } catch (exception& ex) {
+      cout << "Test " << name << " failed with uncaught exception: "
+        << ex.what() << endl;
+    }
+  }
+  virtual void noResult() {
+    functor.afterTest();
+    try {
+      functor.checkNoResult();
       cout << "Test " << name << " passed" << endl;
     } catch (venom_test_check_fail& ex) {
       cout << "Test " << name << " failed: " << ex.what() << endl;
@@ -116,11 +132,14 @@ void run_test_success(const string& name, const IStream& istream,
 }
 
 struct alloc_obj_check : public base_check {
-  void check(const venom_cell& actual) const {
+  void check(venom_cell& actual) const {
     VENOM_TEST_CHECK(actual.asRawObject());
+    VENOM_TEST_CHECK_EQ(actual.asRawObject()->getCount(), 1);
     VENOM_TEST_CHECK_EQ(actual.asRawObject()->cell(0).asInt(), 100);
     VENOM_TEST_CHECK(!actual.asRawObject()->cell(1).asRawObject());
+    actual.decRef();
   }
+  void checkNoResult() const { VENOM_TEST_FAIL; }
 };
 
 struct print_check : public base_check {
@@ -129,9 +148,10 @@ struct print_check : public base_check {
     save = venom_stdout.rdbuf();
     venom_stdout.rdbuf(sb->rdbuf());
   }
-  void check(const venom_cell& actual) const {
+  void check(venom_cell& actual) const {
     VENOM_TEST_CHECK_EQ(sb->str(), "1337\n");
   }
+  void checkNoResult() const { VENOM_TEST_FAIL; }
   void afterTest() { venom_stdout.rdbuf(save); }
   stringstream* sb;
   streambuf* save;
@@ -147,7 +167,7 @@ int main(int argc, char **argv) {
   {
     Instruction *istream[] = {
       new InstFormatU32(Instruction::ALLOC_OBJ, 2 /* test_obj */),
-      new InstFormatU32(Instruction::DUP, 2),
+      new InstFormatU32(Instruction::DUP_REF, 2),
       new InstFormatC(Instruction::PUSH_CELL_INT, 100),
       new InstFormatU32(Instruction::SET_ATTR_OBJ, 0),
       new Instruction(Instruction::PUSH_CELL_NIL),

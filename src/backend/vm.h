@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <stack>
+#include <stdexcept>
 #include <vector>
 
 #include <backend/bytecode.h>
@@ -15,6 +16,12 @@
 
 namespace venom {
 namespace backend {
+
+class VenomRuntimeException : public std::runtime_error {
+public:
+  explicit VenomRuntimeException(const std::string& msg)
+    : std::runtime_error(msg) {}
+};
 
 /**
  * ExecutionContext represents a thread of execution in the venom virtual
@@ -35,11 +42,13 @@ public:
   public:
     virtual ~Callback() {}
     virtual void handleResult(runtime::venom_cell& result) = 0;
+    virtual void noResult() = 0;
   };
 
   class DefaultCallback : public Callback {
   public:
     virtual void handleResult(runtime::venom_cell& result) {};
+    virtual void noResult() {}
   };
 
   /** Does *not* take ownership of executable */
@@ -67,15 +76,6 @@ private:
 
   void initConstants();
   void releaseConstants();
-
-  struct state_cleaner {
-    state_cleaner(ExecutionContext* ctx) : ctx(ctx) {}
-    ~state_cleaner() {
-      util::stack_clear(ctx->program_stack);
-      util::stack_clear(ctx->local_variables_stack);
-    }
-    ExecutionContext* ctx;
-  };
 
 protected:
 
@@ -114,10 +114,19 @@ protected:
     return local_variables_stack.top();
   }
 
+  inline std::vector<bool>& local_variables_ref_info() {
+    return local_variables_ref_info_stack.top();
+  }
+  inline const std::vector<bool>& local_variables_ref_info() const {
+    return local_variables_ref_info_stack.top();
+  }
+
   inline void new_frame() {
     local_variables_stack.push(std::vector<runtime::venom_cell>());
+    local_variables_ref_info_stack.push(std::vector<bool>());
   }
-  inline void pop_frame() { local_variables_stack.pop(); }
+
+  void pop_frame();
 
   /** Linked program */
   Executable* code;
@@ -136,6 +145,8 @@ protected:
 
   /** Program frames - created per function invocation */
   std::stack< std::vector<runtime::venom_cell> > local_variables_stack;
+
+  std::stack< std::vector<bool> > local_variables_ref_info_stack;
 
   /** Is this context currently executing? */
   bool is_executing;

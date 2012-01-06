@@ -28,8 +28,8 @@ void venom_cell::decRef() {
 }
 
 #ifndef NDEBUG
-void venom_cell::AssertNonZeroRef(const venom_cell& cell) {
-  assert(cell.asRawObject()->getCount());
+void venom_cell::AssertNonZeroRefCount(const venom_cell& cell) {
+  assert(!cell.asRawObject() || cell.asRawObject()->getCount());
 }
 #endif
 

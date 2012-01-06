@@ -63,9 +63,9 @@ public:
   void decRef();
 
 #ifdef NDEBUG
-  static inline void AssertNonZeroRef(const venom_cell& cell) {}
+  static inline void AssertNonZeroRefCount(const venom_cell& cell) {}
 #else
-  static void AssertNonZeroRef(const venom_cell& cell);
+  static void AssertNonZeroRefCount(const venom_cell& cell);
 #endif
 
 protected:

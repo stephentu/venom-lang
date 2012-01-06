@@ -15,20 +15,23 @@ void ExecutionContext::execute(Callback& callback) {
   util::ScopedBoolean sb(is_executing);
   util::ScopedVariable<ExecutionContext*> sv(_current, this);
   scoped_constants sc(this);
-  state_cleaner cleaner(this);
 
   new_frame();
   while (true) {
     if ((*program_counter)->execute(*this)) program_counter++;
     if (program_counter == code->instructions.end()) {
       // end of stream
-      venom_cell ret;
       if (!program_stack.empty()) {
-        ret = program_stack.top();
+        venom_cell ret = program_stack.top();
         program_stack.pop();
+        assert(program_stack.empty());
+        callback.handleResult(ret); // takes care of decRef()-ing ret
+      } else {
+        callback.noResult();
       }
       pop_frame();
-      callback.handleResult(ret);
+      assert(local_variables_stack.empty());
+      assert(local_variables_ref_info_stack.empty());
       return;
     }
   }
@@ -89,6 +92,21 @@ void ExecutionContext::resumeExecution(venom_object* obj, size_t index) {
   obj->incRef();
   program_stack.push(venom_cell(obj));
   desc->dispatch(this);
+}
+
+void ExecutionContext::pop_frame() {
+  // must decRef() the cells on the stack which need it
+  vector<venom_cell>& locVars = local_variables();
+  vector<bool>& refInfo = local_variables_ref_info();
+
+  assert(locVars.size() == refInfo.size());
+
+  for (size_t i = 0; i < locVars.size(); i++) {
+    if (refInfo[i]) locVars[i].decRef();
+  }
+
+  local_variables_stack.pop();
+  local_variables_ref_info_stack.pop();
 }
 
 // TODO: replace this with a thread-local
