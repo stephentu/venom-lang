@@ -21,6 +21,7 @@ void
 CodeGenerator::bindLabel(Label* label) {
   assert(!label->isBound());
   label->index = instructions.size();
+  instToLabels[label->index] = label;
 }
 
 size_t
@@ -179,8 +180,14 @@ CodeGenerator::printDebugStream() {
   }
   cerr << endl;
 
+  size_t index = 0;
   for (vector<SymbolicInstruction*>::iterator it = instructions.begin();
-       it != instructions.end(); ++it) {
+       it != instructions.end(); ++it, ++index) {
+    InstLabelMap::iterator iit = instToLabels.find(index);
+    if (iit != instToLabels.end()) {
+      cerr << "label_" << iit->second->index << ":" << endl;
+    }
+    cerr << "  ";
     (*it)->printDebug(cerr);
   }
 }

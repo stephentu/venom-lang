@@ -152,6 +152,10 @@ private:
   /** Created labels, for memory management */
   std::vector<Label*> labels;
 
+  /** Map instruction to label(s) */
+  typedef std::map<size_t, Label*> InstLabelMap;
+  InstLabelMap instToLabels;
+
   /** Instruction stream */
   std::vector<SymbolicInstruction*> instructions;
 
