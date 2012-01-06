@@ -21,7 +21,18 @@ WhileStmtNode::codeGen(CodeGenerator& cg) {
   Label *loop = cg.newBoundLabel();
   Label *done = cg.newLabel();
   cond->codeGen(cg);
-  cg.emitInstLabel(Instruction::BRANCH_Z, done);
+
+  Instruction::Opcode op;
+  if (cond->getStaticType()->isInt()) {
+    op = Instruction::BRANCH_Z_INT;
+  } else if (cond->getStaticType()->isFloat()) {
+    op = Instruction::BRANCH_Z_FLOAT;
+  } else if (cond->getStaticType()->isBool()) {
+    op = Instruction::BRANCH_Z_BOOL;
+  } else {
+    op = Instruction::BRANCH_Z_REF;
+  }
+  cg.emitInstLabel(op, done);
   stmts->codeGen(cg);
   cg.emitInstLabel(Instruction::JUMP, loop);
   cg.bindLabel(done);

@@ -49,24 +49,24 @@ public:
     return data ? std::string(data, size) : "";
   }
 
-  static venom_object_ptr
-  init(backend::ExecutionContext* ctx, venom_object_ptr self) {
-    venom_string* s = static_cast<venom_string*>(self.get());
+  static venom_ret_cell
+  init(backend::ExecutionContext* ctx, venom_cell self) {
+    venom_string* s = static_cast<venom_string*>(self.asRawObject());
     s->data = NULL;
     s->size = 0;
-    return venom_object::NilPtr;
+    return venom_ret_cell(venom_object::Nil);
   }
 
-  static venom_object_ptr
-  release(backend::ExecutionContext* ctx, venom_object_ptr self) {
-    venom_string* s = static_cast<venom_string*>(self.get());
+  static venom_ret_cell
+  release(backend::ExecutionContext* ctx, venom_cell self) {
+    venom_string* s = static_cast<venom_string*>(self.asRawObject());
     s->releaseData();
-    return venom_object::NilPtr;
+    return venom_ret_cell(venom_object::Nil);
   }
 
-  static venom_object_ptr
-  stringify(backend::ExecutionContext* ctx, venom_object_ptr self) {
-    return self;
+  static venom_ret_cell
+  stringify(backend::ExecutionContext* ctx, venom_cell self) {
+    return venom_ret_cell(self.asRawObject());
   }
 
 private:

@@ -117,7 +117,10 @@ public:
   bool isString() const;
   bool isBool() const;
 
-  bool isNumeric() const;
+  inline bool isNumeric() const { return isInt() || isFloat(); }
+  inline bool isPrimitive() const { return isNumeric() || isBool(); }
+  inline bool isRefCounted() const { return !isPrimitive(); }
+
   bool isFunction() const;
   bool isClassType() const;
   bool isModuleType() const;
@@ -260,8 +263,20 @@ public:
   inline const std::vector<InstantiatedType*>&
     getParams() const { return params; }
 
+  inline bool isInt() const { return getType()->isInt(); }
+  inline bool isFloat() const { return getType()->isFloat(); }
+  inline bool isString() const { return getType()->isString(); }
+  inline bool isBool() const { return getType()->isBool(); }
+
   inline bool isNumeric() const { return getType()->isNumeric(); }
+  inline bool isPrimitive() const { return getType()->isPrimitive(); }
+  inline bool isRefCounted() const { return getType()->isRefCounted(); }
   inline bool isFunction() const { return getType()->isFunction(); }
+  inline bool isClassType() const { return getType()->isClassType(); }
+  inline bool isModuleType() const { return getType()->isModuleType(); }
+
+  /** Is this type visible to the program (can we assign a reference to it?) */
+  inline bool isVisible() const { return !isModuleType(); }
 
   SymbolTable* getClassSymbolTable();
   const SymbolTable* getClassSymbolTable() const;

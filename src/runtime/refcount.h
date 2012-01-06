@@ -2,6 +2,7 @@
 #define VENOM_RUNTIME_REFCOUNT_H
 
 #include <cassert>
+#include <util/noncopyable.h>
 
 namespace venom {
 namespace runtime {
@@ -16,6 +17,7 @@ public:
   ~venom_countable() { assert(!count); }
   inline void incRef() const { count++; }
   uint32_t decRef() const { assert(count > 0); return --count; }
+  inline uint32_t getCount() const { return count; }
 protected:
   mutable uint32_t count;
 };
@@ -63,10 +65,25 @@ protected:
 /** Does NOT do any automatic object destruction, even if ref
  * count goes to zero */
 template <typename Ptr>
-class scoped_ref_counter {
+class scoped_ref_counter : private util::noncopyable {
 public:
   scoped_ref_counter(Ptr *ptr) : ptr(ptr) { ptr->incRef(); }
   ~scoped_ref_counter() { ptr->decRef(); }
+private:
+  Ptr* ptr;
+};
+
+/** Does NOT incRef, but will decRef when it goes out of scope */
+template <typename Ptr>
+class scoped_ret_value : private util::noncopyable {
+public:
+  scoped_ret_value(Ptr *ptr) : ptr(ptr) {}
+  ~scoped_ret_value() { if (ptr && !ptr->decRef()) delete ptr; }
+  Ptr* operator->() const {
+    assert(ptr); // null pointer exception?
+    return ptr;
+  }
+  inline Ptr* get() const { return ptr; }
 private:
   Ptr* ptr;
 };

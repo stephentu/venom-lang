@@ -11,7 +11,7 @@ namespace runtime {
 
 extern backend::FunctionDescriptor* BuiltinPrintDescriptor;
 extern std::ostream venom_stdout;
-venom_object_ptr print(backend::ExecutionContext* ctx, venom_object_ptr arg0);
+venom_ret_cell print(backend::ExecutionContext* ctx, venom_cell arg0);
 
 }
 }

@@ -46,9 +46,9 @@ public:
    *
    * Both opnd1 and opnd0 are popped off the stack (in that order), opnd1 is at
    * the top of the stack before the invocation, and opnd0 + opnd1 is pushed
-   * onto the stack. The BINOP_ADD handler will be invoked as:
+   * onto the stack. The BINOP_ADD_INT handler will be invoked as:
    *
-   *   BINOP_ADD_impl(opnd0, opnd1)
+   *   BINOP_ADD_INT_impl(opnd0, opnd1)
    *
    * Zero operand instructions:
    *
@@ -61,15 +61,21 @@ public:
    *   PUSH_CELL_NIL
    *     -> Nil
    *   PUSH_CONST N0
-   *     -> const[N0]
+   *     -> const[N0] ; incRef(const[N0])
+   *
    *   LOAD_LOCAL_VAR N0
    *      -> variables[N0]
+   *   LOAD_LOCAL_VAR_REF N0
+   *      -> variables[N0] ; incRef(variables[N0])
+   *
    *   ALLOC_OBJ N0
-   *      -> obj
+   *      -> obj ; incRef(obj)
+   *
    *   CALL N0
    *      -> ret_pc ; pc = N0
    *   CALL_NATIVE N0
    *      [aN, aN-1, ..., a1, a0] -> ret_value ; N0(a0, a1, ..., aN-1, aN)
+   *
    *   JUMP N0
    *      -> ; pc = next_pc + N0
    *
@@ -77,85 +83,200 @@ public:
    *
    *   POP_CELL
    *     opnd0 ->
+   *   POP_CELL_REF
+   *     opnd0 -> ; decRef(opnd0)
+   *
    *   STORE_LOCAL_VAR N0
    *     opnd0 -> ; variables[N0] = opnd0
+   *   STORE_LOCAL_VAR_REF N0
+   *     opnd0 -> ; variables[N0] = opnd0
+   *
    *   INT_TO_FLOAT
    *     opnd0 -> float(opnd0)
-   *   UNOP_PLUS
+   *   FLOAT_TO_INT
+   *     opnd0 -> int(opnd0)
+   *
+   *   UNOP_PLUS_INT
    *     opnd0 -> +opnd0
    *   UNOP_PLUS_FLOAT
    *     opnd0 -> +opnd0
-   *   UNOP_MINUS
+   *
+   *   UNOP_MINUS_INT
    *     opnd0 -> -opnd0
    *   UNOP_MINUS_FLOAT
    *     opnd0 -> -opnd0
-   *   UNOP_CMP_NOT
+   *
+   *   UNOP_CMP_NOT_INT
    *     opnd0 -> !opnd0
-   *   UNOP_BIT_NOT
+   *   UNOP_CMP_NOT_FLOAT
+   *     opnd0 -> !opnd0
+   *   UNOP_CMP_NOT_BOOL
+   *     opnd0 -> !opnd0
+   *   UNOP_CMP_NOT_REF
+   *     opnd0 -> !opnd0 ; decRef(opnd0)
+   *
+   *   UNOP_BIT_NOT_INT
    *     opnd0 -> ~opnd0
-   *   BRANCH_Z N0
-   *     opnd0 -> ; if (opnd) pc = next_pc + N0 else pc = next_pc
-   *   BRANCH_NZ N0
-   *     opnd0 -> ; if (!opnd) pc = next_pc + N0 else pc = next_pc
-   *   TEST
+   *
+   *   BRANCH_Z_INT N0
+   *     opnd0 -> ; if (opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_Z_FLOAT N0
+   *     opnd0 -> ; if (opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_Z_BOOL N0
+   *     opnd0 -> ; if (opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_Z_REF N0
+   *     opnd0 -> ; if (opnd0) pc = next_pc + N0 else pc = next_pc, decRef(opnd0)
+   *
+   *   BRANCH_NZ_INT N0
+   *     opnd0 -> ; if (!opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_NZ_FLOAT N0
+   *     opnd0 -> ; if (!opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_NZ_BOOL N0
+   *     opnd0 -> ; if (!opnd0) pc = next_pc + N0 else pc = next_pc
+   *   BRANCH_NZ_REF N0
+   *     opnd0 -> ; if (!opnd0) pc = next_pc + N0 else pc = next_pc, decRef(opnd0)
+   *
+   *   TEST_INT
    *     opnd0 -> bool(opnd0)
+   *   TEST_FLOAT
+   *     opnd0 -> bool(opnd0)
+   *   TEST_REF
+   *     opnd0 -> bool(opnd0) ; decRef(opnd0)
+   *
    *   GET_ATTR_OBJ N0
-   *     opnd0 -> opnd0.attr[N0]
+   *     opnd0 -> opnd0.attr[N0] ; decRef(opnd0)
+   *   GET_ATTR_OBJ_REF N0
+   *     opnd0 -> opnd0.attr[N0] ; incRef(opnd0.attr[N0]), decRef(opnd0)
+   *
    *   GET_ARRAY_ACCESS
+   *     // TODO: spec and implement
+   *
    *   DUP N0
    *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances)
+   *   DUP_REF N0
+   *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances) ; incRef(opnd0) (N0 times)
+   *
    *   CALL_VIRTUAL N0
-   *     obj -> ret_value ; PC = obj.vtable[N0]
+   *     obj -> ret_value ; PC = obj.vtable[N0] ; decRef(obj)
    *
    * Two operand instructions:
    *
-   *   BINOP_ADD
+   *   BINOP_ADD_INT
    *     opnd0, opnd1 -> opnd0 + opnd1
    *   BINOP_ADD_FLOAT
    *     opnd0, opnd1 -> opnd0 + opnd1
-   *   BINOP_SUB
+   *
+   *   BINOP_SUB_INT
    *     opnd0, opnd1 -> opnd0 - opnd1
    *   BINOP_SUB_FLOAT
    *     opnd0, opnd1 -> opnd0 - opnd1
-   *   BINOP_MULT
+   *
+   *   BINOP_MULT_INT
    *     opnd0, opnd1 -> opnd0 * opnd1
    *   BINOP_MULT_FLOAT
    *     opnd0, opnd1 -> opnd0 * opnd1
-   *   BINOP_DIV
+   *
+   *   BINOP_DIV_INT
    *     opnd0, opnd1 -> opnd0 / opnd1
    *   BINOP_DIV_FLOAT
    *     opnd0, opnd1 -> opnd0 / opnd1
-   *   BINOP_MOD
+   *
+   *   BINOP_MOD_INT
    *     opnd0, opnd1 -> opnd0 & opnd1
-   *   BINOP_CMP_AND
+   *
+   *   BINOP_CMP_AND_INT
    *     opnd0, opnd1 -> opnd0 && opnd1
-   *   BINOP_CMP_OR
+   *   BINOP_CMP_AND_FLOAT
+   *     opnd0, opnd1 -> opnd0 && opnd1
+   *   BINOP_CMP_AND_BOOL
+   *     opnd0, opnd1 -> opnd0 && opnd1
+   *   BINOP_CMP_AND_REF
+   *     opnd0, opnd1 -> opnd0 && opnd1 ; decRef(opnd0), decRef(opnd1)
+   *
+   *   BINOP_CMP_OR_INT
    *     opnd0, opnd1 -> opnd0 || opnd1
-   *   BINOP_CMP_LT
+   *   BINOP_CMP_OR_FLOAT
+   *     opnd0, opnd1 -> opnd0 || opnd1
+   *   BINOP_CMP_OR_BOOL
+   *     opnd0, opnd1 -> opnd0 || opnd1
+   *   BINOP_CMP_OR_REF
+   *     opnd0, opnd1 -> opnd0 || opnd1 ; decRef(opnd0), decRef(opnd1)
+   *
+   *   BINOP_CMP_LT_INT
    *     opnd0, opnd1 -> opnd0 < opnd1
-   *   BINOP_CMP_LE
+   *   BINOP_CMP_LT_FLOAT
+   *     opnd0, opnd1 -> opnd0 < opnd1
+   *   BINOP_CMP_LT_BOOL
+   *     opnd0, opnd1 -> opnd0 < opnd1
+   *
+   *   BINOP_CMP_LE_INT
    *     opnd0, opnd1 -> opnd0 <= opnd1
-   *   BINOP_CMP_GT
+   *   BINOP_CMP_LE_FLOAT
+   *     opnd0, opnd1 -> opnd0 <= opnd1
+   *   BINOP_CMP_LE_BOOL
+   *     opnd0, opnd1 -> opnd0 <= opnd1
+   *
+   *   BINOP_CMP_GT_INT
    *     opnd0, opnd1 -> opnd0 > opnd1
-   *   BINOP_CMP_GE
+   *   BINOP_CMP_GT_FLOAT
+   *     opnd0, opnd1 -> opnd0 > opnd1
+   *   BINOP_CMP_GT_BOOL
+   *     opnd0, opnd1 -> opnd0 > opnd1
+   *
+   *   BINOP_CMP_GE_INT
    *     opnd0, opnd1 -> opnd0 >= opnd1
-   *   BINOP_CMP_EQ
+   *   BINOP_CMP_GE_FLOAT
+   *     opnd0, opnd1 -> opnd0 >= opnd1
+   *   BINOP_CMP_GE_BOOL
+   *     opnd0, opnd1 -> opnd0 >= opnd1
+   *
+   *   BINOP_CMP_EQ_INT
    *     opnd0, opnd1 -> opnd0 == opnd1
-   *   BINOP_CMP_NEQ
+   *   BINOP_CMP_EQ_FLOAT
+   *     opnd0, opnd1 -> opnd0 == opnd1
+   *   BINOP_CMP_EQ_BOOL
+   *     opnd0, opnd1 -> opnd0 == opnd1
+   *   BINOP_CMP_EQ_REF
+   *     opnd0, opnd1 -> opnd0 == opnd1 ; decRef(opnd0), decRef(opnd1)
+   *
+   *   BINOP_CMP_NEQ_INT
    *     opnd0, opnd1 -> opnd0 != opnd1
-   *   BINOP_BIT_AND
+   *   BINOP_CMP_NEQ_FLOAT
+   *     opnd0, opnd1 -> opnd0 != opnd1
+   *   BINOP_CMP_NEQ_BOOL
+   *     opnd0, opnd1 -> opnd0 != opnd1
+   *   BINOP_CMP_NEQ_REF
+   *     opnd0, opnd1 -> opnd0 != opnd1 ; decRef(opnd0), decRef(opnd1)
+   *
+   *   BINOP_BIT_AND_INT
    *     opnd0, opnd1 -> opnd0 & opnd1
-   *   BINOP_BIT_OR
+   *   BINOP_BIT_AND_BOOL
+   *     opnd0, opnd1 -> opnd0 & opnd1
+   *
+   *   BINOP_BIT_OR_INT
    *     opnd0, opnd1 -> opnd0 | opnd1
-   *   BINOP_BIT_XOR
+   *   BINOP_BIT_OR_BOOL
+   *     opnd0, opnd1 -> opnd0 | opnd1
+   *
+   *   BINOP_BIT_XOR_INT
    *     opnd0, opnd1 -> opnd0 ^ opnd1
-   *   BINOP_BIT_LSHIFT
+   *   BINOP_BIT_XOR_BOOL
+   *     opnd0, opnd1 -> opnd0 ^ opnd1
+   *
+   *   BINOP_BIT_LSHIFT_INT
    *     opnd0, opnd1 -> opnd0 << opnd1
-   *   BINOP_BIT_RSHIFT
+   *
+   *   BINOP_BIT_RSHIFT_INT
    *     opnd0, opnd1 -> opnd0 >> opnd1
+   *
    *   SET_ATTR_OBJ N0
-   *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1
+   *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1, decRef(opnd0)
+   *   SET_ATTR_OBJ_REF N0
+   *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1, decRef(opnd0)
+   *
    *   SET_ARRAY_ACCESS
+   *     // TODO: spec and implement
+   *
    *   RET
    *     opnd0, opnd1 -> opnd1 ; PC = opnd0
    */
@@ -167,6 +288,7 @@ public:
     x(PUSH_CELL_NIL) \
     x(PUSH_CONST) \
     x(LOAD_LOCAL_VAR) \
+    x(LOAD_LOCAL_VAR_REF) \
     x(ALLOC_OBJ) \
     x(CALL) \
     x(CALL_NATIVE) \
@@ -174,46 +296,86 @@ public:
 
 #define OPCODE_DEFINER_ONE(x) \
     x(POP_CELL) \
+    x(POP_CELL_REF) \
     x(STORE_LOCAL_VAR) \
+    x(STORE_LOCAL_VAR_REF) \
     x(INT_TO_FLOAT) \
-    x(UNOP_PLUS) \
+    x(FLOAT_TO_INT) \
+    x(UNOP_PLUS_INT) \
     x(UNOP_PLUS_FLOAT) \
-    x(UNOP_MINUS) \
+    x(UNOP_MINUS_INT) \
     x(UNOP_MINUS_FLOAT) \
-    x(UNOP_CMP_NOT) \
-    x(UNOP_BIT_NOT) \
-    x(BRANCH_Z) \
-    x(BRANCH_NZ) \
-    x(TEST) \
+    x(UNOP_CMP_NOT_INT) \
+    x(UNOP_CMP_NOT_FLOAT) \
+    x(UNOP_CMP_NOT_BOOL) \
+    x(UNOP_CMP_NOT_REF) \
+    x(UNOP_BIT_NOT_INT) \
+    x(BRANCH_Z_INT) \
+    x(BRANCH_Z_FLOAT) \
+    x(BRANCH_Z_BOOL) \
+    x(BRANCH_Z_REF) \
+    x(BRANCH_NZ_INT) \
+    x(BRANCH_NZ_FLOAT) \
+    x(BRANCH_NZ_BOOL) \
+    x(BRANCH_NZ_REF) \
+    x(TEST_INT) \
+    x(TEST_FLOAT) \
+    x(TEST_REF) \
     x(GET_ATTR_OBJ) \
+    x(GET_ATTR_OBJ_REF) \
     x(GET_ARRAY_ACCESS) \
     x(DUP) \
+    x(DUP_REF) \
     x(CALL_VIRTUAL) \
 
 #define OPCODE_DEFINER_TWO(x) \
-    x(BINOP_ADD) \
+    x(BINOP_ADD_INT) \
     x(BINOP_ADD_FLOAT) \
-    x(BINOP_SUB) \
+    x(BINOP_SUB_INT) \
     x(BINOP_SUB_FLOAT) \
-    x(BINOP_MULT) \
+    x(BINOP_MULT_INT) \
     x(BINOP_MULT_FLOAT) \
-    x(BINOP_DIV) \
+    x(BINOP_DIV_INT) \
     x(BINOP_DIV_FLOAT) \
-    x(BINOP_MOD) \
-    x(BINOP_CMP_AND) \
-    x(BINOP_CMP_OR) \
-    x(BINOP_CMP_LT) \
-    x(BINOP_CMP_LE) \
-    x(BINOP_CMP_GT) \
-    x(BINOP_CMP_GE) \
-    x(BINOP_CMP_EQ) \
-    x(BINOP_CMP_NEQ) \
-    x(BINOP_BIT_AND) \
-    x(BINOP_BIT_OR) \
-    x(BINOP_BIT_XOR) \
-    x(BINOP_BIT_LSHIFT) \
-    x(BINOP_BIT_RSHIFT) \
+    x(BINOP_MOD_INT) \
+    x(BINOP_CMP_AND_INT) \
+    x(BINOP_CMP_AND_FLOAT) \
+    x(BINOP_CMP_AND_BOOL) \
+    x(BINOP_CMP_AND_REF) \
+    x(BINOP_CMP_OR_INT) \
+    x(BINOP_CMP_OR_FLOAT) \
+    x(BINOP_CMP_OR_BOOL) \
+    x(BINOP_CMP_OR_REF) \
+    x(BINOP_CMP_LT_INT) \
+    x(BINOP_CMP_LT_FLOAT) \
+    x(BINOP_CMP_LT_BOOL) \
+    x(BINOP_CMP_LE_INT) \
+    x(BINOP_CMP_LE_FLOAT) \
+    x(BINOP_CMP_LE_BOOL) \
+    x(BINOP_CMP_GT_INT) \
+    x(BINOP_CMP_GT_FLOAT) \
+    x(BINOP_CMP_GT_BOOL) \
+    x(BINOP_CMP_GE_INT) \
+    x(BINOP_CMP_GE_FLOAT) \
+    x(BINOP_CMP_GE_BOOL) \
+    x(BINOP_CMP_EQ_INT) \
+    x(BINOP_CMP_EQ_FLOAT) \
+    x(BINOP_CMP_EQ_BOOL) \
+    x(BINOP_CMP_EQ_REF) \
+    x(BINOP_CMP_NEQ_INT) \
+    x(BINOP_CMP_NEQ_FLOAT) \
+    x(BINOP_CMP_NEQ_BOOL) \
+    x(BINOP_CMP_NEQ_REF) \
+    x(BINOP_BIT_AND_INT) \
+    x(BINOP_BIT_AND_BOOL) \
+    x(BINOP_BIT_OR_INT) \
+    x(BINOP_BIT_OR_BOOL) \
+    x(BINOP_BIT_XOR_INT) \
+    x(BINOP_BIT_XOR_BOOL) \
+    x(BINOP_BIT_LSHIFT_INT) \
+    x(BINOP_BIT_RSHIFT_INT) \
     x(SET_ATTR_OBJ) \
+    x(SET_ATTR_OBJ_REF) \
     x(SET_ARRAY_ACCESS) \
     x(RET) \
 
@@ -227,6 +389,17 @@ public:
     OPCODE_DEFINER(OPND)
 #undef OPND
   };
+
+  static inline void CompileTimeAsserts() {
+    enum AnonOpcode {
+#define OPND(a) a,
+      OPCODE_DEFINER(OPND)
+#undef OPND
+      NumElems
+    };
+    // we want the opcode to fit in 1 byte
+    VENOM_COMPILE_TIME_ASSERT(NumElems <= 256);
+  }
 
   static std::string stringify(Opcode opcode) {
     switch (opcode) {

@@ -147,8 +147,6 @@ bool Type::isFloat() const { return equals(*FloatType); }
 bool Type::isString() const { return equals(*StringType); }
 bool Type::isBool() const { return equals(*BoolType); }
 
-bool Type::isNumeric() const { return isInt() || isFloat(); }
-
 bool Type::isFunction() const {
   for (vector<Type*>::const_iterator it = FuncTypes.begin();
        it != FuncTypes.end(); ++it) {

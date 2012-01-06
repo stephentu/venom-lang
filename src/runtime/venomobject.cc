@@ -13,84 +13,42 @@ using namespace venom::backend;
 namespace venom {
 namespace runtime {
 
-// These ctors/dtors cannot be placed in the header, because
-// we only have a forward decl of venom_object (so we can't
-// incRef()/decRef() it)
-
-venom_cell::venom_cell(venom_object* obj) : data(obj), type(ObjType) {
-  if (obj) obj->incRef();
-}
-
-venom_cell::venom_cell(const venom_cell& that)
-  : data(that.data), type(that.type) {
-  if (type == ObjType && data.obj) data.obj->incRef();
-}
-
-venom_cell::~venom_cell() {
-  if (type == ObjType && data.obj && !data.obj->decRef()) delete data.obj;
-}
-
-venom_cell& venom_cell::operator=(const venom_cell& that) {
-  // objects have to be treated specially
-  bool thisIsObject = isObject();
-  bool thatIsObject = that.isObject();
-  if (thisIsObject) {
-    // need to decRef and possibly free, but only if that doesn't contain the
-    // same pointer
-    if (thatIsObject && data.obj == that.data.obj) return *this;
-    if (data.obj && !data.obj->decRef()) delete data.obj;
-  }
-  // now, regular assignment is ok
-  data = that.data;
-  type = that.type;
-  // do an incRef if we are now an object
-  if (type == ObjType && data.obj) data.obj->incRef();
-  return *this;
-}
-
 ref_ptr<venom_object> venom_cell::asObject() const {
-  assert(isObject());
   return ref_ptr<venom_object>(data.obj);
 }
 
-ref_ptr<venom_object> venom_cell::box() const {
-  assert(isInitialized());
-  switch (type) {
-  case IntType: return ref_ptr<venom_object>(new venom_integer(data.int_value));
-  case DoubleType: return ref_ptr<venom_object>(new venom_double(data.double_value));
-  case BoolType: return ref_ptr<venom_object>(new venom_boolean(data.bool_value));
-  case ObjType: return ref_ptr<venom_object>(data.obj);
-  default: VENOM_NOT_REACHED;
+void venom_cell::incRef() {
+  if (data.obj) data.obj->incRef();
+}
+
+void venom_cell::decRef() {
+  if (data.obj && !data.obj->decRef()) {
+    delete data.obj;
   }
 }
 
-string venom_cell::stringifyNativeOnly() const {
-  assert(isInitialized());
-  switch (type) {
-  case IntType: return util::stringify(data.int_value);
-  case DoubleType: return util::stringify(data.double_value);
-  case BoolType: return data.bool_value ? "True" : "False";
-  case ObjType: return !data.obj ? "Nil" : data.obj->stringifyNativeOnly();
-  default: VENOM_NOT_REACHED;
-  }
+#ifndef NDEBUG
+void venom_cell::AssertNonZeroRef(const venom_cell& cell) {
+  assert(cell.asRawObject()->getCount());
 }
+#endif
 
 venom_object* venom_object::Nil(NULL);
 ref_ptr<venom_object> venom_object::NilPtr(NULL);
 
 FunctionDescriptor* venom_object::InitDescriptor(
-    new FunctionDescriptor((void*)init, 1, true));
+    new FunctionDescriptor((void*)init, 1, 0x1, true));
 
 FunctionDescriptor* venom_object::ReleaseDescriptor(
-    new FunctionDescriptor((void*)release, 1, true));
+    new FunctionDescriptor((void*)release, 1, 0x1, true));
 
 FunctionDescriptor* venom_object::StringifyDescriptor(
-    new FunctionDescriptor((void*)stringify, 1, true));
+    new FunctionDescriptor((void*)stringify, 1, 0x1, true));
 
 venom_class_object venom_object::ObjClassTable(
     "object",
     sizeof(venom_object),
-    0,
+    0, 0,
     util::vec3(InitDescriptor, ReleaseDescriptor, StringifyDescriptor));
 
 /**
@@ -138,6 +96,7 @@ venom_object::~venom_object() {
     // a venom_cell, since we did not allocate it with
     // operator new.
     for (size_t i = 0; i < class_obj->n_cells; i++, p++) {
+      if (class_obj->ref_cell_bitmap & (0x1 << i)) p->decRef();
       p->~venom_cell();
     }
   }
@@ -150,10 +109,11 @@ string venom_object::stringifyNativeOnly() const {
     assert(desc->getNumArgs() == 1);
     FunctionDescriptor::F1 f =
       reinterpret_cast<FunctionDescriptor::F1>(desc->getFunctionPtr());
-    venom_object_ptr str =
-      f(NULL, venom_object_ptr(const_cast<venom_object*>(this)));
-    assert(str->getClassObj() == &venom_string::StringClassTable);
-    return static_cast<venom_string*>(str.get())->getData();
+    venom_ret_cell str =
+      f(NULL, venom_cell(const_cast<venom_object*>(this)));
+    scoped_ret_value<venom_object> ptr(str.asRawObject());
+    assert(ptr->getClassObj() == &venom_string::StringClassTable);
+    return static_cast<venom_string*>(ptr.get())->getData();
   } else {
     stringstream buf;
     buf << "object@0x" << hex << intptr_t(this)
@@ -162,20 +122,20 @@ string venom_object::stringifyNativeOnly() const {
   }
 }
 
-ref_ptr<venom_object>
-venom_object::stringify(ExecutionContext* ctx, ref_ptr<venom_object> self) {
+venom_ret_cell
+venom_object::stringify(ExecutionContext* ctx, venom_cell self) {
+  venom_object_ptr ptr = self.asObject();
   stringstream buf;
-  buf << "object@0x" << hex << intptr_t(self.get());
-  return ref_ptr<venom_object>(new venom_string(buf.str()));
+  buf << "object@0x" << hex << intptr_t(self.asRawObject());
+  return venom_ret_cell(new venom_string(buf.str()));
 }
 
-ref_ptr<venom_object>
+venom_ret_cell
 venom_object::virtualDispatch(ExecutionContext* ctx, size_t index) {
   ctx->resumeExecution(this, index);
   venom_cell ret = ctx->program_stack.top();
-  ref_ptr<venom_object> box = ret.box();
   ctx->program_stack.pop();
-  return box;
+  return venom_ret_cell(ret);
 }
 
 }

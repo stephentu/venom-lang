@@ -26,7 +26,13 @@ namespace runtime {
 /** Forward decls */
 class venom_object;
 
+/**
+ * A cell is a unit of storage on the stack and as an object
+ * member field. A cell is *not* aware of its contents- it is really
+ * just a union with some helper methods.
+ */
 class venom_cell {
+  friend class venom_ret_cell;
 public:
   /** Order matters */
   enum CellType {
@@ -38,87 +44,29 @@ public:
   };
 
   /** Un-initialized ctor */
-  venom_cell() : data(0), type(NoneType) {}
+  venom_cell() : data(0) {}
 
-  venom_cell(int64_t int_value)
-    : data(int_value), type(IntType) {}
-  venom_cell(int int_value)
-    : data(int_value), type(IntType) {}
-  venom_cell(double double_value)
-    : data(double_value), type(DoubleType) {}
-  venom_cell(float double_value)
-    : data(double_value), type(DoubleType) {}
-  venom_cell(bool bool_value)
-    : data(bool_value), type(BoolType) {}
-  venom_cell(venom_object* obj);
-  venom_cell(const venom_cell& that);
+  venom_cell(int64_t int_value) : data(int_value) {}
+  venom_cell(int int_value) : data(int_value) {}
+  venom_cell(double double_value) : data(double_value) {}
+  venom_cell(float double_value) : data(double_value) {}
+  venom_cell(bool bool_value) : data(bool_value) {}
+  venom_cell(venom_object* obj) : data(obj) {}
 
-  ~venom_cell();
-
-  venom_cell& operator=(const venom_cell& that);
-
-  inline bool isInitialized() const { return type; }
-  inline bool isPrimitive() const { return type && type < ObjType; }
-
-  inline bool isInt() const { return type == IntType; }
-  inline bool isDouble() const { return type == DoubleType; }
-  inline bool isBool() const { return type == BoolType; }
-  inline bool isObject() const { return type == ObjType; }
-
-  inline int64_t asInt() const { assert(isInt()); return data.int_value; }
-  inline double asDouble() const { assert(isDouble()); return data.double_value; }
-  inline bool asBool() const { assert(isBool()); return data.bool_value; }
-  inline venom_object* asRawObject() const { assert(isObject()); return data.obj; }
-
+  inline int64_t asInt() const { return data.int_value; }
+  inline double asDouble() const { return data.double_value; }
+  inline bool asBool() const { return data.bool_value; }
+  inline venom_object* asRawObject() const { return data.obj; }
   ref_ptr<venom_object> asObject() const;
-  ref_ptr<venom_object> box() const;
 
-  inline bool truthTest() const {
-    assert(isInitialized());
-    if (VENOM_LIKELY(type == BoolType)) return data.bool_value;
-    switch (type) {
-    case IntType: return data.int_value;
-    case DoubleType: return data.double_value;
-    // TODO: watch out for boxed primitives...
-    case ObjType: return data.obj;
-    default: assert(false);
-    }
-    return false;
-  }
-  inline bool falseTest() const { return !truthTest(); }
+  void incRef();
+  void decRef();
 
-  /** Operator overloads */
-
-  // NOTE: obj operator overload is implemented by invoking the object's
-  // operator method, instead of using a C++ operator overload.
-  // The C++ operator overloads are to be used for primitive types only.
-
-#define IMPL_OPERATOR_OVERLOAD(op) \
-  bool operator op (const venom_cell& that) const { \
-    assert(isInitialized()); \
-    switch (type) { \
-    case IntType: return that.isInt() ? data.int_value op that.asInt() : false; \
-    case DoubleType: return that.isDouble() ? data.double_value op that.asDouble() : false; \
-    case BoolType: return that.isBool() ? data.bool_value op that.asBool() : false; \
-    default: VENOM_NOT_REACHED; \
-    } \
-  } \
-
-  IMPL_OPERATOR_OVERLOAD(==)
-  IMPL_OPERATOR_OVERLOAD(!=)
-  IMPL_OPERATOR_OVERLOAD(<)
-  IMPL_OPERATOR_OVERLOAD(<=)
-  IMPL_OPERATOR_OVERLOAD(>)
-  IMPL_OPERATOR_OVERLOAD(>=)
-
-#undef IMPL_OPERATOR_OVERLOAD
-
-  /**
-   * Stringify this cell into an STL string. For objects, stringify() will call
-   * into the object's virtual stringify() method only if the method is a
-   * native one.
-   */
-  std::string stringifyNativeOnly() const;
+#ifdef NDEBUG
+  static inline void AssertNonZeroRef(const venom_cell& cell) {}
+#else
+  static void AssertNonZeroRef(const venom_cell& cell);
+#endif
 
 protected:
   union types {
@@ -138,15 +86,24 @@ protected:
     types(bool bool_value) : bool_value(bool_value) {}
     types(venom_object* obj) : obj(obj) {}
   } data;
-
-  /** What type is in data? 0 (NoneType) means not initialized */
-  uint8_t type;
 };
 
-inline std::ostream& operator<<(std::ostream& o, const venom_cell& cell) {
-  o << cell.stringifyNativeOnly();
-  return o;
-}
+/**
+ * The same as a cell, except when you construct a venom_ret_cell
+ * with a venom_object, an incRef() is done automatically.
+ */
+class venom_ret_cell : public venom_cell {
+public:
+  venom_ret_cell(int64_t int_value) : venom_cell(int_value) {}
+  venom_ret_cell(int int_value) : venom_cell(int_value) {}
+  venom_ret_cell(double double_value) : venom_cell(double_value) {}
+  venom_ret_cell(float double_value) : venom_cell(double_value) {}
+  venom_ret_cell(bool bool_value) : venom_cell(bool_value) {}
+  venom_ret_cell(venom_object* obj) : venom_cell(obj) { incRef(); }
+
+  // TODO: try to use special venom_cell ctor for this
+  venom_ret_cell(const venom_cell& cell) { data = cell.data; }
+};
 
 /**
  * A venom_class_object is created once per class, and holds the vtable for
@@ -158,9 +115,14 @@ public:
   venom_class_object(const std::string& name,
                      size_t sizeof_obj_base,
                      size_t n_cells,
+                     uint64_t ref_cell_bitmap,
                      const std::vector<backend::FunctionDescriptor*>& vtable)
     : name(name), sizeof_obj_base(sizeof_obj_base),
-      n_cells(n_cells), vtable(vtable) {}
+      n_cells(n_cells), ref_cell_bitmap(ref_cell_bitmap),
+      vtable(vtable) {
+    // TODO: implementation limitation for now
+    assert(n_cells <= 64);
+  }
 
   /** Fully qualified class name (ie a.b.c) */
   const std::string name;
@@ -175,6 +137,10 @@ public:
 
   /** The number of cells that this object requires */
   const size_t n_cells;
+
+  /** Bitmap which indicates which cells are ref-counted
+   * TODO: handle when an obj has > 64 fields */
+  const uint64_t ref_cell_bitmap;
 
   /** The vtable for the class */
   const std::vector<backend::FunctionDescriptor*> vtable;
@@ -252,9 +218,9 @@ public:
    *
    * Default constructor does nothing
    */
-  static ref_ptr<venom_object>
-  init(backend::ExecutionContext* ctx, ref_ptr<venom_object> self) {
-    return NilPtr;
+  static venom_ret_cell
+  init(backend::ExecutionContext* ctx, venom_cell self) {
+    return venom_ret_cell(Nil);
   }
 
   /**
@@ -262,23 +228,23 @@ public:
    *
    * Default destructor does nothing
    */
-  static ref_ptr<venom_object>
-  release(backend::ExecutionContext* ctx, ref_ptr<venom_object> self) {
-    return NilPtr;
+  static venom_ret_cell
+  release(backend::ExecutionContext* ctx, venom_cell self) {
+    return venom_ret_cell(Nil);
   }
 
   /**
    * stringify - returns a venom_string object instance
    */
-  static ref_ptr<venom_object>
-  stringify(backend::ExecutionContext* ctx, ref_ptr<venom_object> self);
+  static venom_ret_cell
+  stringify(backend::ExecutionContext* ctx, venom_cell self);
 
   /**
    * Do virtual dispatch on this object, using the n-th method entry in
    * the vtable. Assumes the arguments are already on the stack (except
    * the "this" pointer)
    */
-  ref_ptr<venom_object>
+  venom_ret_cell
   virtualDispatch(backend::ExecutionContext* ctx, size_t index);
 
 protected:

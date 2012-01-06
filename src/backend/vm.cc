@@ -36,7 +36,9 @@ void ExecutionContext::execute(Callback& callback) {
 
 struct const_init_functor {
   inline venom_cell* operator()(const string& s) const {
-    return new venom_cell(new venom_string(s));
+    venom_string *sptr = new venom_string(s);
+    sptr->incRef();
+    return new venom_cell(sptr);
   }
 };
 
@@ -49,6 +51,9 @@ void ExecutionContext::initConstants() {
 
 void ExecutionContext::releaseConstants() {
   assert(constant_pool);
+  for (size_t i = 0; i < code->constant_pool.size(); i++) {
+    constant_pool[i]->decRef();
+  }
   util::delete_pointers(
       constant_pool, constant_pool + code->constant_pool.size());
   delete [] constant_pool;
@@ -81,6 +86,7 @@ void ExecutionContext::resumeExecution(Instruction** pc) {
 void ExecutionContext::resumeExecution(venom_object* obj, size_t index) {
   FunctionDescriptor *desc = obj->getClassObj()->vtable.at(index);
   assert(desc);
+  obj->incRef();
   program_stack.push(venom_cell(obj));
   desc->dispatch(this);
 }
@@ -94,15 +100,16 @@ void FunctionDescriptor::dispatch(ExecutionContext* ctx) {
     switch (num_args) {
     case 0: {
       F0 f = reinterpret_cast<F0>(function_ptr);
-      venom_object_ptr ret = f(ctx);
-      ctx->program_stack.push(venom_cell(ret.get()));
+      venom_ret_cell ret = f(ctx);
+      ctx->program_stack.push(ret);
       break;
     }
     case 1: {
       F1 f = reinterpret_cast<F1>(function_ptr);
       venom_cell arg0 = ctx->program_stack.top(); ctx->program_stack.pop();
-      venom_object_ptr ret = f(ctx, arg0.box());
-      ctx->program_stack.push(venom_cell(ret.get()));
+      venom_ret_cell ret = f(ctx, arg0);
+      ctx->program_stack.push(ret);
+      if (arg_ref_cell_bitmap & 0x1) arg0.decRef();
       break;
     }
     // TODO: more arguments...

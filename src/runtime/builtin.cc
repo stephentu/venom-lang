@@ -10,15 +10,16 @@ namespace venom {
 namespace runtime {
 
 FunctionDescriptor* BuiltinPrintDescriptor(
-  new FunctionDescriptor((void*)print, 1, true));
+  new FunctionDescriptor((void*)print, 1, 0x1, true));
 
 ostream venom_stdout(cout.rdbuf());
 
-venom_object_ptr print(ExecutionContext* ctx, venom_object_ptr arg0) {
-  venom_object_ptr str = arg0->virtualDispatch(ctx, 2);
-  assert(str->getClassObj() == &venom_string::StringClassTable);
-  venom_stdout << static_cast<venom_string*>(str.get())->getData() << endl;
-  return venom_object::NilPtr;
+venom_ret_cell print(ExecutionContext* ctx, venom_cell arg0) {
+  venom_ret_cell ret = arg0.asRawObject()->virtualDispatch(ctx, 2);
+  scoped_ret_value<venom_object> ptr(ret.asRawObject());
+  assert(ptr->getClassObj() == &venom_string::StringClassTable);
+  venom_stdout << static_cast<venom_string*>(ptr.get())->getData() << endl;
+  return venom_ret_cell(venom_object::Nil);
 }
 
 }

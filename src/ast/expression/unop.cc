@@ -30,18 +30,17 @@ UnopNode::typeCheckImpl(SemanticContext* ctx,
   switch (type) {
   case PLUS:
   case MINUS:
-    // require numeric or bool
-    if (!kidType->isNumeric() &&
-        !kidType->equals(*InstantiatedType::BoolType)) {
+    // require numeric
+    if (!kidType->isNumeric()) {
       throw TypeViolationException(
-          "Expected numeric type or bool for unary operator " +
+          "Expected numeric type for unary operator " +
           StringifyType(type) + ", got " + kidType->stringify());
     }
     return kidType;
 
   case BIT_NOT:
     // require int
-    if (!kidType->equals(*InstantiatedType::IntType)) {
+    if (!kidType->isInt()) {
       throw TypeViolationException(
           "Expected type int for unary operator " + StringifyType(type) +
           ", got " + kidType->stringify());

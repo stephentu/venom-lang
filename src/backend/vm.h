@@ -154,22 +154,28 @@ class FunctionDescriptor {
   friend class ExecutionContext;
   friend class Instruction;
 public:
-  typedef runtime::venom_object_ptr vptr;
+  typedef runtime::venom_cell vcell;
+  typedef runtime::venom_ret_cell vrcell;
   typedef ExecutionContext* exptr;
 
   // TODO: more typedefs
-  typedef vptr(*F0)(exptr);
-  typedef vptr(*F1)(exptr,vptr);
-  typedef vptr(*F2)(exptr,vptr,vptr);
-  typedef vptr(*F3)(exptr,vptr,vptr,vptr);
-  typedef vptr(*F4)(exptr,vptr,vptr,vptr,vptr);
-  typedef vptr(*F5)(exptr,vptr,vptr,vptr,vptr,vptr);
-  typedef vptr(*F6)(exptr,vptr,vptr,vptr,vptr,vptr,vptr);
-  typedef vptr(*F7)(exptr,vptr,vptr,vptr,vptr,vptr,vptr,vptr);
-  typedef vptr(*F8)(exptr,vptr,vptr,vptr,vptr,vptr,vptr,vptr,vptr);
+  typedef vrcell(*F0)(exptr);
+  typedef vrcell(*F1)(exptr,vcell);
+  typedef vrcell(*F2)(exptr,vcell,vcell);
+  typedef vrcell(*F3)(exptr,vcell,vcell,vcell);
+  typedef vrcell(*F4)(exptr,vcell,vcell,vcell,vcell);
+  typedef vrcell(*F5)(exptr,vcell,vcell,vcell,vcell,vcell);
+  typedef vrcell(*F6)(exptr,vcell,vcell,vcell,vcell,vcell,vcell);
+  typedef vrcell(*F7)(exptr,vcell,vcell,vcell,vcell,vcell,vcell,vcell);
+  typedef vrcell(*F8)(exptr,vcell,vcell,vcell,vcell,vcell,vcell,vcell,vcell);
 
-  FunctionDescriptor(void* function_ptr, size_t num_args, bool native)
-    : function_ptr(function_ptr), num_args(num_args), native(native) {}
+  FunctionDescriptor(void* function_ptr, size_t num_args,
+                     uint64_t arg_ref_cell_bitmap, bool native)
+    : function_ptr(function_ptr), num_args(num_args),
+      arg_ref_cell_bitmap(arg_ref_cell_bitmap), native(native) {
+    // TODO: implementation limitation
+    assert(num_args <= 64);
+  }
 
   /** Accessors */
   inline void* getFunctionPtr() const { return function_ptr; }
@@ -184,6 +190,7 @@ protected:
 private:
   void* function_ptr;
   size_t num_args;
+  uint64_t arg_ref_cell_bitmap;
   bool native;
 };
 
