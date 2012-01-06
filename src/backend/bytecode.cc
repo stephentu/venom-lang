@@ -16,6 +16,7 @@ static inline void CheckNullPointer(const venom_cell& cell) {
 
 // Don't be tempted to rewrite execute to use function pointers-
 // I tried it and it runs a bit slower
+
 /*
 typedef bool(Instruction::*FARG0)(ExecutionContext&);
 typedef bool(Instruction::*FARG1)(ExecutionContext&,venom_cell&);
@@ -74,7 +75,7 @@ bool Instruction::execute(ExecutionContext& ctx) {
 
 #define HANDLE_ONE(a) \
     case a: { \
-      stack<venom_cell>& pstack = ctx.program_stack; \
+      ExecutionContext::program_stack_type& pstack = ctx.program_stack; \
       venom_cell opnd0 = pstack.top(); \
       pstack.pop(); \
       return a ## _impl(ctx, opnd0); \
@@ -82,7 +83,7 @@ bool Instruction::execute(ExecutionContext& ctx) {
 
 #define HANDLE_TWO(a) \
     case a: { \
-      stack<venom_cell>& pstack = ctx.program_stack; \
+      ExecutionContext::program_stack_type& pstack = ctx.program_stack; \
       venom_cell opnd1 = pstack.top(); \
       pstack.pop(); \
       venom_cell opnd0 = pstack.top(); \

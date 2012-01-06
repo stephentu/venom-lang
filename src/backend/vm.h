@@ -32,6 +32,9 @@ class ExecutionContext {
   friend class Instruction;
   friend class runtime::venom_object;
 public:
+
+  typedef std::stack<runtime::venom_cell> program_stack_type;
+
   /**
    * Callback class to read a result from execute()
    *
@@ -141,7 +144,7 @@ protected:
   runtime::venom_class_object** class_obj_pool;
 
   /** Program stack - shared per context */
-  std::stack<runtime::venom_cell> program_stack;
+  program_stack_type program_stack;
 
   /** Program frames - created per function invocation */
   std::stack< std::vector<runtime::venom_cell> > local_variables_stack;
