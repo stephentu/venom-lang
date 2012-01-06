@@ -174,7 +174,7 @@ private:
 
   template <typename SearchType>
   struct container_table_external_functor {
-    SymbolReference operator()(const SearchType& t) {
+    inline SymbolReference operator()(const SearchType& t) {
       return SymbolReference(t->getFullName());
     }
   };

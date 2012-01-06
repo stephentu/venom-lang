@@ -89,7 +89,7 @@ public:
    *   STORE_LOCAL_VAR N0
    *     opnd0 -> ; variables[N0] = opnd0
    *   STORE_LOCAL_VAR_REF N0
-   *     opnd0 -> ; variables[N0] = opnd0
+   *     opnd0 -> ; decRef(variables[N0]), variables[N0] = opnd0
    *
    *   INT_TO_FLOAT
    *     opnd0 -> float(opnd0)
@@ -272,7 +272,8 @@ public:
    *   SET_ATTR_OBJ N0
    *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1, decRef(opnd0)
    *   SET_ATTR_OBJ_REF N0
-   *     opnd0, opnd1 -> ; opnd0.attr[N0] = opnd1, decRef(opnd0)
+   *     opnd0, opnd1 -> ; decRef(opnd0.attr[N0]),
+   *                       opnd0.attr[N0] = opnd1, decRef(opnd0)
    *
    *   SET_ARRAY_ACCESS
    *     // TODO: spec and implement
