@@ -131,6 +131,18 @@ public:
   virtual void print(std::ostream& o, size_t indent = 0) = 0;
 
 protected:
+
+  /**
+   * Replace this ast node with replacement. Meant to be called
+   * during the rewriteLocal stage. Does the following:
+   *
+   * (1) sets the symbol table correctly
+   * (2) runs static analysis
+   * (3) runs type checking
+   */
+  virtual ASTNode*
+    replace(analysis::SemanticContext* ctx, ASTNode* replacement);
+
   analysis::SymbolTable* symbols;
   LocationCtx            locCtx;
 };

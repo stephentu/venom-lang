@@ -48,6 +48,8 @@ public:
     return false;
   }
 
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 

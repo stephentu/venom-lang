@@ -26,7 +26,7 @@ public:
 
   /** Returns NULL if no explicit type */
   inline const ParameterizedTypeString*
-  getExplicitParameterizedTypeString() const { return explicit_type; }
+    getExplicitParameterizedTypeString() const { return explicit_type; }
 
   virtual size_t getNumKids() const { return 0; }
 
@@ -45,6 +45,8 @@ public:
   virtual analysis::BaseSymbol* getSymbol();
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 

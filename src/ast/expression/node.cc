@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <sstream>
 
+#include <analysis/semanticcontext.h>
 #include <ast/expression/node.h>
 #include <util/stl.h>
 
 using namespace std;
+using namespace venom::analysis;
 
 namespace venom {
 namespace ast {
@@ -27,6 +29,13 @@ string ParameterizedTypeString::stringify() const {
 		s << "}";
 	}
 	return s.str();
+}
+
+ASTExpressionNode*
+ASTExpressionNode::replace(SemanticContext* ctx, ASTNode* replacement) {
+  assert(replacement);
+  assert(dynamic_cast<ASTExpressionNode*>(replacement));
+  return static_cast<ASTExpressionNode*>(ASTNode::replace(ctx, replacement));
 }
 
 }

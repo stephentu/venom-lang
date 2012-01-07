@@ -22,6 +22,11 @@ BaseSymbol::getFullName() const {
   return buf.str();
 }
 
+bool
+BaseSymbol::isModuleLevelSymbol() const {
+  return getDefinedSymbolTable()->isModuleLevelSymbolTable();
+}
+
 InstantiatedType*
 Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
              const InstantiatedTypeVec& params) {

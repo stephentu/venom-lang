@@ -27,6 +27,9 @@ public:
   inline SymbolTable* getDefinedSymbolTable() { return table; }
   inline const SymbolTable* getDefinedSymbolTable() const { return table; }
 
+  /** Is this symbol defined in a top level module? */
+  bool isModuleLevelSymbol() const;
+
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params) = 0;
@@ -179,6 +182,9 @@ public:
     getModuleSymbolTable() { return moduleTable; }
   inline const SymbolTable*
     getModuleSymbolTable() const { return moduleTable; }
+
+  inline Type* getModuleType() { return moduleType; }
+  inline const Type* getModuleType() const { return moduleType; }
 
   /** This symbol should only be visible when the current ctx equals the
    * original (importing) context. This is to prevent seeing all of an

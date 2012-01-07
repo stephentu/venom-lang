@@ -130,15 +130,7 @@ public:
 
   inline bool isRootContext() const { return !parent; }
 
-  SemanticContext* newChildContext(const std::string& moduleName) {
-    SemanticContext *child =
-      new SemanticContext(moduleName, this,
-                          isRootContext() ? this : programRoot);
-    child->setRootSymbolTable(rootSymbols->newChildScope(child, NULL));
-    childrenMap[moduleName] = child;
-    children.push_back(child);
-    return child;
-  }
+  SemanticContext* newChildContext(const std::string& moduleName);
 
   SemanticContext* findModule(const util::StrVec& names);
   SemanticContext* createModule(const util::StrVec& names);

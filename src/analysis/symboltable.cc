@@ -122,6 +122,11 @@ SymbolTable::canSee(BaseSymbol* bs) {
 }
 
 bool
+SymbolTable::isModuleLevelSymbolTable() const {
+  return this == ctx->getModuleRoot()->getSymbolTable();
+}
+
+bool
 SymbolTable::isDefined(const string& name,
                        unsigned int type,
                        RecurseMode mode) {

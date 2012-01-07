@@ -1,3 +1,5 @@
+#include <ast/expression/attraccess.h>
+#include <ast/expression/symbolnode.h>
 #include <ast/expression/variable.h>
 #include <ast/statement/classdecl.h>
 
@@ -44,6 +46,25 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
         name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
   assert(sym);
   return sym->bind(ctx, t, typeParamArgs);
+}
+
+ASTNode*
+VariableNode::rewriteLocal(SemanticContext* ctx) {
+  BaseSymbol *bs = getSymbol();
+  assert(bs);
+  if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
+    if (sym->isModuleLevelSymbol()) {
+      // need to rewrite x to reference x off of the
+      // module object
+      ModuleSymbol *msym =
+        ctx->getRootSymbolTable()->findModuleSymbol(
+            ctx->getModuleName(), SymbolTable::NoRecurse);
+      assert(msym);
+      AttrAccessNode *rep = new AttrAccessNode(new SymbolNode(msym), name);
+      return replace(ctx, rep);
+    }
+  }
+  return NULL;
 }
 
 void

@@ -38,6 +38,17 @@ void SemanticContext::collectObjectCode(vector<ObjectCode*>& objCodes) {
   }
 }
 
+SemanticContext*
+SemanticContext::newChildContext(const string& moduleName) {
+  SemanticContext *child =
+    new SemanticContext(moduleName, this,
+                        isRootContext() ? this : programRoot);
+  child->setRootSymbolTable(rootSymbols->newChildScope(child, NULL));
+  childrenMap[moduleName] = child;
+  children.push_back(child);
+  return child;
+}
+
 SemanticContext* SemanticContext::findModule(const util::StrVec& names) {
   if (names.empty()) return this;
   map<string, SemanticContext*>::iterator it = childrenMap.find(names[0]);

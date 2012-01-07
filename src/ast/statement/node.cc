@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include <analysis/type.h>
 #include <analysis/semanticcontext.h>
 
@@ -11,13 +13,6 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
-void ASTStatementNode::checkExpectedType(InstantiatedType* expected) {
-  if (expected && !expected->equals(*InstantiatedType::VoidType)) {
-    throw TypeViolationException(
-        "Expected type " + expected->stringify() + ", got void type");
-  }
-}
-
 void ASTStatementNode::typeCheck(SemanticContext* ctx,
                                  InstantiatedType* expected) {
   forchild (kid) {
@@ -30,6 +25,20 @@ void ASTStatementNode::typeCheck(SemanticContext* ctx,
     }
   } endfor
   checkExpectedType(expected);
+}
+
+ASTStatementNode*
+ASTStatementNode::replace(SemanticContext* ctx, ASTNode* replacement) {
+  assert(replacement);
+  assert(dynamic_cast<ASTStatementNode*>(replacement));
+  return static_cast<ASTStatementNode*>(ASTNode::replace(ctx, replacement));
+}
+
+void ASTStatementNode::checkExpectedType(InstantiatedType* expected) {
+  if (expected && !expected->equals(*InstantiatedType::VoidType)) {
+    throw TypeViolationException(
+        "Expected type " + expected->stringify() + ", got void type");
+  }
 }
 
 }

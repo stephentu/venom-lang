@@ -135,6 +135,8 @@ public:
    */
   bool canSee(BaseSymbol *sym);
 
+  bool isModuleLevelSymbolTable() const;
+
   bool isDefined(const std::string& name, unsigned int type, RecurseMode mode);
 
   BaseSymbol*

@@ -2,8 +2,10 @@
 
 #include <analysis/symboltable.h>
 
+#include <ast/expression/node.h>
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
+#include <ast/statement/node.h>
 #include <ast/node.h>
 
 #include <backend/codegenerator.h>
@@ -95,6 +97,21 @@ ASTNode::codeGen(CodeGenerator& cg) {
     if (!kid) continue;
     kid->codeGen(cg);
   } endfor
+}
+
+ASTNode*
+ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
+  assert(replacement);
+  replacement->initSymbolTable(getSymbolTable());
+  replacement->semanticCheck(ctx);
+  if (ASTStatementNode *stmt =
+        dynamic_cast<ASTStatementNode*>(replacement)) {
+    stmt->typeCheck(ctx);
+  } else if (ASTExpressionNode *expr =
+               dynamic_cast<ASTExpressionNode*>(replacement)) {
+    expr->typeCheck(ctx);
+  }
+  return replacement;
 }
 
 }

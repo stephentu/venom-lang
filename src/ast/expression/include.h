@@ -11,6 +11,7 @@
 #include <ast/expression/binop.h>
 #include <ast/expression/unop.h>
 
+#include <ast/expression/symbolnode.h>
 #include <ast/expression/variable.h>
 
 #include <ast/expression/attraccess.h>

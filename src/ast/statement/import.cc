@@ -56,16 +56,18 @@ ImportStmtNode::registerSymbol(SemanticContext* ctx) {
   assert(mctx->getModuleRoot());
   assert(mctx->getModuleRoot()->getSymbolTable());
 
-  // create module type (in the current semantic context)
-  Type *moduleType = ctx->createModuleType(names.back());
-  // create the module class symbol (and insert into current scope)
-  symbols->createClassSymbol(
-      moduleType->getName(),
-      mctx->getModuleRoot()->getSymbolTable(), moduleType);
-  // create the module symbol (to make the module visible to this scope)
+  // find the module symbol (in the module's root scope)
+  ModuleSymbol *msym =
+    mctx->getRootSymbolTable()->findModuleSymbol(
+        names.back(), SymbolTable::NoRecurse);
+  assert(msym);
+
+  // create the module symbol in this scope
+  // (to make the module visible to this scope)
   symbols->createModuleSymbol(
         names.back(),
-        mctx->getModuleRoot()->getSymbolTable(), moduleType, ctx);
+        mctx->getModuleRoot()->getSymbolTable(),
+        msym->getModuleType(), ctx);
 }
 
 }
