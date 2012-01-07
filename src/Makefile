@@ -73,8 +73,13 @@ BINARIES = venom test/venom-test test/venom-bytecode-test
 BINARIES_OBJ = $(addsuffix .o,$(BINARIES))
 BINARIES_DEPS = $(addsuffix .d,$(BINARIES))
 
+.PHONY: clean
 clean:
 	rm -f $(ALLOBJFILES) $(BINARIES_OBJ)
 	rm -f $(GENERATED_SRCS)
 	rm -f $(DEPS) $(BINARIES_DEPS)
 	rm -f $(BINARIES)
+
+.PHONY: count-lines
+count-lines: clean
+	cloc . --force-lang='yacc,yy' --force-lang='lex,ll'
