@@ -28,13 +28,25 @@ public:
   virtual size_t getNumKids() const { return 1 + args.size(); }
 
   virtual ASTNode* getNthKid(size_t kid) {
+    VENOM_CHECK_RANGE(kid, 1 + args.size());
     switch (kid) {
     case 0:  return primary;
-    default: return args.at(kid - 1);
+    default: return args[kid - 1];
     }
   }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 1 + args.size());
+    switch (idx) {
+    case 0:  VENOM_SAFE_SET_CASE(primary, kid);
+    default: VENOM_SAFE_SET_CASE(args[idx - 1], kid);
+    }
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 1 + args.size());
+    return false;
+  }
 
 protected:
   virtual analysis::InstantiatedType*

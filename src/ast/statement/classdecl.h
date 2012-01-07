@@ -53,7 +53,15 @@ public:
     VENOM_SAFE_RETURN(kids, kid);
   }
 
-  virtual bool needsNewScope(size_t k) const { return true; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 1);
+    VENOM_SAFE_SET_EXPR(stmts, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 1);
+    return true;
+  }
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,

@@ -31,7 +31,15 @@ public:
     VENOM_SAFE_RETURN(kids, kid);
   }
 
-  virtual bool needsNewScope(size_t k) const { return k == 1; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 2);
+    VENOM_SAFE_SET2(cond, stmts, kid, idx);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 2);
+    return k == 1;
+  }
 
   virtual void codeGen(backend::CodeGenerator& cg);
 

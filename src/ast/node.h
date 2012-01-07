@@ -30,10 +30,18 @@ public:
 
   virtual ~ASTNode();
 
-  /** Traversal **/
+  /** Tree Traversal **/
 
-  virtual size_t getNumKids() const      = 0;
+  virtual size_t getNumKids() const = 0;
+
   virtual ASTNode* getNthKid(size_t kid) = 0;
+  inline const ASTNode* getNthKid(size_t kid) const {
+    return const_cast<ASTNode*>(this)->getNthKid(kid);
+  }
+
+  /** Tree Mutators */
+
+  virtual void setNthKid(size_t idx, ASTNode* kid) = 0;
 
   /** AST Context **/
   enum LocationCtx {
@@ -90,6 +98,18 @@ public:
    * TODO: declare as protected, with appropriate friends
    */
   virtual void registerSymbol(analysis::SemanticContext* ctx) {}
+
+  /** Tree re-writing **/
+
+  /**
+   * Do a local tree rewrite on this node (recursively).
+   *
+   * If the return value is NULL, then that means no rewrite was performed.  If
+   * the return value is not NULL, then that means a rewrite was performed, and
+   * the return value is the *new* value of node. It is up to the caller to
+   * delete the old node.
+   */
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
 
   /** Code Generation **/
 

@@ -33,7 +33,15 @@ public:
     VENOM_SAFE_RETURN(kids, kid);
   }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 2);
+    VENOM_SAFE_SET2(first, second, kid, idx);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 2);
+    return false;
+  }
 
 protected:
   virtual analysis::InstantiatedType*
@@ -75,9 +83,20 @@ public:
 
   virtual size_t getNumKids() const { return pairs.size(); }
 
-  virtual ASTNode* getNthKid(size_t kid) { return pairs.at(kid); }
+  virtual ASTNode* getNthKid(size_t kid) {
+    VENOM_CHECK_RANGE(kid, pairs.size());
+    return pairs[kid];
+  }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, pairs.size());
+    VENOM_SAFE_SET_EXPR(pairs[idx], kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, pairs.size());
+    return false;
+  }
 
 protected:
   virtual analysis::InstantiatedType*

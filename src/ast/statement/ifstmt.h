@@ -33,7 +33,15 @@ public:
     VENOM_SAFE_RETURN(kids, kid);
   }
 
-  virtual bool needsNewScope(size_t k) const { return k != 0; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 3);
+    VENOM_SAFE_SET3(cond, true_branch, false_branch, kid, idx);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 3);
+    return k != 0;
+  }
 
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);

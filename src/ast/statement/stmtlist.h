@@ -38,7 +38,15 @@ public:
 
   virtual ASTNode* getNthKid(size_t kid) { return stmts.at(kid); }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, stmts.size());
+    VENOM_SAFE_SET_EXPR(stmts[idx], kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, stmts.size());
+    return false;
+  }
 
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);

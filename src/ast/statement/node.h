@@ -21,6 +21,9 @@ public:
   ASTStatementNode() {}
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
+  virtual ASTStatementNode* rewriteLocal(analysis::SemanticContext* ctx) {
+    return NULL;
+  }
 protected:
   void checkExpectedType(analysis::InstantiatedType* expected);
 };

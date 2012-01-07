@@ -10,6 +10,9 @@
 
 #include <util/macros.h>
 
+using namespace venom::analysis;
+using namespace venom::backend;
+
 namespace venom {
 namespace ast {
 
@@ -46,7 +49,7 @@ const ClassDeclNode* ASTNode::getEnclosingClassNode() const {
   return const_cast<ASTNode*>(this)->getEnclosingClassNode();
 }
 
-void ASTNode::initSymbolTable(analysis::SymbolTable* symbols) {
+void ASTNode::initSymbolTable(SymbolTable* symbols) {
   assert(this->symbols == NULL);
   this->symbols = symbols;
 
@@ -61,7 +64,7 @@ void ASTNode::initSymbolTable(analysis::SymbolTable* symbols) {
 }
 
 void
-ASTNode::semanticCheckImpl(analysis::SemanticContext* ctx, bool doRegister) {
+ASTNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   if (doRegister) {
     registerSymbol(ctx);
   }
@@ -71,8 +74,23 @@ ASTNode::semanticCheckImpl(analysis::SemanticContext* ctx, bool doRegister) {
   } endfor
 }
 
+ASTNode*
+ASTNode::rewriteLocal(SemanticContext* ctx) {
+  for (size_t i = 0; i < getNumKids(); i++) {
+    ASTNode* kid = getNthKid(i);
+    if (!kid) continue;
+    ASTNode* rep = kid->rewriteLocal(ctx);
+    if (rep) {
+      assert(rep != kid);
+      setNthKid(i, rep);
+      delete rep;
+    }
+  }
+  return NULL;
+}
+
 void
-ASTNode::codeGen(backend::CodeGenerator& cg) {
+ASTNode::codeGen(CodeGenerator& cg) {
   forchild (kid) {
     if (!kid) continue;
     kid->codeGen(cg);

@@ -19,9 +19,20 @@ public:
 
   virtual size_t getNumKids() const { return values.size(); }
 
-  virtual ASTNode* getNthKid(size_t kid) { return values.at(kid); }
+  virtual ASTNode* getNthKid(size_t kid) {
+    VENOM_CHECK_RANGE(kid, values.size());
+    return values[kid];
+  }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, values.size());
+    VENOM_SAFE_SET_EXPR(values[idx], kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, values.size());
+    return false;
+  }
 
 protected:
   virtual analysis::InstantiatedType*

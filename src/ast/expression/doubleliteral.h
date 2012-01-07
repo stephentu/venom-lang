@@ -17,7 +17,13 @@ public:
     throw std::out_of_range(__PRETTY_FUNCTION__);
   }
 
-  virtual bool needsNewScope(size_t k) const { return false; }
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    throw std::out_of_range(__PRETTY_FUNCTION__);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    throw std::out_of_range(__PRETTY_FUNCTION__);
+  }
 
 protected:
   virtual analysis::InstantiatedType*

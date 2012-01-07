@@ -63,6 +63,10 @@ public:
                 = analysis::InstantiatedTypeVec()) {
     return staticType = typeCheckImpl(ctx, expected, typeParamArgs);
   }
+
+  virtual ASTExpressionNode* rewriteLocal(analysis::SemanticContext* ctx) {
+    return NULL;
+  }
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
