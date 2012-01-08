@@ -60,11 +60,14 @@ VariableNode::rewriteLocal(SemanticContext* ctx) {
         ctx->getRootSymbolTable()->findModuleSymbol(
             ctx->getModuleName(), SymbolTable::NoRecurse);
       assert(msym);
-      AttrAccessNode *rep = new AttrAccessNode(new SymbolNode(msym), name);
+      AttrAccessNode *rep =
+        new AttrAccessNode(
+            new SymbolNode(msym, msym->getModuleType()->instantiate(ctx)),
+            name);
       return replace(ctx, rep);
     }
   }
-  return NULL;
+  return replace(ctx, createSymbolNode());
 }
 
 void
@@ -79,6 +82,14 @@ VariableNode::codeGen(CodeGenerator& cg) {
     // then wait until the AttrAccess node to generate
     // code
   }
+}
+
+ASTExpressionNode*
+VariableNode::createSymbolNode() {
+  BaseSymbol *bs = getSymbol();
+  assert(bs);
+  assert(staticType);
+  return new SymbolNode(bs, staticType);
 }
 
 void

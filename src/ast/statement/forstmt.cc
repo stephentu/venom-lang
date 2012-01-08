@@ -58,5 +58,20 @@ ForStmtNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   checkExpectedType(expected);
 }
 
+ASTNode*
+ForStmtNode::rewriteLocal(SemanticContext* ctx) {
+  for (size_t i = 1; i < getNumKids(); i++) {
+    ASTNode* kid = getNthKid(i);
+    assert(kid);
+    ASTNode* rep = kid->rewriteLocal(ctx);
+    if (rep) {
+      assert(rep != kid);
+      setNthKid(i, rep);
+      delete kid;
+    }
+  }
+  return NULL;
+}
+
 }
 }

@@ -40,17 +40,11 @@
     } \
   } while (0)
 
-#define VENOM_SAFE_SET_CASE(treeKid, param) \
-  do { \
-    VENOM_SAFE_SET_EXPR(treeKid, param); \
-    break; \
-  } while (0)
-
 #define VENOM_SAFE_SET2(treeKid0, treeKid1, param, idx) \
   do { \
     switch (idx) { \
-    case 0: VENOM_SAFE_SET_CASE(treeKid0, param); \
-    case 1: VENOM_SAFE_SET_CASE(treeKid1, param); \
+    case 0: VENOM_SAFE_SET_EXPR(treeKid0, param); break; \
+    case 1: VENOM_SAFE_SET_EXPR(treeKid1, param); break; \
     default: assert(false); \
     } \
   } while (0)
@@ -58,9 +52,9 @@
 #define VENOM_SAFE_SET3(treeKid0, treeKid1, treeKid2, param, idx) \
   do { \
     switch (idx) { \
-    case 0: VENOM_SAFE_SET_CASE(treeKid0, param); \
-    case 1: VENOM_SAFE_SET_CASE(treeKid1, param); \
-    case 2: VENOM_SAFE_SET_CASE(treeKid2, param); \
+    case 0: VENOM_SAFE_SET_EXPR(treeKid0, param); break; \
+    case 1: VENOM_SAFE_SET_EXPR(treeKid1, param); break; \
+    case 2: VENOM_SAFE_SET_EXPR(treeKid2, param); break; \
     default: assert(false); \
     } \
   } while (0)

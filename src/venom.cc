@@ -14,6 +14,8 @@ int main(int argc, char **argv) {
       global_compile_opts.trace_parse = true;
     } else if (argv[ai] == string ("-s")) {
       global_compile_opts.trace_lex = true;
+    } else if (argv[ai] == string ("-c")) {
+      global_compile_opts.semantic_check_only = true;
     } else if (argv[ai] == string ("--print-ast")) {
       global_compile_opts.print_ast = true;
     } else if (argv[ai] == string ("--print-bytecode")) {

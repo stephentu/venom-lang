@@ -40,6 +40,8 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
     VariableNode *vn = dynamic_cast<VariableNode*>(variable);
     assert(vn && !vn->getExplicitParameterizedTypeString());
     symbols->createSymbol(vn->getName(), rhs);
+    // go again, so we can set the static type on variable
+    TypeCheckAssignment(ctx, symbols, variable, value);
   }
 }
 

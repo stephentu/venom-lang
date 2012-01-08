@@ -21,8 +21,7 @@ InstantiatedType*
 SymbolNode::typeCheckImpl(SemanticContext* ctx,
                           InstantiatedType* expected,
                           const InstantiatedTypeVec& typeParamArgs) {
-  TypeTranslator t;
-  return symbol->bind(ctx, t, typeParamArgs);
+  return staticType;
 }
 
 void

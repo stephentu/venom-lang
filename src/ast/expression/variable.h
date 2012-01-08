@@ -64,6 +64,8 @@ public:
   }
 
 private:
+  ASTExpressionNode* createSymbolNode();
+
   std::string              name;
   ParameterizedTypeString* explicit_type;
 };
@@ -74,6 +76,10 @@ public:
     : VariableNode("self", NULL) {}
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx) {
+    return NULL;
+  }
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
@@ -95,6 +101,10 @@ public:
     : VariableNode("super", NULL) {}
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx) {
+    return NULL;
+  }
 
 protected:
   virtual analysis::InstantiatedType*

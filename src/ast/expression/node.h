@@ -43,7 +43,7 @@ typedef std::vector<ParameterizedTypeString*> TypeStringVec;
 
 class ASTExpressionNode : public ASTNode {
 public:
-  ASTExpressionNode() {}
+  ASTExpressionNode() : staticType(NULL) {}
 
   inline analysis::InstantiatedType*
     getStaticType() { return staticType; }

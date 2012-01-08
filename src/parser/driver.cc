@@ -85,12 +85,25 @@ unsafe_compile(const string& fname, fstream& infile,
   assert(pctx.stmts);
   ctx.setModuleRoot(pctx.stmts);
   if (global_compile_opts.print_ast) {
+    cerr << "After parse stage:" << endl;
     pctx.stmts->print(cerr);
     cerr << endl;
   }
   pctx.stmts->initSymbolTable(ctx.getRootSymbolTable()->newChildScope(NULL));
   pctx.stmts->semanticCheck(&ctx);
   pctx.stmts->typeCheck(&ctx);
+  if (global_compile_opts.print_ast) {
+    cerr << "After type check stage:" << endl;
+    pctx.stmts->print(cerr);
+    cerr << endl;
+  }
+
+  pctx.stmts->rewriteLocal(&ctx);
+  if (global_compile_opts.print_ast) {
+    cerr << "After rewrite local stage:" << endl;
+    pctx.stmts->print(cerr);
+    cerr << endl;
+  }
 
   if (global_compile_opts.semantic_check_only) return;
 

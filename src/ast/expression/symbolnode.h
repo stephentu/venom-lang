@@ -8,14 +8,13 @@ namespace ast {
 
 /**
  * Synthetic AST node
- *
- * TODO: SymbolNode should possibly derive from VariableNode
- * since they both share some code in common
  */
 class SymbolNode : public ASTExpressionNode {
 public:
-  /** Does *not* take ownership of symbol */
-  SymbolNode(analysis::BaseSymbol* symbol) : symbol(symbol) {}
+  /** Does *not* take ownership of symbol, nor type */
+  SymbolNode(analysis::BaseSymbol* symbol,
+             analysis::InstantiatedType* type)
+    : symbol(symbol) { staticType = type; }
 
   virtual size_t getNumKids() const { return 0; }
 

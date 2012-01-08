@@ -7,10 +7,18 @@
 #include <analysis/symbol.h>
 #include <analysis/type.h>
 
+#include <ast/expression/boolliteral.h>
+#include <ast/expression/doubleliteral.h>
+#include <ast/expression/intliteral.h>
+#include <ast/expression/nilliteral.h>
+#include <ast/expression/node.h>
+
 #include <util/macros.h>
 #include <util/stl.h>
 
 using namespace std;
+
+using namespace venom::ast;
 
 namespace venom {
 namespace analysis {
@@ -184,6 +192,14 @@ string TypeParamType::stringify() const {
 }
 
 string TypeParamType::stringifyTypename() const { return stringify(); }
+
+ASTExpressionNode*
+Type::createDefaultInitializer() const {
+  if (isInt()) return new IntLiteralNode(0);
+  else if (isFloat()) return new DoubleLiteralNode(0.0);
+  else if (isBool()) return new BoolLiteralNode(false);
+  else return new NilLiteralNode;
+}
 
 InstantiatedType* Type::instantiate() {
   assert(params == 0);

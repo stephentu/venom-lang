@@ -56,7 +56,28 @@ void
 ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
                              InstantiatedType* expected) {
   assert(!expected);
-  if (value) AssignNode::TypeCheckAssignment(ctx, symbols, variable, value);
+  if (!value) {
+    // replace
+    //   attr x::T
+    // with
+    //   attr x::T = <default initializer>
+    //
+    // where <default initializer> is:
+    //   0 (T = Int)
+    //   0.0 (T = Double)
+    //   False (T = Bool)
+    //   Nil (otherwise)
+
+    BaseSymbol *bs = variable->getSymbol();
+    assert(bs);
+    assert(dynamic_cast<Symbol*>(bs));
+    Symbol *sym = static_cast<Symbol*>(bs);
+    value = sym->getInstantiatedType()->getType()->createDefaultInitializer();
+    value->initSymbolTable(symbols);
+    // no need to call semantic check on value
+  }
+
+  AssignNode::TypeCheckAssignment(ctx, symbols, variable, value);
 }
 
 }

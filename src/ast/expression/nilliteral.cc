@@ -14,10 +14,10 @@ InstantiatedType*
 NilLiteralNode::typeCheckImpl(SemanticContext* ctx,
                               InstantiatedType* expected,
                               const InstantiatedTypeVec& typeParamArgs) {
-  if (expected && expected->isSubtypeOf(*InstantiatedType::ObjectType)) {
+  if (expected && !expected->isPrimitive()) {
     return expected;
   }
-  return InstantiatedType::ObjectType;
+  return InstantiatedType::AnyType;
 }
 
 void

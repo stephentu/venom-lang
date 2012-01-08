@@ -85,7 +85,7 @@ ASTNode::rewriteLocal(SemanticContext* ctx) {
     if (rep) {
       assert(rep != kid);
       setNthKid(i, rep);
-      delete rep;
+      delete kid;
     }
   }
   return NULL;

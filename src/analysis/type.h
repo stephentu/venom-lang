@@ -8,6 +8,12 @@
 #include <utility>
 
 namespace venom {
+
+namespace ast {
+  /** Forward decl */
+  class ASTExpressionNode;
+}
+
 namespace analysis {
 
 /** Forward decl */
@@ -153,6 +159,8 @@ public:
     assert(parent || name == "any" || name == "boundless");
     return (parent == NULL) ? name == "boundless" : false;
   }
+
+  ast::ASTExpressionNode* createDefaultInitializer() const;
 
   /**
    * The input SemanticContext is the current context, which

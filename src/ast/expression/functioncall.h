@@ -38,8 +38,8 @@ public:
   virtual void setNthKid(size_t idx, ASTNode* kid) {
     VENOM_CHECK_RANGE(idx, 1 + args.size());
     switch (idx) {
-    case 0:  VENOM_SAFE_SET_CASE(primary, kid);
-    default: VENOM_SAFE_SET_CASE(args[idx - 1], kid);
+    case 0:  VENOM_SAFE_SET_EXPR(primary, kid); break;
+    default: VENOM_SAFE_SET_EXPR(args[idx - 1], kid); break;
     }
   }
 
