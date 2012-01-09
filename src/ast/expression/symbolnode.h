@@ -13,8 +13,12 @@ class SymbolNode : public ASTExpressionNode {
 public:
   /** Does *not* take ownership of symbol, nor type */
   SymbolNode(analysis::BaseSymbol* symbol,
-             analysis::InstantiatedType* type)
-    : symbol(symbol) { staticType = type; }
+             analysis::InstantiatedType* staticType,
+             analysis::InstantiatedType* expectedType)
+    : symbol(symbol) {
+    this->staticType = staticType;
+    this->expectedType = expectedType;
+  }
 
   virtual size_t getNumKids() const { return 0; }
 

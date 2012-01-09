@@ -109,7 +109,10 @@ ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
     stmt->typeCheck(ctx);
   } else if (ASTExpressionNode *expr =
                dynamic_cast<ASTExpressionNode*>(replacement)) {
-    expr->typeCheck(ctx);
+    ASTExpressionNode *self = dynamic_cast<ASTExpressionNode*>(this);
+    assert(self);
+    expr->typeCheck(ctx, self->getExpectedType(), self->getTypeParamArgs());
+    // TODO: assert resulting typeCheck equals the original node's typeCheck?
   }
   return replacement;
 }

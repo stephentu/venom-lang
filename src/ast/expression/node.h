@@ -43,12 +43,22 @@ typedef std::vector<ParameterizedTypeString*> TypeStringVec;
 
 class ASTExpressionNode : public ASTNode {
 public:
-  ASTExpressionNode() : staticType(NULL) {}
+  ASTExpressionNode() : staticType(NULL), expectedType(NULL) {}
 
   inline analysis::InstantiatedType*
     getStaticType() { return staticType; }
   inline const analysis::InstantiatedType*
     getStaticType() const { return staticType; }
+
+  inline analysis::InstantiatedType*
+    getExpectedType() { return expectedType; }
+  inline const analysis::InstantiatedType*
+    getExpectedType() const { return expectedType; }
+
+  inline analysis::InstantiatedTypeVec&
+    getTypeParamArgs() { return typeParams; }
+  inline const analysis::InstantiatedTypeVec&
+    getTypeParamArgs() const { return typeParams; }
 
   /** Do type-checking on this node recursively.
    *  expected is what you expect this node to type-check to, if it matters
@@ -61,7 +71,8 @@ public:
               analysis::InstantiatedType* expected = NULL,
               const analysis::InstantiatedTypeVec& typeParamArgs
                 = analysis::InstantiatedTypeVec()) {
-    return staticType = typeCheckImpl(ctx, expected, typeParamArgs);
+    return staticType =
+      typeCheckImpl(ctx, expectedType = expected, typeParams = typeParamArgs);
   }
 
 protected:
@@ -73,6 +84,8 @@ protected:
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);
 
   analysis::InstantiatedType* staticType;
+  analysis::InstantiatedType* expectedType;
+  analysis::InstantiatedTypeVec typeParams;
 };
 
 typedef std::vector<ASTExpressionNode *> ExprNodeVec;

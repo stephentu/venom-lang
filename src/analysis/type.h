@@ -79,6 +79,11 @@ public:
 
   static Type* ObjectType;
 
+  /** Boxed primitive types */
+  static Type* BoxedIntType;
+  static Type* BoxedBoolType;
+  static Type* BoxedFloatType;
+
   /** Special type which represents a class type */
   static Type* ClassType;
 
@@ -261,6 +266,9 @@ public:
   static InstantiatedType* StringType;
   static InstantiatedType* VoidType;
   static InstantiatedType* ObjectType;
+  static InstantiatedType* BoxedIntType;
+  static InstantiatedType* BoxedBoolType;
+  static InstantiatedType* BoxedFloatType;
   static InstantiatedType* ModuleType;
   static InstantiatedType* BoundlessType;
 

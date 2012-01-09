@@ -134,11 +134,7 @@ protected:
 
   /**
    * Replace this ast node with replacement. Meant to be called
-   * during the rewriteLocal stage. Does the following:
-   *
-   * (1) sets the symbol table correctly
-   * (2) runs static analysis
-   * (3) runs type checking
+   * during the rewriteLocal stage.
    */
   virtual ASTNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);

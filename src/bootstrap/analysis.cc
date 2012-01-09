@@ -32,11 +32,20 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // TODO: passing NULL for the owner AST node is a hack for now
   //       we need to either build fake AST nodes, or create a new
   //       data structure to represent a scope
+
+  // any is the root of the class hierarchy. primitive types derive from any
+  // assigning a primitive to an any type, however, causes boxing of the
+  // primitive
   root->createClassSymbol("any", root->newChildScope(NULL), Type::AnyType);
+
+  // primitives
   root->createClassSymbol("int", root->newChildScope(NULL), Type::IntType);
   root->createClassSymbol("bool", root->newChildScope(NULL), Type::BoolType);
   root->createClassSymbol("float", root->newChildScope(NULL), Type::FloatType);
+
   root->createClassSymbol("string", root->newChildScope(NULL), Type::StringType);
+
+  // void exists so we can give everything a return type
   root->createClassSymbol("void", root->newChildScope(NULL), Type::VoidType);
 
 #define _CREATE_FUNC(n) \
@@ -75,6 +84,25 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                               InstantiatedTypeVec(),
                               InstantiatedType::VoidType, true);
   root->createClassSymbol("object", objSymTab, Type::ObjectType);
+
+  // boxed primitives, with hidden names
+  SymbolTable *IntSymTab = root->newChildScope(NULL);
+  IntSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
+                              util::vec1(InstantiatedType::IntType),
+                              InstantiatedType::VoidType, true);
+  root->createClassSymbol("<Int>", IntSymTab, Type::BoxedIntType);
+
+  SymbolTable *FloatSymTab = root->newChildScope(NULL);
+  FloatSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
+                              util::vec1(InstantiatedType::FloatType),
+                              InstantiatedType::VoidType, true);
+  root->createClassSymbol("<Float>", FloatSymTab, Type::BoxedFloatType);
+
+  SymbolTable *BoolSymTab = root->newChildScope(NULL);
+  BoolSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
+                              util::vec1(InstantiatedType::BoolType),
+                              InstantiatedType::VoidType, true);
+  root->createClassSymbol("<Bool>", BoolSymTab, Type::BoxedBoolType);
 
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
                           createTypeParams(ctx, 1));

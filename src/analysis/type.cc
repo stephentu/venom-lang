@@ -57,6 +57,10 @@ Type* Type::Func19Type(new Type("func19", NULL, InstantiatedType::AnyType, 20));
 Type* Type::ObjectType(new Type("object", NULL, InstantiatedType::AnyType, 0));
 InstantiatedType* InstantiatedType::ObjectType(Type::ObjectType->instantiate());
 
+Type* Type::BoxedIntType(new Type("<Int>", NULL, InstantiatedType::ObjectType, 0));
+Type* Type::BoxedBoolType(new Type("<Bool>", NULL, InstantiatedType::ObjectType, 0));
+Type* Type::BoxedFloatType(new Type("<Float>", NULL, InstantiatedType::ObjectType, 0));
+
 /** Cannot be named 'class', since 'class' is a keyword in the language */
 Type* Type::ClassType(new Type("classtype", NULL, InstantiatedType::ObjectType, 1));
 

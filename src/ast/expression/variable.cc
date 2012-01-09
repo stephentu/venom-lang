@@ -62,7 +62,8 @@ VariableNode::rewriteLocal(SemanticContext* ctx) {
       assert(msym);
       AttrAccessNode *rep =
         new AttrAccessNode(
-            new SymbolNode(msym, msym->getModuleType()->instantiate(ctx)),
+            new SymbolNode(
+              msym, msym->getModuleType()->instantiate(ctx), NULL),
             name);
       return replace(ctx, rep);
     }
@@ -89,7 +90,7 @@ VariableNode::createSymbolNode() {
   BaseSymbol *bs = getSymbol();
   assert(bs);
   assert(staticType);
-  return new SymbolNode(bs, staticType);
+  return new SymbolNode(bs, staticType, expectedType);
 }
 
 void
