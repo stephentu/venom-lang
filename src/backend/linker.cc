@@ -20,8 +20,9 @@ struct constant_table_functor {
     Linker::MapTbl ret;
     ret.reserve(obj->getConstantPool().size());
     for (size_t i = 0; i < obj->getConstantPool().size(); i++) {
+      bool create;
       ret.push_back(
-        exec_const_pool->create(obj->getConstantPool()[i]));
+        exec_const_pool->create(obj->getConstantPool()[i], create));
     }
     return ret;
   }

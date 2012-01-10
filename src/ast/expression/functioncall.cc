@@ -138,9 +138,11 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
       // TODO: implement calling of function objects
       VENOM_UNIMPLEMENTED;
     }
-    FuncSymbol *fs = dynamic_cast<FuncSymbol*>(bs);
-    assert(fs);
-    size_t fidx = cg.enterFunction(fs);
+    VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+    FuncSymbol *fs = static_cast<FuncSymbol*>(bs);
+    bool create;
+    size_t fidx = cg.enterFunction(fs, create);
+    assert(!create || fs->isNative());
     if (fs->isMethod()) {
       // emit the "this" pointer
       primary->codeGen(cg);

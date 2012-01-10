@@ -16,16 +16,23 @@ struct container_base {
   map_type map;
 
   template <typename Functor>
-  size_t createImpl(const SearchType& t, Functor f) {
+  size_t createImpl(const SearchType& t, Functor f, bool& create) {
     typename map_type::iterator it = map.find(t);
     if (it == map.end()) {
       size_t ret = vec.size();
       vec.push_back(f(t));
       map[t] = ret;
+      create = true;
       return ret;
     } else {
+      create = false;
       return it->second;
     }
+  }
+
+  inline void reset() {
+    vec.clear();
+    map.clear();
   }
 };
 
@@ -38,8 +45,8 @@ struct container_pool_functor {
 
 template <typename SearchType>
 struct container_pool : public container_base<SearchType, SearchType> {
-  inline size_t create(const SearchType& t) {
-    return createImpl(t, container_pool_functor<SearchType>());
+  inline size_t create(const SearchType& t, bool& create) {
+    return createImpl(t, container_pool_functor<SearchType>(), create);
   }
 };
 

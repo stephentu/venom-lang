@@ -25,69 +25,68 @@ CodeGenerator::bindLabel(Label* label) {
 }
 
 size_t
-CodeGenerator::createLocalVariable(Symbol* symbol) {
-  return local_variable_pool.create(symbol);
+CodeGenerator::createLocalVariable(Symbol* symbol, bool& create) {
+  return local_variable_pool.create(symbol, create);
 }
 
 size_t
-CodeGenerator::getLocalVariable(Symbol* symbol) {
-  util::container_pool<Symbol*>::map_type::iterator it =
-    local_variable_pool.map.find(symbol);
-  if (it == local_variable_pool.map.end()) {
-    throw invalid_argument("No such symbol");
-  }
-  return it->second;
+CodeGenerator::createConstant(const string& constant, bool& create) {
+  return constant_pool.create(constant, create);
 }
 
 size_t
-CodeGenerator::createConstant(const string& constant) {
-  return constant_pool.create(constant);
-}
-
-size_t
-CodeGenerator::enterLocalClass(ClassSymbol* symbol) {
+CodeGenerator::enterLocalClass(ClassSymbol* symbol, bool& create) {
   // assert local class
   assert(symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
-  return class_reference_table.createLocal(symbol);
+  return class_reference_table.createLocal(symbol, create);
 }
 
 size_t
-CodeGenerator::enterExternalClass(ClassSymbol* symbol) {
+CodeGenerator::enterExternalClass(ClassSymbol* symbol, bool& create) {
   // assert external class
   assert(!symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
-  return class_reference_table.createExternal(symbol);
+  return class_reference_table.createExternal(symbol, create);
 }
 
 size_t
-CodeGenerator::enterClass(ClassSymbol* symbol) {
+CodeGenerator::enterClass(ClassSymbol* symbol, bool& create) {
   return symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()) ?
-     enterLocalClass(symbol) : enterExternalClass(symbol);
+     enterLocalClass(symbol, create) : enterExternalClass(symbol, create);
 }
 
 size_t
-CodeGenerator::enterLocalFunction(FuncSymbol* symbol) {
+CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
   // assert local function
   assert(symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
-  return func_reference_table.createLocal(symbol);
+  size_t idx = func_reference_table.createLocal(symbol, create);
+
+  // create func start label
+  if (create) {
+    Label *start = newBoundLabel();
+    instToFuncLabels[start->index] = make_pair(start, symbol);
+  }
+
+  return idx;
 }
 
 size_t
-CodeGenerator::enterExternalFunction(FuncSymbol* symbol) {
+CodeGenerator::enterExternalFunction(FuncSymbol* symbol, bool& create) {
   // assert external function
   assert(!symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
-  return func_reference_table.createExternal(symbol);
+  return func_reference_table.createExternal(symbol, create);
 }
 
 size_t
-CodeGenerator::enterFunction(FuncSymbol* symbol) {
+CodeGenerator::enterFunction(FuncSymbol* symbol, bool& create) {
   return symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()) ?
-     enterLocalFunction(symbol) : enterExternalFunction(symbol);
+     enterLocalFunction(symbol, create) :
+     enterExternalFunction(symbol, create);
 }
 
 void
@@ -165,7 +164,11 @@ CodeGenerator::printDebugStream() {
   cerr << endl;
 
   cerr << "; function pool" << endl;
-  // TODO: implement me
+  for (size_t i = 0; i < func_pool.vec.size(); i++) {
+    cerr << i << ": ";
+    FuncSymbol* fsym = func_pool.vec[i];
+    cerr << fsym->getName() << endl;
+  }
   cerr << endl;
 
   cerr << "; function reference table" << endl;
@@ -183,9 +186,14 @@ CodeGenerator::printDebugStream() {
   size_t index = 0;
   for (vector<SymbolicInstruction*>::iterator it = instructions.begin();
        it != instructions.end(); ++it, ++index) {
-    InstLabelMap::iterator iit = instToLabels.find(index);
-    if (iit != instToLabels.end()) {
-      cerr << "label_" << iit->second->index << ":" << endl;
+    InstLabelSymbolPairMap::iterator iit = instToFuncLabels.find(index);
+    if (iit != instToFuncLabels.end()) {
+      cerr << iit->second.second->getName() << ":" << endl;
+    } else {
+      InstLabelMap::iterator iit = instToLabels.find(index);
+      if (iit != instToLabels.end()) {
+        cerr << "label_" << iit->second->index << ":" << endl;
+      }
     }
     cerr << "  ";
     (*it)->printDebug(cerr);

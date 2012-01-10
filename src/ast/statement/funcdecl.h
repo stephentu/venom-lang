@@ -29,7 +29,12 @@ public:
                ParameterizedTypeString* ret_typename,
                ASTStatementNode*        stmts)
     : name(name), typeParams(typeParams), params(params),
-      ret_typename(ret_typename), stmts(stmts) {}
+      ret_typename(ret_typename), stmts(stmts) {
+    for (ExprNodeVec::iterator it = this->params.begin();
+         it != this->params.end(); ++it) {
+      (*it)->setLocationContext(FunctionParam);
+    }
+  }
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
@@ -64,12 +69,16 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual analysis::BaseSymbol* getSymbol();
+
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
   //virtual void lift(analysis::SemanticContext* ctx,
   //                  std::vector<ASTStatementNode*>& liftedStmts,
   //                  bool liftThisContext);
+
+  virtual void codeGen(backend::CodeGenerator& cg);
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FuncDeclNode)
 
@@ -106,6 +115,9 @@ public:
 
   virtual bool isCtor() const { return true; }
   virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(CtorDeclNode)
+
 private:
   ExprNodeVec superArgs;
 };

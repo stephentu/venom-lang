@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -89,35 +90,34 @@ public:
   }
 
   /** Returns an index used to reference into the local variable table */
-  size_t createLocalVariable(analysis::Symbol* symbol);
+  size_t createLocalVariable(analysis::Symbol* symbol, bool& create);
 
-  /** throws error if local variable does not exist */
-  size_t getLocalVariable(analysis::Symbol* symbol);
+  inline void resetLocalVariables() { local_variable_pool.reset(); }
 
   /** Returns an index used to reference into the constant pool */
-  size_t createConstant(const std::string& constant);
+  size_t createConstant(const std::string& constant, bool& create);
 
   /** Enter local ClassSymbol into the class pool, and return an
    * index used to reference this class symbolically. The reference
    * returned is *NOT* the position in the local class pool, but rather
    * the position in the class reference table (which points into the local
    * class pool) */
-  size_t enterLocalClass(analysis::ClassSymbol* symbol);
+  size_t enterLocalClass(analysis::ClassSymbol* symbol, bool& create);
 
-  size_t enterExternalClass(analysis::ClassSymbol* symbol);
+  size_t enterExternalClass(analysis::ClassSymbol* symbol, bool& create);
 
-  size_t enterClass(analysis::ClassSymbol* symbol);
+  size_t enterClass(analysis::ClassSymbol* symbol, bool& create);
 
   /** Enter local FuncSymbol into the function pool, and return an
    * index used to reference this function symbolically. The reference
    * returned is *NOT* the position in the local function pool, but rather
    * the position in the function reference table (which points into the local
    * function pool) */
-  size_t enterLocalFunction(analysis::FuncSymbol* symbol);
+  size_t enterLocalFunction(analysis::FuncSymbol* symbol, bool& create);
 
-  size_t enterExternalFunction(analysis::FuncSymbol* symbol);
+  size_t enterExternalFunction(analysis::FuncSymbol* symbol, bool& create);
 
-  size_t enterFunction(analysis::FuncSymbol* symbol);
+  size_t enterFunction(analysis::FuncSymbol* symbol, bool& create);
 
   /** Instruction emitting methods */
 
@@ -156,6 +156,11 @@ private:
   typedef std::map<size_t, Label*> InstLabelMap;
   InstLabelMap instToLabels;
 
+  /** Map function inst stream to label */
+  typedef std::map<size_t, std::pair<Label*, analysis::BaseSymbol*> >
+    InstLabelSymbolPairMap;
+  InstLabelSymbolPairMap instToFuncLabels;
+
   /** Instruction stream */
   std::vector<SymbolicInstruction*> instructions;
 
@@ -167,7 +172,8 @@ private:
     container_table_local_functor(util::container_pool<SearchType>* pool)
       : pool(pool) {}
     inline SymbolReference operator()(const SearchType& t) {
-      return SymbolReference(pool->create(t));
+      bool create;
+      return SymbolReference(pool->create(t, create));
     }
     util::container_pool<SearchType>* pool;
   };
@@ -183,11 +189,13 @@ private:
   struct container_table :
   public util::container_base<SearchType, SymbolReference> {
     container_table(util::container_pool<SearchType>* pool): pool(pool) {}
-    inline size_t createLocal(const SearchType& t) {
-      return createImpl(t, container_table_local_functor<SearchType>(pool));
+    inline size_t createLocal(const SearchType& t, bool& create) {
+      return createImpl(
+          t, container_table_local_functor<SearchType>(pool), create);
     }
-    inline size_t createExternal(const SearchType& t) {
-      return createImpl(t, container_table_external_functor<SearchType>());
+    inline size_t createExternal(const SearchType& t, bool& create) {
+      return createImpl(
+          t, container_table_external_functor<SearchType>(), create);
     }
     util::container_pool<SearchType>* pool;
   };

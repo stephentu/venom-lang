@@ -71,8 +71,10 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
     FuncDeclNode* mainFcn = new FuncDeclNode(
         "<main>", util::StrVec(),
         ExprNodeVec(), NULL, new StmtListNode(mainStmts));
-    // don't register/typecheck the new function (it is merely
-    // a placeholder for code generation)
+    mainFcn->setSymbolTable(symbols);
+    mainFcn->registerSymbol(ctx);
+
+    // don't typecheck the new function (no types changed)
 
     // append to the stmt list
     stmts.push_back(mainFcn);

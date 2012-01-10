@@ -87,8 +87,13 @@ VariableNode::codeGen(CodeGenerator& cg) {
   BaseSymbol *bs = getSymbol();
   assert(bs);
   if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
-    size_t idx = cg.getLocalVariable(sym);
-    cg.emitInstU32(Instruction::LOAD_LOCAL_VAR, idx);
+    bool create;
+    size_t idx = cg.createLocalVariable(sym, create);
+    assert(!create);
+    cg.emitInstU32(
+        sym->getInstantiatedType()->isPrimitive() ?
+          Instruction::LOAD_LOCAL_VAR : Instruction::LOAD_LOCAL_VAR_REF,
+        idx);
   } else {
     // otherwise if we are referencing a module/class,
     // then wait until the AttrAccess node to generate

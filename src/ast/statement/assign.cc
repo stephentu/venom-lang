@@ -170,11 +170,11 @@ AssignNode::codeGen(CodeGenerator& cg) {
   // TODO: we need to check these conditions actually
   // hold (during static analysis)
   BaseSymbol* bs = variable->getSymbol();
-  assert(bs);
-  Symbol* sym = dynamic_cast<Symbol*>(bs);
-  assert(sym);
+  VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
+  Symbol* sym = static_cast<Symbol*>(bs);
 
-  size_t idx = cg.createLocalVariable(sym);
+  bool create;
+  size_t idx = cg.createLocalVariable(sym, create);
   cg.emitInstU32(Instruction::STORE_LOCAL_VAR, idx);
 }
 

@@ -14,8 +14,11 @@
 #include <ast/statement/stmtexpr.h>
 #include <ast/statement/stmtlist.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 using namespace venom::util;
 
 namespace venom {
@@ -123,11 +126,19 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   }
 }
 
-void
-FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
+BaseSymbol*
+FuncDeclNode::getSymbol() {
   TypeTranslator t;
   FuncSymbol *fs = symbols->findFuncSymbol(name, SymbolTable::NoRecurse, t);
-  assert(fs);
+  return fs;
+}
+
+void
+FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
+  BaseSymbol *bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+  FuncSymbol *fs = static_cast<FuncSymbol*>(bs);
+
   stmts->typeCheck(ctx, fs->getReturnType());
   checkExpectedType(expected);
 }
@@ -192,6 +203,55 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 //}
 
 void
+FuncDeclNode::codeGen(CodeGenerator& cg) {
+  BaseSymbol *bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+
+  bool create;
+  cg.enterLocalFunction(static_cast<FuncSymbol*>(bs), create);
+  assert(create);
+  cg.resetLocalVariables();
+
+  // the calling convention is that args come in
+  // the program stack like so:
+  //                                  top -----
+  //                                          ||
+  //                                          \/
+  // ret_addr | argN | argN-1 | ... | arg1 | arg0
+
+  for (ExprNodeVec::iterator it = params.begin();
+       it != params.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, *it);
+    VariableNode* vn = static_cast<VariableNode*>(*it);
+    TypeTranslator t;
+    Symbol *psym =
+      stmts->getSymbolTable()->findSymbol(
+          vn->getName(), SymbolTable::NoRecurse, t);
+    assert(psym);
+    // store symbol from stack into local variable slot
+    bool create;
+    size_t idx = cg.createLocalVariable(psym, create);
+    assert(create);
+    cg.emitInstU32(
+        psym->getInstantiatedType()->isPrimitive() ?
+          Instruction::STORE_LOCAL_VAR : Instruction::STORE_LOCAL_VAR_REF,
+        idx);
+  }
+  stmts->codeGen(cg);
+}
+
+FuncDeclNode*
+FuncDeclNode::cloneImpl() {
+  return new FuncDeclNode(
+    name,
+    typeParams,
+    util::transform_vec(params.begin(), params.end(),
+      ASTExpressionNode::CloneFunctor()),
+    ret_typename ? ret_typename->clone() : NULL,
+    stmts->clone());
+}
+
+void
 CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   assert(locCtx & ASTNode::TopLevelClassBody);
   assert(dynamic_cast<ClassDeclNode*>(symbols->getOwner()));
@@ -218,15 +278,14 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   FuncDeclNode::registerSymbol(ctx);
 }
 
-FuncDeclNode*
-FuncDeclNode::cloneImpl() {
-  return new FuncDeclNode(
-    name,
-    typeParams,
+CtorDeclNode*
+CtorDeclNode::cloneImpl() {
+  return new CtorDeclNode(
     util::transform_vec(params.begin(), params.end(),
       ASTExpressionNode::CloneFunctor()),
-    ret_typename ? ret_typename->clone() : NULL,
-    stmts->clone());
+    stmts->clone(),
+    util::transform_vec(superArgs.begin(), superArgs.end(),
+      ASTExpressionNode::CloneFunctor()));
 }
 
 }

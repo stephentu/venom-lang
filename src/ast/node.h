@@ -1,6 +1,7 @@
 #ifndef VENOM_AST_NODE_H
 #define VENOM_AST_NODE_H
 
+#include <cassert>
 #include <iostream>
 
 #include <util/macros.h>
@@ -34,6 +35,7 @@ struct _CloneFunctor {
   typedef _CloneFunctor<type> CloneFunctor;
 
 class ASTNode {
+  friend class StmtListNode;
 public:
   ASTNode() : symbols(NULL), locCtx((LocationCtx)0) {}
 
@@ -58,6 +60,7 @@ public:
     TopLevelClassBody = 0x1 << 1, /* In class Foo stmts end, all top level
                                    * stmts have TopLevelClassBody ctx */
     AssignmentLHS     = 0x1 << 2, /* top level exprs on the lhs of assign */
+    FunctionParam     = 0x1 << 3, /* parameter of function **declaration** (not call) */
   };
 
   inline LocationCtx getLocationContext() const    { return locCtx; }
@@ -176,6 +179,12 @@ public:
   virtual void print(std::ostream& o, size_t indent = 0) = 0;
 
 protected:
+
+  /** Only sets *this* node's symbol table (non recursive) */
+  inline void setSymbolTable(analysis::SymbolTable* symbols) {
+    assert(!this->symbols);
+    this->symbols = symbols;
+  }
 
   /**
    * Replace this ast node with replacement. Meant to be called

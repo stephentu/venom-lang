@@ -89,7 +89,7 @@ SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* parent,
 
 bool
 SymbolTable::belongsTo(const SymbolTable* parent) const {
-  const SymbolTable* cur = getPrimaryParent();
+  const SymbolTable* cur = this;
   while (cur) {
     if (cur == parent) return true;
     cur = cur->getPrimaryParent();
