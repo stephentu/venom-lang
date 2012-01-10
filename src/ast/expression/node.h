@@ -35,6 +35,9 @@ struct ParameterizedTypeString {
 
   std::string stringify() const;
 
+  ParameterizedTypeString* clone();
+  VENOM_AST_CLONE_FUNCTOR(ParameterizedTypeString)
+
   const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;
 };
@@ -75,11 +78,16 @@ public:
       typeCheckImpl(ctx, expectedType = expected, typeParams = typeParamArgs);
   }
 
+  VENOM_AST_TYPED_CLONE(ASTExpressionNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs) = 0;
+
+  virtual void cloneSetState(ASTNode* node);
+
   virtual ASTExpressionNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);
 

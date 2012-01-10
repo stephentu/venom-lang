@@ -154,5 +154,17 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
   }
 }
 
+FunctionCallNode*
+FunctionCallNode::cloneImpl() {
+  return new FunctionCallNode(
+      primary->clone(),
+      util::transform_vec(
+        typeArgs.begin(), typeArgs.end(),
+        ParameterizedTypeString::CloneFunctor()),
+      util::transform_vec(
+        args.begin(), args.end(),
+        ASTExpressionNode::CloneFunctor()));
+}
+
 }
 }

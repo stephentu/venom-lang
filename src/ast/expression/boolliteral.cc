@@ -22,5 +22,10 @@ BoolLiteralNode::codeGen(CodeGenerator& cg) {
   cg.emitInstBool(Instruction::PUSH_CELL_BOOL, value);
 }
 
+BoolLiteralNode*
+BoolLiteralNode::cloneImpl() {
+  return new BoolLiteralNode(value);
+}
+
 }
 }

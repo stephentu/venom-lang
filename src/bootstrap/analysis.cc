@@ -104,6 +104,14 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                               InstantiatedType::VoidType, true);
   root->createClassSymbol("<Bool>", BoolSymTab, Type::BoxedBoolType);
 
+  SymbolTable *RefSymTab = root->newChildScope(NULL);
+  vector<InstantiatedType*> RefTypeParam = createTypeParams(ctx, 1);
+  RefSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
+                              util::vec1(RefTypeParam[0]),
+                              InstantiatedType::VoidType, true);
+  RefSymTab->createSymbol("value", true, RefTypeParam[0]);
+  root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
+
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
                           createTypeParams(ctx, 1));
 

@@ -39,7 +39,7 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
         symbols, var->getExplicitParameterizedTypeString());
   }
 
-  symbols->createSymbol(var->getName(), itype);
+  symbols->createSymbol(var->getName(), true, itype);
 }
 
 void
@@ -77,7 +77,14 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
     // no need to call semantic check on value
   }
 
-  AssignNode::TypeCheckAssignment(ctx, symbols, variable, value);
+  AssignNode::TypeCheckAssignment(ctx, symbols, variable, value, true);
+}
+
+ClassAttrDeclNode*
+ClassAttrDeclNode::cloneImpl() {
+  return new ClassAttrDeclNode(
+      variable->clone(),
+      value ? value->clone() : NULL);
 }
 
 }

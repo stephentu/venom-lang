@@ -29,5 +29,11 @@ SymbolNode::print(ostream& o, size_t indent) {
   o << "(synthetic-symbol-node " << symbol->getFullName() << ")";
 }
 
+SymbolNode*
+SymbolNode::cloneImpl() {
+  // cannot clone symbol node
+  VENOM_NOT_REACHED;
+}
+
 }
 }

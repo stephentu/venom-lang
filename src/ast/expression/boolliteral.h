@@ -26,6 +26,8 @@ public:
     throw std::out_of_range(__PRETTY_FUNCTION__);
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(BoolLiteralNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

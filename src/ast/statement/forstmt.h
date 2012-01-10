@@ -52,6 +52,8 @@ public:
 
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ForStmtNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(for ";
     variable->print(o, indent);

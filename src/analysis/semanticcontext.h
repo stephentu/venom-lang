@@ -122,6 +122,9 @@ public:
   inline const backend::ObjectCode*
     getObjectCode() const { return objectCode; }
 
+  /** TODO: use atomic instructions if we need thread safety */
+  inline uint64_t uniqueId() { return idGen++; }
+
   void collectObjectCode(std::vector<backend::ObjectCode*>& objCodes);
 
   /** Root symbol table of the *module* */
@@ -190,6 +193,7 @@ private:
   /** Module root symbol table */
   SymbolTable* rootSymbols;
 
+  uint64_t idGen;
 };
 
 }

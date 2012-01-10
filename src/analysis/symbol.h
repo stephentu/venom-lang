@@ -30,6 +30,12 @@ public:
   /** Is this symbol defined in a top level module? */
   bool isModuleLevelSymbol() const;
 
+  /**
+   * Precondition: this symbol is defined in either
+   * query, or a primary ancestor of query
+   */
+  bool isLocalTo(const SymbolTable* query) const;
+
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params) = 0;
@@ -55,10 +61,19 @@ class Symbol : public BaseSymbol {
 protected:
   Symbol(const std::string& name,
          SymbolTable*       table,
+         bool               objectField,
          InstantiatedType*  type)
-    : BaseSymbol(name, table), type(type) {}
+    : BaseSymbol(name, table), objectField(objectField), type(type) {}
 
 public:
+  inline bool isObjectField() const { return objectField; }
+  inline bool isPromoteToRef() const { return promoteToRef; }
+
+  inline void markPromoteToRef() {
+    assert(!isObjectField());
+    promoteToRef = true;
+  }
+
   inline InstantiatedType* getInstantiatedType() { return type; }
   inline const InstantiatedType* getInstantiatedType() const { return type; }
 
@@ -67,6 +82,8 @@ public:
          const InstantiatedTypeVec& params);
 
 private:
+  unsigned objectField : 1;
+  unsigned promoteToRef : 1;
   InstantiatedType* type;
 };
 

@@ -45,5 +45,10 @@ void ReturnNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   }
 }
 
+ReturnNode*
+ReturnNode::cloneImpl() {
+  return new ReturnNode(expr ? expr->clone() : NULL);
+}
+
 }
 }

@@ -84,6 +84,9 @@ public:
   static Type* BoxedBoolType;
   static Type* BoxedFloatType;
 
+  /** Ref type */
+  static Type* RefType;
+
   /** Special type which represents a class type */
   static Type* ClassType;
 

@@ -34,6 +34,8 @@ public:
     return false;
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ArrayLiteralNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

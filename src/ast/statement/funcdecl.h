@@ -40,6 +40,9 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  inline ASTStatementNode* getStmts() { return stmts; }
+  inline const ASTStatementNode* getStmts() const { return stmts; }
+
   virtual bool isCtor() const { return false; }
 
   virtual size_t getNumKids() const { return 1; }
@@ -63,6 +66,12 @@ public:
 
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
+
+  //virtual void lift(analysis::SemanticContext* ctx,
+  //                  std::vector<ASTStatementNode*>& liftedStmts,
+  //                  bool liftThisContext);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FuncDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(func " << name << " -> ";

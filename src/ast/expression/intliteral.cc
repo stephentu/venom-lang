@@ -22,5 +22,10 @@ IntLiteralNode::codeGen(CodeGenerator& cg) {
   cg.emitInstI64(Instruction::PUSH_CELL_INT, value);
 }
 
+IntLiteralNode*
+IntLiteralNode::cloneImpl() {
+  return new IntLiteralNode(value);
+}
+
 }
 }

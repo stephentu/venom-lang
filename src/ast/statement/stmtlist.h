@@ -60,6 +60,8 @@ public:
     } endfor
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(StmtListNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stmts" << std::endl << util::indent(indent + 1);
     PrintStmtNodeVec(o, stmts, indent + 1);

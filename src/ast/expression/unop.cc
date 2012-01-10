@@ -56,5 +56,10 @@ UnopNode::typeCheckImpl(SemanticContext* ctx,
   return NULL;
 }
 
+UnopNode*
+UnopNode::cloneImpl() {
+  return new UnopNode(kid->clone(), type);
+}
+
 }
 }

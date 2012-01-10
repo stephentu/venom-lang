@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -27,10 +28,28 @@ BaseSymbol::isModuleLevelSymbol() const {
   return getDefinedSymbolTable()->isModuleLevelSymbolTable();
 }
 
+bool
+BaseSymbol::isLocalTo(const SymbolTable* query) const {
+  assert(query);
+  if (table == query) return true;
+  // grab owner of query
+  const ASTNode* owner = query->getOwner();
+  if (!owner ||
+      // TODO: i think checking for passing just a FuncDeclNode alone
+      // is sufficient...
+      dynamic_cast<const ClassDeclNode*>(owner) ||
+      dynamic_cast<const FuncDeclNode*>(owner)) return false;
+  return isLocalTo(owner->getSymbolTable());
+}
+
 InstantiatedType*
 Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
              const InstantiatedTypeVec& params) {
-  return type ? t.translate(ctx, type) : NULL;
+  if (!type) return NULL;
+  InstantiatedType* translated = t.translate(ctx, type);
+  return isPromoteToRef() ?
+    Type::RefType->instantiate(ctx, util::vec1(translated)) :
+    translated;
 }
 
 bool FuncSymbol::isConstructor() const {

@@ -21,6 +21,9 @@ public:
   ASTStatementNode() {}
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
+
+  VENOM_AST_TYPED_CLONE(ASTStatementNode)
+
 protected:
   virtual ASTStatementNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);

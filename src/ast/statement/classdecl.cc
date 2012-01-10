@@ -128,5 +128,14 @@ void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   assert(stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t));
 }
 
+ClassDeclNode*
+ClassDeclNode::cloneImpl() {
+  return new ClassDeclNode(
+      name,
+      util::transform_vec(parents.begin(), parents.end(),
+        ParameterizedTypeString::CloneFunctor()),
+      typeParams, stmts->clone());
+}
+
 }
 }

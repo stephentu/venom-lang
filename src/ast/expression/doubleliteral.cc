@@ -22,5 +22,11 @@ DoubleLiteralNode::codeGen(CodeGenerator& cg) {
   cg.emitInstDouble(Instruction::PUSH_CELL_FLOAT, value);
 }
 
+DoubleLiteralNode*
+DoubleLiteralNode::cloneImpl() {
+  return new DoubleLiteralNode(value);
+}
+
+
 }
 }

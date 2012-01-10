@@ -145,6 +145,7 @@ public:
 
   Symbol*
   createSymbol(const std::string& name,
+               bool               objectField,
                InstantiatedType*  type);
 
   Symbol*

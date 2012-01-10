@@ -46,6 +46,8 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassAttrDeclNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(attr ";
     variable->print(o, indent);

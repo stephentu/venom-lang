@@ -50,6 +50,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
@@ -83,6 +85,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableSelfNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
@@ -113,6 +117,8 @@ protected:
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
   virtual void codeGen(backend::CodeGenerator& cg);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableSuperNode)
 
 public:
   virtual void print(std::ostream& o, size_t indent = 0) {

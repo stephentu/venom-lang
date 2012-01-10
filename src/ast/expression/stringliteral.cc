@@ -23,5 +23,10 @@ StringLiteralNode::codeGen(CodeGenerator& cg) {
   cg.emitInstU32(Instruction::PUSH_CONST, idx);
 }
 
+StringLiteralNode*
+StringLiteralNode::cloneImpl() {
+  return new StringLiteralNode(value);
+}
+
 }
 }

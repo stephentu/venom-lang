@@ -16,7 +16,9 @@ class AssignNode : public ASTStatementNode {
 public:
   /** Takes ownership of variable, value */
   AssignNode(ASTExpressionNode* variable, ASTExpressionNode* value)
-    : variable(variable), value(value) {}
+    : variable(variable), value(value) {
+    variable->setLocationContext(AssignmentLHS);
+  }
 
   ~AssignNode() {
     delete variable;
@@ -42,6 +44,9 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  //virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+  //                              RewriteMode mode);
+
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
@@ -49,6 +54,8 @@ public:
                          analysis::InstantiatedType* expected = NULL);
 
   virtual void codeGen(backend::CodeGenerator& cg);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(AssignNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign ";
@@ -63,7 +70,8 @@ protected:
   TypeCheckAssignment(analysis::SemanticContext* ctx,
                       analysis::SymbolTable*     symbols,
                       ASTExpressionNode*         variable,
-                      ASTExpressionNode*         value);
+                      ASTExpressionNode*         value,
+                      bool                       objectField);
 
 private:
   ASTExpressionNode* variable;

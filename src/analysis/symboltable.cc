@@ -157,8 +157,9 @@ SymbolTable::findBaseSymbol(const string& name,
 
 Symbol*
 SymbolTable::createSymbol(const string&     name,
+                          bool              objectField,
                           InstantiatedType* type) {
-  Symbol *sym = new Symbol(name, this, type);
+  Symbol *sym = new Symbol(name, this, objectField, type);
   symbolContainer.insert(name, sym);
   return sym;
 }

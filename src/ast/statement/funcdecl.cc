@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <set>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -118,7 +119,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   for (size_t i = 0; i < params.size(); i++) {
     VariableNode *vn = dynamic_cast<VariableNode*>(params[i]);
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), itypes[i]);
+        vn->getName(), false, itypes[i]);
   }
 }
 
@@ -130,6 +131,65 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   stmts->typeCheck(ctx, fs->getReturnType());
   checkExpectedType(expected);
 }
+
+//void
+//FuncDeclNode::lift(SemanticContext* ctx,
+//                   vector<ASTStatementNode*>& liftedStmts,
+//                   bool liftThisContext) {
+//  // recurse first
+//  vector<ASTStatementNode*> ls;
+//  stmts->lift(ctx, ls, true);
+//
+//  // now lift all inner function decls
+//  if (liftThisContext) {
+//    assert(dynamic_cast<StmtListNode*>(stmts));
+//    StmtListNode *funcStmts = static_cast<StmtListNode*>(stmts);
+//    for (size_t i = 0; i < funcStmts->getNumKids(); i++) {
+//      ASTNode *kid = funcStmts->getNthKid(i);
+//      assert(kid);
+//      if (FuncDeclNode *funcDecl = dynamic_cast<FuncDeclNode*>(kid)) {
+//        // need to lift this decl- but first
+//
+//        // look for all locations in the func decl stmtlist which are non-local
+//        // (reference a location defined in a parent). mark all the symbols
+//        // ( which changes the type to ref{T} )
+//        vector<Symbol*> nonLocalSyms;
+//        funcDecl->getStmts()->findAndRewriteNonLocalRefs(ctx, nonLocalSyms);
+//
+//        // for each unique location, add a synthetic parameter to the func decl
+//        set<Symbol*> uniqueNonLocalSyms(
+//            nonLocalSyms.begin(), nonLocalSyms.end());
+//
+//        // rewrite all subsequent callers. the tricky case is:
+//        //
+//        //   def a() =
+//        //     x = 1;
+//        //     def b() = x = 2; end
+//        //     def c() = b(); end
+//        //     c();
+//        //   end
+//        //
+//        // after b is lifted, we need to rewrite the caller of b in c.
+//        // however, we'll need to pass the x reference into c as a param (even though
+//        // c does not explicitly reference x). we can achieve this by rewriting the
+//        // call in c to b as a$b(x) [where x is a reference to the original x symbol],
+//        // and when we lift c the usual mechanism will take care of adding x as a
+//        // param to the lifted c. thus, the final rewrite looks like:
+//        //
+//        //   def a$b(x::<ref>{int}) = x.set(2); end
+//        //   def a$c(x::<ref>{int}) = a$b(x); end
+//        //   def a() =
+//        //     x = <ref>{int}(1);
+//        //     a$c(x);
+//        //   end
+//
+//
+//      }
+//    }
+//
+//
+//  }
+//}
 
 void
 CtorDeclNode::registerSymbol(SemanticContext* ctx) {
@@ -156,6 +216,17 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   stmt->initSymbolTable(stmts->getSymbolTable());
 
   FuncDeclNode::registerSymbol(ctx);
+}
+
+FuncDeclNode*
+FuncDeclNode::cloneImpl() {
+  return new FuncDeclNode(
+    name,
+    typeParams,
+    util::transform_vec(params.begin(), params.end(),
+      ASTExpressionNode::CloneFunctor()),
+    ret_typename ? ret_typename->clone() : NULL,
+    stmts->clone());
 }
 
 }

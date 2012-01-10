@@ -361,5 +361,10 @@ BinopNode::codeGen(CodeGenerator& cg) {
   }
 }
 
+BinopNode*
+BinopNode::cloneImpl() {
+  return new BinopNode(left->clone(), right->clone(), type);
+}
+
 }
 }

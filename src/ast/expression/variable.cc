@@ -85,6 +85,12 @@ VariableNode::codeGen(CodeGenerator& cg) {
   }
 }
 
+VariableNode*
+VariableNode::cloneImpl() {
+  return new VariableNode(
+      name, explicit_type ? explicit_type->clone() : NULL);
+}
+
 ASTExpressionNode*
 VariableNode::createSymbolNode() {
   BaseSymbol *bs = getSymbol();
@@ -121,6 +127,11 @@ VariableSelfNode::codeGen(CodeGenerator& cg) {
   VENOM_UNIMPLEMENTED;
 }
 
+VariableSelfNode*
+VariableSelfNode::cloneImpl() {
+  return new VariableSelfNode;
+}
+
 void
 VariableSuperNode::registerSymbol(SemanticContext* ctx) {
   ClassDeclNode *cdn = getEnclosingClassNode();
@@ -147,6 +158,11 @@ VariableSuperNode::typeCheckImpl(SemanticContext* ctx,
 void
 VariableSuperNode::codeGen(CodeGenerator& cg) {
   VENOM_UNIMPLEMENTED;
+}
+
+VariableSuperNode*
+VariableSuperNode::cloneImpl() {
+  return new VariableSuperNode;
 }
 
 }

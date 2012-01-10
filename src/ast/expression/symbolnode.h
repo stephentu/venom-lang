@@ -36,6 +36,8 @@ public:
 
   virtual analysis::BaseSymbol* getSymbol() { return symbol; }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(SymbolNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

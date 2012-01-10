@@ -43,6 +43,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(WhileStmtNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(while ";
     cond->print(o, indent);

@@ -35,5 +35,10 @@ StmtExprNode::codeGen(CodeGenerator& cg) {
       Instruction::POP_CELL_REF : Instruction::POP_CELL);
 }
 
+StmtExprNode*
+StmtExprNode::cloneImpl() {
+  return new StmtExprNode(expr->clone());
+}
+
 }
 }

@@ -41,6 +41,8 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ReturnNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(return ";
     if (expr) expr->print(o, indent);

@@ -38,5 +38,10 @@ AttrAccessNode::typeCheckImpl(SemanticContext* ctx,
   return attrSym->bind(ctx, t, typeParamArgs);
 }
 
+AttrAccessNode*
+AttrAccessNode::cloneImpl() {
+  return new AttrAccessNode(primary->clone(), name);
+}
+
 }
 }

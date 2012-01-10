@@ -48,5 +48,12 @@ ArrayLiteralNode::typeCheckImpl(SemanticContext* ctx,
   }
 }
 
+ArrayLiteralNode*
+ArrayLiteralNode::cloneImpl() {
+  ASTExpressionNode::CloneFunctor f;
+  return new ArrayLiteralNode(
+      util::transform_vec(values.begin(), values.end(), f));
+}
+
 }
 }

@@ -45,5 +45,12 @@ StmtListNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   }
 }
 
+StmtListNode*
+StmtListNode::cloneImpl() {
+  return new StmtListNode(
+      util::transform_vec(stmts.begin(), stmts.end(),
+        ASTStatementNode::CloneFunctor()));
+}
+
 }
 }

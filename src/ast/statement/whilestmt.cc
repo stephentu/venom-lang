@@ -38,5 +38,10 @@ WhileStmtNode::codeGen(CodeGenerator& cg) {
   cg.bindLabel(done);
 }
 
+WhileStmtNode*
+WhileStmtNode::cloneImpl() {
+  return new WhileStmtNode(cond->clone(), stmts->clone());
+}
+
 }
 }

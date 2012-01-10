@@ -43,6 +43,8 @@ public:
     return false;
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(DictPair)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
@@ -97,6 +99,8 @@ public:
     VENOM_CHECK_RANGE(k, pairs.size());
     return false;
   }
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(DictLiteralNode)
 
 protected:
   virtual analysis::InstantiatedType*

@@ -46,5 +46,12 @@ void IfStmtNode::codeGen(CodeGenerator& cg) {
   cg.bindLabel(done);
 }
 
+IfStmtNode*
+IfStmtNode::cloneImpl() {
+  return new IfStmtNode(
+      cond->clone(), true_branch->clone(), false_branch->clone());
+
+}
+
 }
 }

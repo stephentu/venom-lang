@@ -67,6 +67,8 @@ public:
     return false;
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(BinopNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

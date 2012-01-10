@@ -41,6 +41,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(StmtExprNode)
+
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stmtexpr ";
     expr->print(o, indent);

@@ -37,6 +37,8 @@ public:
     return false;
   }
 
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ArrayAccessNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

@@ -25,5 +25,10 @@ NilLiteralNode::codeGen(CodeGenerator& cg) {
   cg.emitInst(Instruction::PUSH_CELL_NIL);
 }
 
+NilLiteralNode*
+NilLiteralNode::cloneImpl() {
+  return new NilLiteralNode;
+}
+
 }
 }

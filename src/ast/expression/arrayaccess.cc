@@ -45,5 +45,10 @@ ArrayAccessNode::typeCheckImpl(SemanticContext* ctx,
   }
 }
 
+ArrayAccessNode*
+ArrayAccessNode::cloneImpl() {
+  return new ArrayAccessNode(primary->clone(), index->clone());
+}
+
 }
 }

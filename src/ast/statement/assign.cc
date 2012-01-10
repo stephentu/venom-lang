@@ -4,6 +4,8 @@
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
 
+#include <ast/expression/attraccess.h>
+#include <ast/expression/functioncall.h>
 #include <ast/expression/variable.h>
 #include <ast/statement/assign.h>
 
@@ -21,7 +23,8 @@ void
 AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
                                 SymbolTable*       symbols,
                                 ASTExpressionNode* variable,
-                                ASTExpressionNode* value) {
+                                ASTExpressionNode* value,
+                                bool               objectField) {
   InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
   InstantiatedType *rhs = value->typeCheck(ctx, lhs);
   assert(rhs);
@@ -39,9 +42,9 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
   } else {
     VariableNode *vn = dynamic_cast<VariableNode*>(variable);
     assert(vn && !vn->getExplicitParameterizedTypeString());
-    symbols->createSymbol(vn->getName(), rhs);
+    symbols->createSymbol(vn->getName(), objectField, rhs);
     // go again, so we can set the static type on variable
-    TypeCheckAssignment(ctx, symbols, variable, value);
+    TypeCheckAssignment(ctx, symbols, variable, value, objectField);
   }
 }
 
@@ -67,7 +70,7 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
       }
       InstantiatedType *itype = ctx->instantiateOrThrow(
             symbols, var->getExplicitParameterizedTypeString());
-      symbols->createSymbol(var->getName(), itype);
+      symbols->createSymbol(var->getName(), false, itype);
     } else {
       // if there is no type string, then only create a new
       // declaration if the symbol doesn't exist anywhere in the scope
@@ -96,11 +99,52 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
       if (!symbols->isDefined(
             var->getName(), SymbolTable::Location,
             SymbolTable::AllowCurrentScope)) {
-        symbols->createSymbol(var->getName(), NULL);
+        symbols->createSymbol(var->getName(), false, NULL);
       }
     }
   }
 }
+
+//ASTNode*
+//AssignNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+//  switch (mode) {
+//  case NonLocalRefs: {
+//    if (VariableNode* varLHS = dynamic_cast<VariableNode*>(variable)) {
+//      BaseSymbol *bs = varLHS->getSymbol();
+//      assert(bs);
+//      if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
+//        // TODO: these checks must be the same as the ones in
+//        // ast/expression/variable.cc - this is fragile; fix it
+//        if (!sym->isLocalTo(symbols) &&
+//            !sym->isObjectField() &&
+//            !sym->isModuleLevelSymbol()) {
+//          // we need to rewrite x to x.set(rhs)
+//          // however, we need to process a rewrite on the RHS first
+//
+//          ASTNode* rep = value->rewriteLocal(ctx, mode);
+//          if (rep) {
+//            ASTNode *old = value;
+//            setNthKid(1, rep);
+//            delete old;
+//          }
+//
+//          assert(hasLocationContext(AssignmentLHS));
+//          sym->markPromoteToRef();
+//
+//          FunctionCallNode *rep =
+//            new FunctionCallNode(
+//              new AttrAccessNode(varLHS->clone(), "set"),
+//              TypeStringVec(),
+//              util::vec1(value->clone()));
+//          return replace(ctx, rep);
+//        }
+//      }
+//    }
+//    // fall-through to default case
+//  }
+//  default: return ASTNode::rewriteLocal(ctx, mode);
+//  }
+//}
 
 void
 AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
@@ -115,7 +159,7 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 void
 AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   assert(value);
-  TypeCheckAssignment(ctx, symbols, variable, value);
+  TypeCheckAssignment(ctx, symbols, variable, value, false);
   checkExpectedType(expected);
 }
 
@@ -132,6 +176,11 @@ AssignNode::codeGen(CodeGenerator& cg) {
 
   size_t idx = cg.createLocalVariable(sym);
   cg.emitInstU32(Instruction::STORE_LOCAL_VAR, idx);
+}
+
+AssignNode*
+AssignNode::cloneImpl() {
+  return new AssignNode(variable->clone(), value->clone());
 }
 
 }

@@ -91,6 +91,14 @@ ASTNode::rewriteLocal(SemanticContext* ctx) {
   return NULL;
 }
 
+ASTNode*
+ASTNode::clone() {
+  ASTNode* copy = cloneImpl();
+  assert(copy);
+  cloneSetState(copy);
+  return copy;
+}
+
 void
 ASTNode::codeGen(CodeGenerator& cg) {
   forchild (kid) {

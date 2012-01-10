@@ -24,6 +24,15 @@ namespace ast {
 class FuncDeclNode;
 class ClassDeclNode;
 
+template <typename T>
+struct _CloneFunctor {
+  typedef T* result_type;
+  inline T* operator()(T* ptr) const { return ptr->clone(); }
+};
+
+#define VENOM_AST_CLONE_FUNCTOR(type) \
+  typedef _CloneFunctor<type> CloneFunctor;
+
 class ASTNode {
 public:
   ASTNode() : symbols(NULL), locCtx((LocationCtx)0) {}
@@ -48,6 +57,7 @@ public:
     FunctionCall      = 0x1, /* In expr(), expr has FunctionCall ctx */
     TopLevelClassBody = 0x1 << 1, /* In class Foo stmts end, all top level
                                    * stmts have TopLevelClassBody ctx */
+    AssignmentLHS     = 0x1 << 2, /* top level exprs on the lhs of assign */
   };
 
   inline LocationCtx getLocationContext() const    { return locCtx; }
@@ -61,7 +71,10 @@ public:
 
   /** Semantic checks **/
 
-  inline analysis::SymbolTable* getSymbolTable() { return symbols; }
+  inline analysis::SymbolTable*
+    getSymbolTable() { return symbols; }
+  inline const analysis::SymbolTable*
+    getSymbolTable() const { return symbols; }
 
   /**
    * Returns true if the k-th child of this AST node represents
@@ -120,6 +133,29 @@ public:
    */
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  template <typename T>
+  inline static T* Clone(T* node) {
+    T* copy = node->clone();
+    copy->setLocationContext(node->locCtx);
+    return copy;
+  };
+
+  /** Should use the above Clone, instead of this one */
+  virtual ASTNode* clone();
+
+  VENOM_AST_CLONE_FUNCTOR(ASTNode)
+
+#define VENOM_AST_TYPED_CLONE(type) \
+  virtual type* clone() { return static_cast<type*>(ASTNode::clone()); } \
+  VENOM_AST_CLONE_FUNCTOR(type)
+
+/** Must be placed in the *public* section of the class decl */
+#define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(type) \
+  VENOM_AST_TYPED_CLONE(type) \
+  protected: \
+  virtual type* cloneImpl(); \
+  public:
+
   /** Debugging helpers **/
 
   /**
@@ -138,6 +174,13 @@ protected:
    */
   virtual ASTNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);
+
+  /** Set any mutable state on the cloned node, which is not captured
+   * by the constructor. Default does nothing */
+  virtual void cloneSetState(ASTNode* node) {}
+
+  /** Do the actual cloning */
+  virtual ASTNode* cloneImpl() = 0;
 
   analysis::SymbolTable* symbols;
   LocationCtx            locCtx;

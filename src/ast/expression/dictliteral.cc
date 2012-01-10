@@ -33,6 +33,11 @@ struct fold_functor {
   SemanticContext* ctx;
 };
 
+DictPair*
+DictPair::cloneImpl() {
+  return new DictPair(first->clone(), second->clone());
+}
+
 InstantiatedType*
 DictLiteralNode::typeCheckImpl(SemanticContext* ctx,
                                InstantiatedType* expected,
@@ -50,6 +55,13 @@ DictLiteralNode::typeCheckImpl(SemanticContext* ctx,
     return Type::MapType->instantiate(
         ctx, util::vec2(res.first, res.second));
   }
+}
+
+DictLiteralNode*
+DictLiteralNode::cloneImpl() {
+  return new DictLiteralNode(
+      util::transform_vec(
+        pairs.begin(), pairs.end(), DictPair::CloneFunctor()));
 }
 
 }
