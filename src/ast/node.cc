@@ -77,11 +77,11 @@ ASTNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 }
 
 ASTNode*
-ASTNode::rewriteLocal(SemanticContext* ctx) {
+ASTNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   for (size_t i = 0; i < getNumKids(); i++) {
     ASTNode* kid = getNthKid(i);
     if (!kid) continue;
-    ASTNode* rep = kid->rewriteLocal(ctx);
+    ASTNode* rep = kid->rewriteLocal(ctx, mode);
     if (rep) {
       assert(rep != kid);
       setNthKid(i, rep);

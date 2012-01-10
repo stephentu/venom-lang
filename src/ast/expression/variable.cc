@@ -49,11 +49,15 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 ASTNode*
-VariableNode::rewriteLocal(SemanticContext* ctx) {
+VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  if (mode != CanonicalRefs) return ASTNode::rewriteLocal(ctx, mode);
+
   BaseSymbol *bs = getSymbol();
   assert(bs);
   if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
     if (sym->isModuleLevelSymbol()) {
+      assert(!sym->isObjectField());
+
       // need to rewrite x to reference x off of the
       // module object
       ModuleSymbol *msym =
@@ -67,8 +71,15 @@ VariableNode::rewriteLocal(SemanticContext* ctx) {
             name);
       return replace(ctx, rep);
     }
+
+    if (sym->isObjectField()) {
+      // rewrite x into self.x
+      AttrAccessNode *rep = new AttrAccessNode(new VariableSelfNode, name);
+      return replace(ctx, rep);
+    }
   }
-  return replace(ctx, createSymbolNode());
+  //return replace(ctx, createSymbolNode());
+  return NULL;
 }
 
 void

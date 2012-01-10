@@ -50,7 +50,8 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected);
 
-  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ForStmtNode)
 

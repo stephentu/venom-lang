@@ -114,6 +114,14 @@ public:
 
   /** Tree re-writing **/
 
+  enum RewriteMode {
+    CanonicalRefs, // rewrite module level vars into attr access +
+                   // un-qualified attrs x into self.x
+
+    ModuleMain,    // rewrite module level statements into a <main>
+                   // function
+  };
+
   /**
    * Do a local tree rewrite on this node (recursively).
    *
@@ -122,7 +130,8 @@ public:
    * the return value is the *new* value of node. It is up to the caller to
    * delete the old node.
    */
-  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
 
   /** Code Generation **/
 

@@ -46,7 +46,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx);
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
@@ -79,7 +80,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx) {
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode) {
     return NULL;
   }
 
@@ -106,7 +108,8 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx) {
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode) {
     return NULL;
   }
 

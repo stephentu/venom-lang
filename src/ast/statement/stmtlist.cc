@@ -5,6 +5,8 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
 #include <ast/statement/stmtlist.h>
 
 using namespace std;
@@ -43,6 +45,39 @@ StmtListNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
       }
     }
   }
+}
+
+ASTNode*
+StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  if (mode != ModuleMain) return ASTNode::rewriteLocal(ctx, mode);
+
+  if (getSymbolTable()->isModuleLevelSymbolTable()) {
+    // we move all the non function/class definitions into
+    // a separate function we call <main>
+
+    StmtNodeVec mainStmts;
+    for (StmtNodeVec::iterator it = stmts.begin();
+         it != stmts.end();) {
+      ASTStatementNode* kid = *it;
+      if (dynamic_cast<FuncDeclNode*>(kid) ||
+          dynamic_cast<ClassDeclNode*>(kid)) {
+        ++it; continue;
+      }
+      it = stmts.erase(it);
+      mainStmts.push_back(kid);
+    }
+
+    // create a function with mainStmts
+    FuncDeclNode* mainFcn = new FuncDeclNode(
+        "<main>", util::StrVec(),
+        ExprNodeVec(), NULL, new StmtListNode(mainStmts));
+    // don't register/typecheck the new function (it is merely
+    // a placeholder for code generation)
+
+    // append to the stmt list
+    stmts.push_back(mainFcn);
+  }
+  return NULL;
 }
 
 StmtListNode*

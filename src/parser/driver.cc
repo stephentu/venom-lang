@@ -21,7 +21,9 @@
 #include <util/filesystem.h>
 
 using namespace std;
+
 using namespace venom::analysis;
+using namespace venom::ast;
 using namespace venom::backend;
 using namespace venom::bootstrap;
 
@@ -98,9 +100,16 @@ unsafe_compile(const string& fname, fstream& infile,
     cerr << endl;
   }
 
-  pctx.stmts->rewriteLocal(&ctx);
+  pctx.stmts->rewriteLocal(&ctx, ASTNode::CanonicalRefs);
   if (global_compile_opts.print_ast) {
-    cerr << "After rewrite local stage:" << endl;
+    cerr << "After rewrite local stage (CanonicalRefs):" << endl;
+    pctx.stmts->print(cerr);
+    cerr << endl;
+  }
+
+  pctx.stmts->rewriteLocal(&ctx, ASTNode::ModuleMain);
+  if (global_compile_opts.print_ast) {
+    cerr << "After rewrite local stage (ModuleMain):" << endl;
     pctx.stmts->print(cerr);
     cerr << endl;
   }
