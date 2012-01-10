@@ -15,15 +15,15 @@ public:
   virtual size_t getNumKids() const { return 0; }
 
   virtual ASTNode* getNthKid(size_t kid) {
-    throw std::out_of_range(__PRETTY_FUNCTION__);
+    throw std::out_of_range(VENOM_SOURCE_INFO);
   }
 
   virtual void setNthKid(size_t idx, ASTNode* kid) {
-    throw std::out_of_range(__PRETTY_FUNCTION__);
+    throw std::out_of_range(VENOM_SOURCE_INFO);
   }
 
   virtual bool needsNewScope(size_t k) const {
-    throw std::out_of_range(__PRETTY_FUNCTION__);
+    throw std::out_of_range(VENOM_SOURCE_INFO);
   }
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(NilLiteralNode)
