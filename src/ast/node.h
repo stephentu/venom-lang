@@ -37,7 +37,7 @@ struct _CloneFunctor {
 class ASTNode {
   friend class StmtListNode;
 public:
-  ASTNode() : symbols(NULL), locCtx((LocationCtx)0) {}
+  ASTNode() : symbols(NULL), locCtx(0) {}
 
   virtual ~ASTNode();
 
@@ -55,16 +55,30 @@ public:
   virtual void setNthKid(size_t idx, ASTNode* kid) = 0;
 
   /** AST Context **/
-  enum LocationCtx {
-    FunctionCall      = 0x1, /* In expr(), expr has FunctionCall ctx */
-    TopLevelClassBody = 0x1 << 1, /* In class Foo stmts end, all top level
-                                   * stmts have TopLevelClassBody ctx */
-    AssignmentLHS     = 0x1 << 2, /* top level exprs on the lhs of assign */
-    FunctionParam     = 0x1 << 3, /* parameter of function **declaration** (not call) */
-  };
 
-  inline LocationCtx getLocationContext() const    { return locCtx; }
-  virtual void setLocationContext(LocationCtx ctx) { locCtx = ctx;  }
+  /* In expr(), expr has FunctionCall ctx */
+  static const uint32_t FunctionCall      = 0x1;
+
+  /* In class Foo stmtlist end, all top level stmts in stmtlist have
+   * TopLevelClassBody ctx */
+  static const uint32_t TopLevelClassBody = 0x1 << 1;
+
+  /* In def fn(...) = stmtlist end, all top level
+   * stmts in stmtlist have TopLevelFuncBody */
+  static const uint32_t TopLevelFuncBody  = 0x1 << 2;
+
+  /* top level exprs on the lhs of assign */
+  static const uint32_t AssignmentLHS     = 0x1 << 3;
+
+  /* parameter of function **declaration** (not call) */
+  static const uint32_t FunctionParam     = 0x1 << 4;
+
+  inline uint32_t getLocationContext() const         { return locCtx;      }
+  inline bool hasLocationContext(uint32_t ctx) const { return locCtx & ctx;}
+
+  virtual void setLocationContext(uint32_t ctx)      { locCtx = ctx;       }
+  virtual void addLocationContext(uint32_t ctx)      { locCtx |= ctx;      }
+  virtual void clearLocationContext(uint32_t ctx)    { locCtx &= ~ctx;     }
 
   FuncDeclNode* getEnclosingFuncNode();
   const FuncDeclNode* getEnclosingFuncNode() const;
@@ -121,6 +135,9 @@ public:
     CanonicalRefs, // rewrite module level vars into attr access +
                    // un-qualified attrs x into self.x
 
+    FunctionReturns, // rewrite all stmt expr returns into explicit
+                     // return statements
+
     ModuleMain,    // rewrite module level statements into a <main>
                    // function
   };
@@ -135,6 +152,9 @@ public:
    */
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
+
+  /** same return semantics as rewriteLocal */
+  virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx);
 
   /** Code Generation **/
 
@@ -201,7 +221,7 @@ protected:
   virtual ASTNode* cloneImpl() = 0;
 
   analysis::SymbolTable* symbols;
-  LocationCtx            locCtx;
+  uint32_t               locCtx;
 };
 
 }

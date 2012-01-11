@@ -11,6 +11,7 @@
 
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
+#include <ast/statement/return.h>
 #include <ast/statement/stmtexpr.h>
 #include <ast/statement/stmtlist.h>
 
@@ -26,7 +27,8 @@ namespace ast {
 
 struct name_functor_t {
   inline string operator()(ASTExpressionNode* node) const {
-    return dynamic_cast<VariableNode*>(node)->getName();
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, node);
+    return static_cast<VariableNode*>(node)->getName();
   }
 } name_functor;
 
@@ -34,7 +36,8 @@ struct itype_functor {
   itype_functor(SemanticContext* ctx, SymbolTable* st)
     : ctx(ctx), st(st) {}
   inline InstantiatedType* operator()(ASTExpressionNode* node) const {
-    VariableNode *vn = dynamic_cast<VariableNode*>(node);
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, node);
+    VariableNode *vn = static_cast<VariableNode*>(node);
     assert(vn->getExplicitParameterizedTypeString());
     return ctx->instantiateOrThrow(
         st, vn->getExplicitParameterizedTypeString());
@@ -42,6 +45,21 @@ struct itype_functor {
   SemanticContext* ctx;
   SymbolTable*     st;
 };
+
+FuncDeclNode::FuncDeclNode(const std::string&       name,
+                           const util::StrVec&      typeParams,
+                           const ExprNodeVec&       params,
+                           ParameterizedTypeString* ret_typename,
+                           ASTStatementNode*        stmts)
+  : name(name), typeParams(typeParams), params(params),
+    ret_typename(ret_typename), stmts(stmts) {
+
+  stmts->addLocationContext(TopLevelFuncBody);
+  for (ExprNodeVec::iterator it = this->params.begin();
+       it != this->params.end(); ++it) {
+    (*it)->addLocationContext(FunctionParam);
+  }
+}
 
 void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   // check current symbol to see if the symbol name is already taken
@@ -92,7 +110,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     InstantiatedType::VoidType;
 
   if (!isCtor() && (locCtx & ASTNode::TopLevelClassBody)) {
-    assert(dynamic_cast<ClassDeclNode*>(symbols->getOwner()));
+    VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
 
     // check that type-signature matches for overrides
     TypeTranslator t;
@@ -120,7 +138,8 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
 
   // add parameters to block (child) symtab
   for (size_t i = 0; i < params.size(); i++) {
-    VariableNode *vn = dynamic_cast<VariableNode*>(params[i]);
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, params[i]);
+    VariableNode *vn = static_cast<VariableNode*>(params[i]);
     stmts->getSymbolTable()->createSymbol(
         vn->getName(), false, itypes[i]);
   }
@@ -141,6 +160,39 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 
   stmts->typeCheck(ctx, fs->getReturnType());
   checkExpectedType(expected);
+}
+
+ASTNode*
+FuncDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  // recurse on children first
+  ASTNode *ret = ASTNode::rewriteLocal(ctx, mode);
+  VENOM_ASSERT_NULL(ret);
+
+  if (mode == FunctionReturns) {
+    BaseSymbol *bs = getSymbol();
+    VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+    FuncSymbol *fs = static_cast<FuncSymbol*>(bs);
+    if (fs->getReturnType()->equals(*InstantiatedType::VoidType)) {
+      // if void return, just add a return void at the very end
+      //
+      // note: even if we have something like
+      //   def foo () =
+      //     if (...) then return; else return; end
+      //   end
+      // adding a return at the end does not alter the program semantics
+      // and simplifies code generation
+      ReturnNode *ret = new ReturnNode(NULL);
+      ret->initSymbolTable(stmts->getSymbolTable());
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+      static_cast<StmtListNode*>(stmts)->appendStatement(ret);
+    } else {
+      // otherwise, we rewrite expr returns into explicit
+      // returns, to simplify code generation
+      ASTNode *ret = stmts->rewriteReturn(ctx);
+      VENOM_ASSERT_NULL(ret);
+    }
+  }
+  return NULL;
 }
 
 //void
@@ -253,8 +305,8 @@ FuncDeclNode::cloneImpl() {
 
 void
 CtorDeclNode::registerSymbol(SemanticContext* ctx) {
-  assert(locCtx & ASTNode::TopLevelClassBody);
-  assert(dynamic_cast<ClassDeclNode*>(symbols->getOwner()));
+  assert(hasLocationContext(ASTNode::TopLevelClassBody));
+  VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
 
   // rewrite:
   //
@@ -269,7 +321,9 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
           new AttrAccessNode(new VariableSuperNode, "<ctor>"),
           TypeStringVec(),
           superArgs));
-  dynamic_cast<StmtListNode*>(stmts)->prependStatement(stmt);
+
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+  static_cast<StmtListNode*>(stmts)->prependStatement(stmt);
 
   // stmt gets semanticCheck called *AFTER* this invocation
   // to registerSymbol(), so we don't need to call it manually

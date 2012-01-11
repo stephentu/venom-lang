@@ -53,12 +53,19 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
-  virtual void setLocationContext(LocationCtx ctx) {
-    ASTNode::setLocationContext(ctx);
-    forchild (kid) {
-      if (kid) kid->setLocationContext(ctx);
-    } endfor
+#define IMPL_LOC_CONTEXT(type) \
+  virtual void type##LocationContext(uint32_t ctx) { \
+    ASTNode::type##LocationContext(ctx); \
+    forchild (kid) { \
+      if (kid) kid->type##LocationContext(ctx); \
+    } endfor \
   }
+
+  IMPL_LOC_CONTEXT(set)
+  IMPL_LOC_CONTEXT(add)
+  IMPL_LOC_CONTEXT(clear)
+
+#undef IMPL_LOC_CONTEXT
 
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
@@ -70,6 +77,9 @@ public:
     PrintStmtNodeVec(o, stmts, indent + 1);
     o << ")";
   }
+
+protected:
+  virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx);
 
 private:
   StmtNodeVec stmts;

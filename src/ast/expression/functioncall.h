@@ -17,7 +17,7 @@ public:
                    const TypeStringVec& typeArgs,
                    const ExprNodeVec&   args)
     : primary(primary), typeArgs(typeArgs), args(args) {
-    primary->setLocationContext(ASTNode::FunctionCall);
+    primary->addLocationContext(ASTNode::FunctionCall);
   }
 
   ~FunctionCallNode() {

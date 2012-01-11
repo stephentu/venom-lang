@@ -17,7 +17,7 @@ public:
   /** Takes ownership of variable, value */
   AssignNode(ASTExpressionNode* variable, ASTExpressionNode* value)
     : variable(variable), value(value) {
-    variable->setLocationContext(AssignmentLHS);
+    variable->addLocationContext(AssignmentLHS);
   }
 
   ~AssignNode() {

@@ -49,6 +49,9 @@ public:
     o << ")";
   }
 
+protected:
+  virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx);
+
 private:
   ASTExpressionNode* expr;
 };

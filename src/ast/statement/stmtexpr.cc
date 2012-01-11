@@ -5,6 +5,7 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <ast/statement/return.h>
 #include <ast/statement/stmtexpr.h>
 
 #include <backend/bytecode.h>
@@ -33,6 +34,13 @@ StmtExprNode::codeGen(CodeGenerator& cg) {
   expr->codeGen(cg);
   cg.emitInst(expr->getStaticType()->isRefCounted() ?
       Instruction::POP_CELL_REF : Instruction::POP_CELL);
+}
+
+ASTNode*
+StmtExprNode::rewriteReturn(SemanticContext* ctx) {
+  ReturnNode *ret = new ReturnNode(ASTNode::Clone(expr));
+  ret->initSymbolTable(symbols);
+  return ret;
 }
 
 StmtExprNode*

@@ -8,8 +8,11 @@
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/return.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -43,6 +46,16 @@ void ReturnNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
         "Expected type " + expected->stringify() +
         ", got type " + retType->stringify());
   }
+}
+
+void
+ReturnNode::codeGen(CodeGenerator& cg) {
+  if (!expr) {
+    cg.emitInst(Instruction::PUSH_CELL_NIL);
+  } else {
+    expr->codeGen(cg);
+  }
+  cg.emitInst(Instruction::RET);
 }
 
 ReturnNode*

@@ -38,7 +38,7 @@ ParameterizedTypeString* ParameterizedTypeString::clone() {
 
 void
 ASTExpressionNode::cloneSetState(ASTNode* node) {
-  assert(dynamic_cast<ASTExpressionNode*>(node));
+  VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, node);
   ASTExpressionNode* enode = static_cast<ASTExpressionNode*>(node);
 
   ASTNode::cloneSetState(node);
@@ -51,7 +51,7 @@ ASTExpressionNode::cloneSetState(ASTNode* node) {
 ASTExpressionNode*
 ASTExpressionNode::replace(SemanticContext* ctx, ASTNode* replacement) {
   assert(replacement);
-  assert(dynamic_cast<ASTExpressionNode*>(replacement));
+  VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, replacement);
   return static_cast<ASTExpressionNode*>(ASTNode::replace(ctx, replacement));
 }
 

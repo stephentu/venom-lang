@@ -114,6 +114,13 @@ unsafe_compile(const string& fname, fstream& infile,
     cerr << endl;
   }
 
+  pctx.stmts->rewriteLocal(&ctx, ASTNode::FunctionReturns);
+  if (global_compile_opts.print_ast) {
+    cerr << "After rewrite local stage (FunctionReturns):" << endl;
+    pctx.stmts->print(cerr);
+    cerr << endl;
+  }
+
   if (global_compile_opts.semantic_check_only) return;
 
   CodeGenerator cg(&ctx);

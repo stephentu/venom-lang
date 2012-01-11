@@ -23,6 +23,15 @@ void IfStmtNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   false_branch->typeCheck(ctx, expected);
 }
 
+ASTNode*
+IfStmtNode::rewriteReturn(SemanticContext* ctx) {
+  ASTNode *trueRep = true_branch->rewriteReturn(ctx);
+  VENOM_ASSERT_NULL(trueRep);
+  ASTNode *falseRep = false_branch->rewriteReturn(ctx);
+  VENOM_ASSERT_NULL(falseRep);
+  return NULL;
+}
+
 void IfStmtNode::codeGen(CodeGenerator& cg) {
   Label *done = cg.newLabel();
   Label *falseBranch = cg.newLabel();

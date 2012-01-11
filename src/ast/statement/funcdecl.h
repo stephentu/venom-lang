@@ -27,14 +27,7 @@ public:
                const util::StrVec&      typeParams,
                const ExprNodeVec&       params,
                ParameterizedTypeString* ret_typename,
-               ASTStatementNode*        stmts)
-    : name(name), typeParams(typeParams), params(params),
-      ret_typename(ret_typename), stmts(stmts) {
-    for (ExprNodeVec::iterator it = this->params.begin();
-         it != this->params.end(); ++it) {
-      (*it)->setLocationContext(FunctionParam);
-    }
-  }
+               ASTStatementNode*        stmts);
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
@@ -77,6 +70,9 @@ public:
   //virtual void lift(analysis::SemanticContext* ctx,
   //                  std::vector<ASTStatementNode*>& liftedStmts,
   //                  bool liftThisContext);
+
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 

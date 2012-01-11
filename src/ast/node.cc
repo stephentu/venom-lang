@@ -108,6 +108,9 @@ ASTNode::codeGen(CodeGenerator& cg) {
 }
 
 ASTNode*
+ASTNode::rewriteReturn(SemanticContext* ctx) { VENOM_NOT_REACHED; }
+
+ASTNode*
 ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
   assert(replacement);
   replacement->initSymbolTable(getSymbolTable());
@@ -117,8 +120,8 @@ ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
     stmt->typeCheck(ctx);
   } else if (ASTExpressionNode *expr =
                dynamic_cast<ASTExpressionNode*>(replacement)) {
-    ASTExpressionNode *self = dynamic_cast<ASTExpressionNode*>(this);
-    assert(self);
+    VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, this);
+    ASTExpressionNode *self = static_cast<ASTExpressionNode*>(this);
     expr->typeCheck(ctx, self->getExpectedType(), self->getTypeParamArgs());
     // TODO: assert resulting typeCheck equals the original node's typeCheck?
   }

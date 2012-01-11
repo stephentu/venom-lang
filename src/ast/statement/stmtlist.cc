@@ -7,6 +7,7 @@
 
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
+#include <ast/statement/return.h>
 #include <ast/statement/stmtlist.h>
 
 using namespace std;
@@ -78,6 +79,24 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
     // append to the stmt list
     stmts.push_back(mainFcn);
+  }
+  return NULL;
+}
+
+ASTNode*
+StmtListNode::rewriteReturn(SemanticContext* ctx) {
+  if (stmts.empty()) {
+    ReturnNode* retNode = new ReturnNode(NULL);
+    appendStatement(retNode);
+    retNode->initSymbolTable(symbols);
+  } else {
+    ASTNode *last = stmts.back();
+    ASTNode *rep = last->rewriteReturn(ctx);
+    if (rep) {
+      assert(rep != last);
+      setNthKid(stmts.size() - 1, rep);
+      delete last;
+    }
   }
   return NULL;
 }

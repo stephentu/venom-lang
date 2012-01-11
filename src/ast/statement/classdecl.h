@@ -29,7 +29,7 @@ public:
                 ASTStatementNode*    stmts)
     : name(name), parents(parents),
       typeParams(typeParams), stmts(stmts) {
-    stmts->setLocationContext(ASTNode::TopLevelClassBody);
+    stmts->addLocationContext(ASTNode::TopLevelClassBody);
   }
 
   ~ClassDeclNode() {

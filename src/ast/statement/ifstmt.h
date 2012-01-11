@@ -46,6 +46,8 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
+  virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx);
+
   virtual void codeGen(backend::CodeGenerator& cg);
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(IfStmtNode)
