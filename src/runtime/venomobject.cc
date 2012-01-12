@@ -42,14 +42,17 @@ FunctionDescriptor* venom_object::InitDescriptor(
 FunctionDescriptor* venom_object::ReleaseDescriptor(
     new FunctionDescriptor((void*)release, 1, 0x1, true));
 
+FunctionDescriptor* venom_object::CtorDescriptor(
+    new FunctionDescriptor((void*)ctor, 1, 0x1, true));
+
 FunctionDescriptor* venom_object::StringifyDescriptor(
     new FunctionDescriptor((void*)stringify, 1, 0x1, true));
 
 venom_class_object venom_object::ObjClassTable(
     "object",
     sizeof(venom_object),
-    0, 0,
-    util::vec3(InitDescriptor, ReleaseDescriptor, StringifyDescriptor));
+    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
+    util::vec1(StringifyDescriptor));
 
 /**
  * We cannot have venom_object() in the header since we have not seen
@@ -133,6 +136,22 @@ venom_object::stringify(ExecutionContext* ctx, venom_cell self) {
 venom_ret_cell
 venom_object::virtualDispatch(ExecutionContext* ctx, size_t index) {
   ctx->resumeExecution(this, index);
+  venom_cell ret = ctx->program_stack.top();
+  ctx->program_stack.pop();
+  return venom_ret_cell(ret);
+}
+
+venom_ret_cell
+venom_object::dispatchInit(ExecutionContext* ctx) {
+  ctx->resumeExecution(this, class_obj->cppInit);
+  venom_cell ret = ctx->program_stack.top();
+  ctx->program_stack.pop();
+  return venom_ret_cell(ret);
+}
+
+venom_ret_cell
+venom_object::dispatchRelease(ExecutionContext* ctx) {
+  ctx->resumeExecution(this, class_obj->cppRelease);
   venom_cell ret = ctx->program_stack.top();
   ctx->program_stack.pop();
   return venom_ret_cell(ret);

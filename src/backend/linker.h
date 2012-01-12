@@ -10,6 +10,7 @@
 
 #include <runtime/venomobject.h>
 
+#include <util/either.h>
 #include <util/container.h>
 #include <util/stl.h>
 
@@ -88,32 +89,54 @@ private:
   LabelVec labels;
 };
 
+namespace {
+  typedef util::either<std::string, runtime::venom_class_object*>::comparable
+          _exec_constant_parent;
+}
+
+class ExecConstant : public _exec_constant_parent {
+public:
+  ExecConstant(const std::string& data) :
+    _exec_constant_parent(data) {}
+  ExecConstant(runtime::venom_class_object* singletonClass) :
+    _exec_constant_parent(singletonClass) {}
+};
+
 class Executable {
   friend class ExecutionContext;
+  friend class Instruction;
 public:
-  typedef std::vector<Constant> ConstPool;
-  typedef util::SizedArray<Instruction*> IStream;
-  typedef util::SizedArray<runtime::venom_class_object*> ClassObjPool;
+  typedef std::vector<ExecConstant> ConstPool;
+  typedef std::vector<FunctionDescriptor*> FuncDescVec;
+  typedef std::vector<runtime::venom_class_object*> ClassObjVec;
 
-  /** has ownership of class_obj_pool and instructions */
-  Executable(const ConstPool& constant_pool,
-             const ClassObjPool& class_obj_pool,
-             const IStream& instructions) :
+  typedef util::SizedArray<Instruction*> IStream;
+
+  Executable( /** Args for execution - takes ownership of instructions */
+             const ConstPool& constant_pool,
+             const IStream& instructions,
+
+             /* Args for mem mgnt- takes ownership of these pointers */
+             const FuncDescVec& user_func_descs,
+             const ClassObjVec& user_class_objs) :
     constant_pool(constant_pool),
-    class_obj_pool(class_obj_pool),
-    instructions(instructions) {}
+    instructions(instructions),
+    user_func_descs(user_func_descs),
+    user_class_objs(user_class_objs) {}
 
   ~Executable() {
-    //util::delete_pointers(class_obj_pool.begin(), class_obj_pool.end());
     util::delete_pointers(instructions.begin(), instructions.end());
-    delete [] instructions.begin();
+    util::delete_pointers(user_func_descs.begin(), user_func_descs.end());
+    util::delete_pointers(user_class_objs.begin(), user_class_objs.end());
   }
 
 protected:
   /** un-initialized constant pool (only holds the data) */
   ConstPool constant_pool;
-  ClassObjPool class_obj_pool;
   IStream instructions;
+
+  FuncDescVec user_func_descs;
+  ClassObjVec user_class_objs;
 };
 
 class LinkerException : public std::runtime_error {
@@ -129,14 +152,18 @@ public:
   typedef std::vector<ObjectCode*> ObjCodeVec;
   typedef std::vector<size_t> MapTbl;
   typedef std::map<std::string, FunctionDescriptor*> FuncDescMap;
+  typedef std::map<std::string, venom_class_object*> ClassObjMap;
 
-  Linker(const FuncDescMap& builtin_function_map) :
-    builtin_function_map(builtin_function_map) {}
+  Linker(const FuncDescMap& builtin_function_map,
+         const ClassObjMap& builtin_class_map) :
+    builtin_function_map(builtin_function_map),
+    builtin_class_map(builtin_class_map) {}
 
   Executable* link(const ObjCodeVec& objs);
 
 private:
   FuncDescMap builtin_function_map;
+  ClassObjMap builtin_class_map;
 };
 
 }

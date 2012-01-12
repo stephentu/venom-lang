@@ -27,6 +27,10 @@ public:
     return venom_ret_cell(Nil);
   }
 protected:
+  static inline venom_box_base<Primitive>* asSelf(venom_cell self) {
+    return static_cast< venom_box_base<Primitive>* >(self.asRawObject());
+  }
+
   Primitive primitive;
 };
 
@@ -34,6 +38,7 @@ class venom_integer : public venom_box_base<int64_t> {
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
+  static backend::FunctionDescriptor* CtorDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 public:
   static venom_class_object IntegerClassTable;
@@ -41,9 +46,15 @@ public:
     venom_box_base<int64_t>(value, &IntegerClassTable) {}
 
   static venom_ret_cell
+  ctor(backend::ExecutionContext* ctx, venom_cell self, venom_cell value) {
+    asSelf(self)->primitive = value.asInt();
+    return venom_ret_cell(Nil);
+  }
+
+  static venom_ret_cell
   stringify(backend::ExecutionContext* ctx, venom_cell self) {
     std::stringstream buf;
-    buf << static_cast<venom_integer*>(self.asRawObject())->primitive;
+    buf << asSelf(self)->primitive;
     return venom_ret_cell(new venom_string(buf.str()));
   }
 };
@@ -52,6 +63,7 @@ class venom_double : public venom_box_base<double> {
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
+  static backend::FunctionDescriptor* CtorDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 public:
   static venom_class_object DoubleClassTable;
@@ -59,9 +71,15 @@ public:
     venom_box_base<double>(value, &DoubleClassTable) {}
 
   static venom_ret_cell
+  ctor(backend::ExecutionContext* ctx, venom_cell self, venom_cell value) {
+    asSelf(self)->primitive = value.asDouble();
+    return venom_ret_cell(Nil);
+  }
+
+  static venom_ret_cell
   stringify(backend::ExecutionContext* ctx, venom_cell self) {
     std::stringstream buf;
-    double value = static_cast<venom_double*>(self.asRawObject())->primitive;
+    double value = asSelf(self)->primitive;
     // TODO: HACK, so that 0 as a float gets displayed as 0.0
     if (value) buf << value;
     else buf << "0.0";
@@ -73,6 +91,7 @@ class venom_boolean : public venom_box_base<bool> {
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
+  static backend::FunctionDescriptor* CtorDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 public:
   static venom_class_object BooleanClassTable;
@@ -80,11 +99,15 @@ public:
     venom_box_base<bool>(value, &BooleanClassTable) {}
 
   static venom_ret_cell
+  ctor(backend::ExecutionContext* ctx, venom_cell self, venom_cell value) {
+    asSelf(self)->primitive = value.asBool();
+    return venom_ret_cell(Nil);
+  }
+
+  static venom_ret_cell
   stringify(backend::ExecutionContext* ctx, venom_cell self) {
     std::stringstream buf;
-    buf <<
-      (static_cast<venom_boolean*>(self.asRawObject())->primitive ?
-       "True" : "False");
+    buf << (asSelf(self)->primitive ?  "True" : "False");
     return venom_ret_cell(new venom_string(buf.str()));
   }
 };

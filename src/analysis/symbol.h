@@ -23,7 +23,8 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
-  std::string getFullName() const;
+  /** Get the fully qualified name of this symbol */
+  virtual std::string getFullName() const;
 
   inline SymbolTable* getDefinedSymbolTable() { return table; }
   inline const SymbolTable* getDefinedSymbolTable() const { return table; }
@@ -164,6 +165,8 @@ public:
                FuncSymbol*                overrides)
     : FuncSymbol(name, typeParams, table, params, returnType, native),
       classSym(classSym), overrides(overrides) {}
+
+  virtual std::string getFullName() const;
 
   inline ClassSymbol* getClassSymbol() { return classSymbol; }
   inline const ClassSymbol* getClassSymbol() const { return classSymbol; }

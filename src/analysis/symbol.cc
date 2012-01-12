@@ -83,6 +83,14 @@ FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
   return t.translate(ctx, ret);
 }
 
+string
+MethodSymbol::getFullName() const {
+  stringstream buf;
+  buf << getClassSymbol()->getFullName();
+  buf << "." << getName();
+  return buf.str();
+}
+
 InstantiatedType*
 ClassSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                   const InstantiatedTypeVec& params) {

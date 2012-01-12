@@ -14,19 +14,19 @@ namespace venom {
 namespace backend {
 
 struct constant_table_functor {
-  constant_table_functor(util::container_pool<string>* exec_const_pool)
+  constant_table_functor(util::container_pool<ExecConstant>* exec_const_pool)
     : exec_const_pool(exec_const_pool) {}
-  inline Linker::MapTbl operator()(ObjectCode* obj) {
+  inline Linker::MapTbl operator()(vector<ExecConstant>& consts) {
     Linker::MapTbl ret;
-    ret.reserve(obj->getConstantPool().size());
-    for (size_t i = 0; i < obj->getConstantPool().size(); i++) {
+    ret.reserve(consts.size());
+    for (size_t i = 0; i < consts.size(); i++) {
       bool create;
       ret.push_back(
-        exec_const_pool->create(obj->getConstantPool()[i], create));
+        exec_const_pool->create(consts[i], create));
     }
     return ret;
   }
-  util::container_pool<string>* exec_const_pool;
+  util::container_pool<ExecConstant>* exec_const_pool;
 };
 
 struct inst_resolver_functor {
@@ -84,8 +84,8 @@ Executable* Linker::link(const ObjCodeVec& objs) {
     for (size_t i = 0; i < obj->getFuncRefTable().size(); i++) {
       SymbolReference& fref = obj->getFuncRefTable()[i];
       if (!fref.isLocal()) {
-        Linker::FuncDescMap::iterator it =
-          func_desc_map.find(fref.getFullName());
+        FuncDescMap::iterator it =
+          funcDescMap.find(fref.getFullName());
         if (it == func_desc_map.end()) {
           throw LinkerException(
               "No external function symbol: " + fref.getFullName());
@@ -100,13 +100,11 @@ Executable* Linker::link(const ObjCodeVec& objs) {
 
   // go through each local class in each obj,
   // and create class objs
-  typedef vector<venom_class_object*> ClassObjVec;
-  typedef map<string, venom_class_object*> ClassObjMap;
-  vector<ClassObjVec> localClassObjs(objs.size());
+  vector<Executable::ClassObjVec> localClassObjs(objs.size());
   ClassObjMap classObjMap; // for external class usage
   for (size_t i = 0; i < objs.size(); i++) {
     ObjectCode* obj = objs[i];
-    ClassObjVec& classObjVec = localClassObjs[i];
+    Executable::ClassObjVec& classObjVec = localClassObjs[i];
     FuncDescVec& refTableVec = func_map_tables[i];
     classObjVec.reserve(obj->getClassPool().size());
     for (vector<ClassSignature>::iterator it = obj->getClassPool().size();
@@ -122,40 +120,80 @@ Executable* Linker::link(const ObjCodeVec& objs) {
   // TODO: assert all new entries
 
   // create the class ref table for each object
+  vector<Executable::ClassObjVec> class_map_tables(objs.size());
+  for (size_t i = 0; i < objs.size(); i++) {
+    ObjectCode* obj = objs[i];
+    Executable::ClassObjVec& classObjVec = localClassObjs[i];
+    Executable::ClassObjVec& refTableVec = class_map_tables[i];
+    refTableVec.reserve(obj->getClassRefTable().size());
+    for (size_t i = 0; i < obj->getClassRefTable().size(); i++) {
+      SymbolReference& fref = obj->getClassRefTable()[i];
+      if (!fref.isLocal()) {
+        ClassObjMap::iterator it =
+          classObjMap.find(fref.getFullName());
+        if (it == classObjMap.end()) {
+          throw LinkerException(
+              "No external class symbol: " + fref.getFullName());
+        }
+        refTableVec.push_back(it->second);
+      } else {
+        VENOM_CHECK_RANGE(fref.getLocalIndex(), localClassObjs.size());
+        refTableVec.push_back(localClassObjs[fref.getLocalIndex()]);
+      }
+    }
+  }
+
+  // translate each obj's constant pool's indices into ExecConstants
+  vector<Executable::ConstPool> localConstVec(objs.size());
+  for (size_t i = 0; i < objs.size(); i++) {
+    ObjectCode* obj = objs[i];
+    Executable::ConstPool& execConstVec = localConstVec[i];
+    execConstVec.reserve(obj->getConstantPool().size());
+    Executable::ClassObjVec& refTableVec = class_map_tables[i];
+    for (size_t i = 0; i < obj->getConstantPool().size(); i++) {
+      Constant& konst = obj->getConstantPool()[i];
+      if (konst.isString()) {
+        execConstVec.push_back(ExecConstant(konst.getData()));
+      } else {
+        VENOM_CHECK_RANGE(konst.getClassIdx(), refTableVec.size());
+        execConstVec.push_back(
+              ExecConstant(refTableVec[konst.getClassIdx()]));
+      }
+    }
+  }
 
   // merge constant pools, and create mapping tables
   // for each objcode
-  util::container_pool<Constant> exec_const_pool;
+  util::container_pool<ExecConstant> exec_const_pool;
   vector<MapTbl> const_map_tables(objs.size());
-
-  // TODO: we want to map all class idxs in consts to the global
-  // class index number, before doing the transformation
-
-  transform(objs.begin(), objs.end(), const_map_tables.begin(),
+  transform(localConstVec.begin(), localConstVec.end(),
+            const_map_tables.begin(),
             constant_table_functor(&exec_const_pool));
-
-
 
   // calculate total # of instructions
   size_t n_insts = util::foldl(objs.begin(), objs.end(),
                                0, inst_sum_functor());
   // TODO: allocate the entire stream as a contiguous memory array
   // (not just have the pointers being contiguous)
-  Executable::IStream::array_type execInsts = new Instruction* [n_insts];
+  vector<Instruction*> execInsts(n_insts);
 
   // resolve instructions into one single stream
   acc = 0;
   for (size_t i = 0; i < objs.size(); i++) {
-    ResolutionTable resTbl(&const_map_tables[i], NULL, &func_map_tables[i]);
+    ResolutionTable resTbl(&const_map_tables[i],
+                           &class_map_tables[i],
+                           &func_map_tables[i]);
     ObjectCode::IStream& insts = objs[i]->getInstructions();
-    transform(insts.begin(), insts.end(), execInsts + acc,
+    transform(insts.begin(), insts.end(), execInsts.begin() + acc,
               inst_resolver_functor(&resTbl));
     acc += insts.size();
   }
 
-  return new Executable(exec_const_pool.vec,
-                        Executable::ClassObjPool(NULL, 0),
-                        Executable::IStream(execInsts, n_insts));
+  return new Executable(
+        exec_const_pool.vec,
+        Executable::IStream::BuildFrom(execInsts),
+        util::flatten_vec(localFuncDesc),
+        util::flatten_vec(localClassObjs));
 }
 
 }

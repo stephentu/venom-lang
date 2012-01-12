@@ -43,8 +43,6 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("bool", root->newChildScope(NULL), Type::BoolType);
   root->createClassSymbol("float", root->newChildScope(NULL), Type::FloatType);
 
-  root->createClassSymbol("string", root->newChildScope(NULL), Type::StringType);
-
   // void exists so we can give everything a return type
   root->createClassSymbol("void", root->newChildScope(NULL), Type::VoidType);
 
@@ -86,6 +84,23 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                 InstantiatedTypeVec(),
                                 InstantiatedType::VoidType,
                                 objectClassSym, NULL, true);
+  FuncSymbol *objStringifyFuncSym =
+    objSymTab->createMethodSymbol("stringify", InstantiatedTypeVec(),
+                                  InstantiatedTypeVec(),
+                                  InstantiatedType::StringType,
+                                  objectClassSym, NULL, true);
+
+  SymbolTable *stringSymTab = root->newChildScope(NULL);
+  ClassSymbol *stringClassSym =
+    root->createClassSymbol("string", stringSymTab, Type::StringType);
+  stringSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                   InstantiatedTypeVec(),
+                                   InstantiatedType::VoidType,
+                                   stringClassSym, NULL, true);
+  stringSymTab->createMethodSymbol("stringify", InstantiatedTypeVec(),
+                                   InstantiatedTypeVec(),
+                                   InstantiatedType::StringType,
+                                   stringClassSym, objStringifyFuncSym, true);
 
   // boxed primitives, with hidden names
   SymbolTable *IntSymTab = root->newChildScope(NULL);
@@ -140,8 +155,32 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
 Linker::FuncDescMap GetBuiltinFunctionMap() {
   Linker::FuncDescMap ret;
+
   // TODO: dynamically load this stuff, instead of hardcode
   ret["<prelude>.print"] = BuiltinPrintDescriptor;
+
+  // object methods
+  ret["<prelude>.object.<ctor>"]    = venom_object::CtorDescriptor;
+  ret["<prelude>.object.stringify"] = venom_object::StringifyDescriptor;
+
+  // string methods
+  ret["<prelude>.string.<ctor>"]    = venom_string::CtorDescriptor;
+  ret["<prelude>.string.stringify"] = venom_string::StringifyDescriptor;
+
+  return ret;
+}
+
+Linker::ClassObjMap GetBuiltinClassMap() {
+  Linker::ClassObjMap ret;
+  // TODO: dynamically load this stuff, instead of hardcode
+
+  ret["<prelude>.object"] = venom_object::ObjClassTable;
+  ret["<prelude>.string"] = venom_string::StringClassTable;
+
+  ret["<prelude>.<Int>"]   = venom_integer::IntegerClassTable;
+  ret["<prelude>.<Float>"] = venom_integer::FloatClassTable;
+  ret["<prelude>.<Bool>"]  = venom_integer::BoolClassTable;
+
   return ret;
 }
 

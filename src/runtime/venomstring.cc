@@ -19,8 +19,8 @@ FunctionDescriptor* venom_string::StringifyDescriptor(
 venom_class_object venom_string::StringClassTable(
     "string",
     sizeof(venom_string),
-    0, 0,
-    util::vec3(InitDescriptor, ReleaseDescriptor, StringifyDescriptor));
+    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
+    util::vec1(StringifyDescriptor));
 
 }
 }

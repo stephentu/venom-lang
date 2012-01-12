@@ -203,7 +203,7 @@ SymbolTable::createMethodSymbol(const string&                    name,
                                 const vector<InstantiatedType*>& params,
                                 InstantiatedType*                returnType,
                                 ClassSymbol*                     classSymbol,
-                                FuncSymbol*                       overrides,
+                                FuncSymbol*                      overrides,
                                 bool                             native) {
   FuncSymbol *sym =
     new MethodSymbol(name, typeParams, this, params,

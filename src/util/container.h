@@ -1,6 +1,8 @@
 #ifndef VENOM_UTIL_CONTAINER_H
 #define VENOM_UTIL_CONTAINER_H
 
+#include <cassert>
+#include <algorithm>
 #include <map>
 #include <vector>
 
@@ -64,8 +66,37 @@ public:
 
   SizedArray()
     : elems(NULL), n_elems(0) {}
-  SizedArray(array_type elems, size_t n_elems)
-    : elems(elems), n_elems(n_elems) {}
+
+  template <typename Iter>
+  SizedArray(Iter begin, Iter end)
+    : elems(NULL), n_elems(0) {
+    n_elems = end - begin;
+    elems = new Obj [n_elems];
+    std::copy(begin, end, elems);
+  }
+
+  ~SizedArray() { if (elems) delete [] elems; }
+
+  SizedArray(const SizedArray<Obj>& that)
+    : elems(that.n_elems ? new Obj[that.n_elems] : NULL),
+      n_elems(that.n_elems) {
+    if (elems) std::copy(that.begin(), that.end(), elems);
+  }
+
+  inline SizedArray<Obj>& operator=(const SizedArray<Obj>& that) {
+    assert(elems != that.elems); // this shouldn't happen
+    if (elems) delete [] elems;
+    if (that.elems) {
+      elems = new Obj [that.n_elems];
+      std::copy(that.begin(), that.end(), elems);
+    } else elems = NULL;
+    n_elems = that.n_elems;
+    return *this;
+  }
+
+  static inline SizedArray<Obj> BuildFrom(const std::vector<Obj>& elems) {
+    return SizedArray<Obj>(elems.begin(), elems.end());
+  }
 
   inline array_type begin() { return elems; }
   inline const array_type begin() const { return elems; }

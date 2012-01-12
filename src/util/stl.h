@@ -127,6 +127,17 @@ inline bool is_unique(Iter begin, Iter end) {
   return seen.size() == count;
 }
 
+template <typename T>
+inline std::vector<T> flatten_vec(const std::vector< std::vector<T> >& vecs) {
+  std::vector<T> result;
+  for (std::vector< std::vector<T> >::iterator it = vecs.begin();
+       it != vecs.end(); ++it) {
+    result.reserve(result.size() + (*it).size());
+    result.insert(result.end(), (*it).begin(), (*it).end());
+  }
+  return result;
+}
+
 template <typename Iter1, typename Iter2, typename BinaryPredicate>
 Iter1 binpred_find_if(Iter1 first1, Iter1 last1, Iter2 first2, BinaryPredicate pred) {
   for (; first1 != last1; first1++, first2++) {

@@ -20,7 +20,8 @@ Instruction* SInstU32::resolve(size_t pos, ResolutionTable& resTable) {
   case Instruction::PUSH_CONST:
     return new InstFormatU32(opcode, resTable.getConstantTable()[value]);
   case Instruction::ALLOC_OBJ:
-    return new InstFormatU32(opcode, resTable.getClassRefTable()[value]);
+    return new InstFormatIPtr(opcode,
+                              intptr_t(resTable.getClassRefTable()[value]));
   case Instruction::CALL:
   case Instruction::CALL_NATIVE:
     return new InstFormatIPtr(opcode,

@@ -171,9 +171,9 @@ bool Instruction::LOAD_LOCAL_VAR_REF_impl(ExecutionContext& ctx) {
 }
 
 bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
-  // TODO: consider storing the pointer in the inst...
-  InstFormatU32 *self = asFormatU32();
-  venom_class_object* class_obj = ctx.class_obj_pool[self->N0];
+  InstFormatIPtr *self = asFormatIPtr();
+  venom_class_object* class_obj =
+    reinterpret_cast<venom_class_object*>(self->N0);
   assert(class_obj);
 
   size_t s =
@@ -194,7 +194,9 @@ bool Instruction::CALL_impl(ExecutionContext& ctx) {
   // create new local variable frame
   ctx.new_frame();
   // set PC
-  ctx.program_counter = reinterpret_cast<Instruction**>(self->N0);
+  FunctionDescriptor *desc = reinterpret_cast<FunctionDescriptor*>(self->N0);
+  ctx.program_counter =
+    ctx.code->instructions.begin() + int64_t(desc->getFunctionPtr());
   return false;
 }
 
@@ -480,7 +482,7 @@ bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
     ctx.new_frame();
     // set PC
     ctx.program_counter =
-      reinterpret_cast<Instruction**>(desc->getFunctionPtr());
+      ctx.code->instructions.begin() + int64_t(desc->getFunctionPtr());
     return false;
   }
 }

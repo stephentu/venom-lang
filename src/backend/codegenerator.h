@@ -16,6 +16,7 @@
 #include <backend/symbolicbytecode.h>
 
 #include <util/container.h>
+#include <util/either.h>
 #include <util/stl.h>
 
 namespace venom {
@@ -51,26 +52,23 @@ inline std::ostream& operator<<(std::ostream& o, const Label& l) {
   return o;
 }
 
-class SymbolReference {
+namespace {
+  typedef util::either<size_t, std::string>::comparable _symref_parent;
+}
+class SymbolReference : public _symref_parent {
 public:
   SymbolReference(size_t local_index) :
-    local(true), local_index(local_index) {}
+    _symref_parent(local_index) {}
   SymbolReference(const std::string& full_name) :
-    local(false), full_name(full_name) {}
+    _symref_parent(full_name) {}
 
-  inline bool isLocal() const { return local; }
+  inline bool isLocal() const { return isLeft(); }
+  inline bool isExternal() const { return isRight(); }
 
-  inline size_t getLocalIndex() const {
-    assert(isLocal()); return local_index; }
+  inline size_t getLocalIndex() const { return left(); }
 
-  inline std::string& getFullName() {
-    assert(!isLocal()); return full_name; }
-  inline const std::string& getFullName() const {
-    assert(!isLocal()); return full_name; }
-private:
-  bool local;
-  size_t local_index;
-  std::string full_name;
+  inline std::string& getFullName() { return right(); }
+  inline const std::string& getFullName() const { return right(); }
 };
 
 inline std::ostream& operator<<(std::ostream& o, const SymbolReference& ref) {
@@ -82,44 +80,21 @@ inline std::ostream& operator<<(std::ostream& o, const SymbolReference& ref) {
   return o;
 }
 
-class Constant {
+namespace {
+  typedef util::either<std::string, size_t>::comparable _constant_parent;
+}
+class Constant : public _constant_parent {
 public:
-  Constant(const std::string& data) : str(true), data(data) {}
-  Constant(size_t classIdx) : str(false), classIdx(classIdx) {}
+  Constant(const std::string& data) : _constant_parent(data) {}
+  Constant(size_t classIdx) : _constant_parent(classIdx) {}
 
-  inline bool isString() const { return str; }
+  inline bool isString() const { return isLeft(); }
+  inline bool isClassSingleton() const { return isRight(); }
 
-  inline std::string& getData() {
-    assert(isString()); return data; }
-  inline const std::string& getData() const {
-    assert(isString()); return data; }
+  inline std::string& getData() { return left(); }
+  inline const std::string& getData() const { return left; }
 
-  inline size_t getClassIdx() const {
-    assert(!isString()); return classIdx; }
-
-  inline bool operator<(const Constant& b) const {
-    if (isString()) {
-      // strings always ahed of symbols
-      return b.isString() ?
-        getData() < b.getData() : true;
-    } else {
-      return b.isString() ?
-        false : getClassIdx() < b.getClassIdx();
-    }
-  }
-  inline bool operator==(const Constant& b) const {
-    if (isString()) {
-      return b.isString() ?
-        getData() == b.getData() : false;
-    } else {
-      return b.isString() ?
-        false : getClassIdx() == b.getClassIdx();
-    }
-  }
-private:
-  bool str;
-  std::string data;
-  analysis::BaseSymbol* symbol;
+  inline size_t getClassIdx() const { return right(); }
 };
 
 inline std::ostream& operator<<(std::ostream& o, const Constant& konst) {

@@ -116,10 +116,13 @@ public:
                      size_t sizeof_obj_base,
                      size_t n_cells,
                      uint64_t ref_cell_bitmap,
+                     backend::FunctionDescriptor* cppInit,
+                     backend::FunctionDescriptor* cppRelease,
+                     backend::FunctionDescriptor* ctor,
                      const std::vector<backend::FunctionDescriptor*>& vtable)
     : name(name), sizeof_obj_base(sizeof_obj_base),
       n_cells(n_cells), ref_cell_bitmap(ref_cell_bitmap),
-      vtable(vtable) {
+      cppInit(cppInit), cppRelease(cppRelease), vtable(vtable) {
     // TODO: implementation limitation for now
     assert(n_cells <= 64);
   }
@@ -141,6 +144,12 @@ public:
   /** Bitmap which indicates which cells are ref-counted
    * TODO: handle when an obj has > 64 fields */
   const uint64_t ref_cell_bitmap;
+
+  backend::FunctionDescriptor* const cppInit;
+
+  backend::FunctionDescriptor* const cppRelease;
+
+  backend::FunctionDescriptor* const ctor;
 
   /** The vtable for the class */
   const std::vector<backend::FunctionDescriptor*> vtable;
@@ -185,6 +194,7 @@ public:
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
+  static backend::FunctionDescriptor* CtorDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 
 public:
@@ -234,6 +244,16 @@ public:
   }
 
   /**
+   * Venom level constructor
+   *
+   * Default constructor does nothing
+   */
+  static venom_ret_cell
+  ctor(backend::ExecutionContext* ctx, venom_cell self) {
+    return venom_ret_cell(Nil);
+  }
+
+  /**
    * stringify - returns a venom_string object instance
    */
   static venom_ret_cell
@@ -246,6 +266,10 @@ public:
    */
   venom_ret_cell
   virtualDispatch(backend::ExecutionContext* ctx, size_t index);
+
+  venom_ret_cell dispatchInit(backend::ExecutionContext* ctx);
+
+  venom_ret_cell dispatchRelease(backend::ExecutionContext* ctx);
 
 protected:
   /**

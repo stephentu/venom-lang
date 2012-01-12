@@ -87,7 +87,13 @@ void ExecutionContext::resumeExecution(Instruction** pc) {
 }
 
 void ExecutionContext::resumeExecution(venom_object* obj, size_t index) {
+
   FunctionDescriptor *desc = obj->getClassObj()->vtable.at(index);
+  resumeExecution(obj, desc);
+}
+
+void ExecutionContext::resumeExecution(venom_object* obj,
+                                       FunctionDescriptor* desc) {
   assert(desc);
   obj->incRef();
   program_stack.push(venom_cell(obj));

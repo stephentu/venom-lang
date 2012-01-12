@@ -26,6 +26,7 @@ protected:
 private:
   static backend::FunctionDescriptor* InitDescriptor;
   static backend::FunctionDescriptor* ReleaseDescriptor;
+  static backend::FunctionDescriptor* CtorDescriptor;
   static backend::FunctionDescriptor* StringifyDescriptor;
 
   inline void initData(const char *data, size_t n) {
@@ -61,6 +62,11 @@ public:
   release(backend::ExecutionContext* ctx, venom_cell self) {
     venom_string* s = static_cast<venom_string*>(self.asRawObject());
     s->releaseData();
+    return venom_ret_cell(venom_object::Nil);
+  }
+
+  static venom_ret_cell
+  ctor(backend::ExecutionContext* ctx, venom_cell self) {
     return venom_ret_cell(venom_object::Nil);
   }
 

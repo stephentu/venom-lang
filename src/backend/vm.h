@@ -59,7 +59,6 @@ public:
     : code(code),
       program_counter(code->instructions.begin()),
       constant_pool(NULL),
-      class_obj_pool(code->class_obj_pool.begin()),
       is_executing(false) {}
 
   ~ExecutionContext() { assert(!constant_pool); }
@@ -110,6 +109,8 @@ protected:
    */
   void resumeExecution(runtime::venom_object* obj, size_t index);
 
+  void resumeExecution(runtime::venom_object* obj, FunctionDescriptor* desc);
+
   inline std::vector<runtime::venom_cell>& local_variables() {
     return local_variables_stack.top();
   }
@@ -139,9 +140,6 @@ protected:
 
   /** Initialized constant pool */
   runtime::venom_cell** constant_pool;
-
-  /** Initialized class object pool */
-  runtime::venom_class_object** class_obj_pool;
 
   /** Program stack - shared per context */
   program_stack_type program_stack;

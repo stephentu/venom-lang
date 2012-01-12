@@ -18,7 +18,7 @@ class FunctionDescriptor;
 class ResolutionTable {
 public:
   typedef std::vector<size_t> ConstTbl;
-  typedef std::vector<size_t> ClassRefTbl;
+  typedef std::vector<runtime::venom_class_object*> ClassRefTbl;
   typedef std::vector<FunctionDescriptor*> FuncRefTbl;
 
   /** Does NOT take ownership of arguments */
