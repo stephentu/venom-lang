@@ -10,8 +10,11 @@
 #include <ast/statement/return.h>
 #include <ast/statement/stmtlist.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -24,12 +27,13 @@ StmtListNode::registerSymbol(SemanticContext* ctx) {
 
     // create the module class symbol (in the *ROOT* symbol table
     // (which is the parent of this node's symbol table))
-    ctx->getRootSymbolTable()->createClassSymbol(
+    ClassSymbol* moduleClassSymbol =
+      ctx->getRootSymbolTable()->createClassSymbol(
         moduleType->getName(), getSymbolTable(), moduleType);
 
     // create the symbol for the module object singleton
     ctx->getRootSymbolTable()->createModuleSymbol(
-        ctx->getModuleName(), getSymbolTable(), moduleType, ctx);
+        ctx->getModuleName(), getSymbolTable(), moduleClassSymbol, ctx);
   }
 }
 
@@ -69,10 +73,13 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
     }
 
     // create a function with mainStmts
+    StmtListNode* mainStmtsNode = new StmtListNode(mainStmts);
     FuncDeclNode* mainFcn = new FuncDeclNode(
         "<main>", util::StrVec(),
-        ExprNodeVec(), NULL, new StmtListNode(mainStmts));
+        ExprNodeVec(), NULL, mainStmtsNode);
+    // <main> is a strange function when it comes to its symbol table
     mainFcn->setSymbolTable(symbols);
+    //mainStmtsNode->setSymbolTable(symbols);
     mainFcn->registerSymbol(ctx);
 
     // don't typecheck the new function (no types changed)
@@ -99,6 +106,23 @@ StmtListNode::rewriteReturn(SemanticContext* ctx) {
     }
   }
   return NULL;
+}
+
+void
+StmtListNode::codeGen(CodeGenerator& cg) {
+  if (getSymbolTable() && getSymbolTable()->isModuleLevelSymbolTable()) {
+    // find the module symbol
+    SemanticContext* ctx = getSymbolTable()->getSemanticContext();
+    ModuleSymbol* msym = ctx->getRootSymbolTable()->findModuleSymbol(
+        ctx->getModuleName(), SymbolTable::NoRecurse);
+    VENOM_ASSERT_NOT_NULL(msym);
+
+    // need to register the module class
+    bool create;
+    cg.enterClass(msym->getModuleClassSymbol(), create);
+    assert(create);
+  }
+  ASTNode::codeGen(cg);
 }
 
 StmtListNode*

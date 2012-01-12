@@ -202,7 +202,7 @@ public:
 
   ModuleSymbol*
   createModuleSymbol(const std::string& name, SymbolTable* moduleTable,
-                     Type* moduleType, SemanticContext* origCtx);
+                     ClassSymbol* moduleClass, SemanticContext* origCtx);
 
   void getModuleSymbols(std::vector<ModuleSymbol*>& symbols);
 

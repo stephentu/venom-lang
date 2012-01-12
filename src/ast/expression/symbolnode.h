@@ -36,6 +36,8 @@ public:
 
   virtual analysis::BaseSymbol* getSymbol() { return symbol; }
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(SymbolNode)
 
 protected:

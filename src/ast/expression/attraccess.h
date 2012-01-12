@@ -38,6 +38,8 @@ public:
 
   virtual analysis::BaseSymbol* getSymbol();
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(AttrAccessNode)
 
 protected:

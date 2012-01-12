@@ -5,8 +5,11 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -36,6 +39,32 @@ AttrAccessNode::typeCheckImpl(SemanticContext* ctx,
         "Type " + obj->stringify() + " has no member " + name);
   }
   return attrSym->bind(ctx, t, typeParamArgs);
+}
+
+void
+AttrAccessNode::codeGen(CodeGenerator& cg) {
+  primary->codeGen(cg);
+
+  if (hasLocationContext(AssignmentLHS) ||
+      hasLocationContext(FunctionCall)) {
+    // AssignNode/FunctionCall will take care of the assignment/call
+    // respectively
+    return;
+  }
+
+  // now, we know we are in an rvalue context, so we must produce
+  // a result
+  BaseSymbol* bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
+  Symbol* sym = static_cast<Symbol*>(bs);
+  assert(sym->isModuleLevelSymbol() || sym->isObjectField());
+
+  size_t slotIdx = sym->getFieldIndex();
+  if (getStaticType()->isRefCounted()) {
+    cg.emitInstU32(Instruction::GET_ATTR_OBJ_REF, slotIdx);
+  } else {
+    cg.emitInstU32(Instruction::GET_ATTR_OBJ, slotIdx);
+  }
 }
 
 AttrAccessNode*

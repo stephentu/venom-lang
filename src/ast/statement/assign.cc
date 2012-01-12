@@ -177,9 +177,26 @@ AssignNode::codeGen(CodeGenerator& cg) {
   VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
   Symbol* sym = static_cast<Symbol*>(bs);
 
-  bool create;
-  size_t idx = cg.createLocalVariable(sym, create);
-  cg.emitInstU32(Instruction::STORE_LOCAL_VAR, idx);
+  bool refCnt = variable->getStaticType()->isRefCounted();
+  if (sym->isModuleLevelSymbol() || sym->isObjectField()) {
+    variable->codeGen(cg);
+    size_t slotIdx = sym->getFieldIndex();
+    cg.emitInstU32(
+        refCnt ?
+          Instruction::SET_ATTR_OBJ_REF :
+          Instruction::SET_ATTR_OBJ,
+        slotIdx);
+  } else {
+    // no codegen for variable, since we can just store directly
+    // into the local variable array
+    bool create;
+    size_t idx = cg.createLocalVariable(sym, create);
+    cg.emitInstU32(
+        refCnt ?
+          Instruction::STORE_LOCAL_VAR_REF :
+          Instruction::STORE_LOCAL_VAR,
+        idx);
+  }
 }
 
 AssignNode*

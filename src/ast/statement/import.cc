@@ -67,7 +67,8 @@ ImportStmtNode::registerSymbol(SemanticContext* ctx) {
   symbols->createModuleSymbol(
         names.back(),
         mctx->getModuleRoot()->getSymbolTable(),
-        msym->getModuleType(), ctx);
+        msym->getModuleClassSymbol(),
+        ctx);
 }
 
 ImportStmtNode*

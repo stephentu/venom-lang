@@ -67,7 +67,9 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
       AttrAccessNode *rep =
         new AttrAccessNode(
             new SymbolNode(
-              msym, msym->getModuleType()->instantiate(ctx), NULL),
+              msym,
+              msym->getModuleClassSymbol()->getType()->instantiate(ctx),
+              NULL),
             name);
       return replace(ctx, rep);
     }

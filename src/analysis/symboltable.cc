@@ -261,9 +261,9 @@ SymbolTable::findModuleSymbol(const string& name, RecurseMode mode) {
 
 ModuleSymbol*
 SymbolTable::createModuleSymbol(const string& name, SymbolTable* moduleTable,
-                                Type* moduleType, SemanticContext* origCtx) {
+                                ClassSymbol* moduleClass, SemanticContext* origCtx) {
   ModuleSymbol *sym =
-    new ModuleSymbol(name, this, moduleTable, moduleType, origCtx);
+    new ModuleSymbol(name, this, moduleTable, moduleClass, origCtx);
   moduleContainer.insert(name, sym);
   return sym;
 }

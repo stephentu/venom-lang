@@ -230,13 +230,13 @@ CodeGenerator::createObjectCode() {
   for (vector<ClassSymbol*>::iterator it = class_pool.vec.begin();
        it != class_pool.vec.end(); ++it) {
 
-    vector<ClassAttributeSymbol*> attributes;
-    vector<MethodSymbol*> methods;
+    vector<Symbol*> attributes;
+    vector<FuncSymbol*> methods;
     ClassSymbol *csym = *it;
     csym->linearizedOrder(attributes, methods);
 
     vector<uint32_t> attrVec(attributes.size());
-    for (vector<ClassAttributeSymbol*>::iterator it = attributes.begin();
+    for (vector<Symbol*>::iterator it = attributes.begin();
          it != attributes.end(); ++it) {
       attrVec.push_back(
           getClassRefIndexFromType(
@@ -244,7 +244,7 @@ CodeGenerator::createObjectCode() {
     }
 
     vector<uint32_t> methVec(methods.size());
-    for (vector<MethodSymbol*>::iterator it = methods.begin();
+    for (vector<FuncSymbol*>::iterator it = methods.begin();
          it != methods.end(); ++it) {
       size_t idx;
       bool res = func_reference_table.find(*it, idx);

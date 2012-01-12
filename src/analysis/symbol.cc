@@ -52,6 +52,76 @@ Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
     translated;
 }
 
+void
+SlotMixin::checkCanGetIndex() {
+  BaseSymbol* bs = getThisSymbol();
+  VENOM_ASSERT_NOT_NULL(bs);
+
+  // 3 cases
+  // A) module level symbol
+  // B) object field
+  // C) method
+
+  if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
+    if (sym->isModuleLevelSymbol()) return;
+    if (sym->isObjectField()) return;
+  } else if (dynamic_cast<MethodSymbol*>(bs)) {
+    return;
+  }
+
+  throw runtime_error(
+      "Cannot ask for field index on non-slot symbol: " +
+      VENOM_SOURCE_INFO);
+}
+
+size_t
+SlotMixin::getFieldIndexImpl() {
+  checkCanGetIndex();
+  if (fieldIndex == -1) {
+    // need to compute
+
+    // get class symbol for module
+    ClassSymbol *csym = getClassSymbolForSlotCalc();
+    VENOM_ASSERT_NOT_NULL(csym);
+
+    vector<Symbol*> attributes;
+    vector<FuncSymbol*> methods;
+    csym->linearizedOrder(attributes, methods);
+
+    for (size_t i = 0; i < attributes.size(); i++) {
+      Symbol* s = attributes[i];
+      assert(s->fieldIndex == -1 || s->fieldIndex >= 0);
+      // indicies should never change once they are set...
+      assert(s->fieldIndex == -1 || size_t(s->fieldIndex) == i);
+      s->fieldIndex = i;
+    }
+
+    for (size_t i = 0; i < methods.size(); i++) {
+      FuncSymbol* fs = methods[i];
+      if (MethodSymbol* ms = dynamic_cast<MethodSymbol*>(fs)) {
+        assert(ms->fieldIndex == -1 || ms->fieldIndex >= 0);
+        // indicies should never change once they are set...
+        assert(ms->fieldIndex == -1 || size_t(ms->fieldIndex) == i);
+        ms->fieldIndex = i;
+      }
+    }
+  }
+  assert(fieldIndex >= 0);
+  return size_t(fieldIndex);
+}
+
+ClassSymbol*
+Symbol::getClassSymbolForSlotCalc() {
+  assert(isModuleLevelSymbol());
+  SemanticContext* mainCtx =
+    getDefinedSymbolTable()->getSemanticContext();
+  ModuleSymbol* msym =
+    mainCtx->getRootSymbolTable()->findModuleSymbol(
+      mainCtx->getModuleName(), SymbolTable::NoRecurse);
+  VENOM_ASSERT_NOT_NULL(msym);
+  return msym->getModuleClassSymbol();
+}
+
 InstantiatedType*
 FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                  const InstantiatedTypeVec& params) {
@@ -113,8 +183,8 @@ ClassSymbol::isTopLevelClass() const {
 }
 
 void
-ClassSymbol::linearizedOrder(vector<ClassAttributeSymbol*>& attributes,
-                             vector<MethodSymbol*>& methods) {
+ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
+                             vector<FuncSymbol*>& methods) {
   vector<SymbolTable*> tables;
   classTable->linearizedClassOrder(tables);
 
@@ -122,16 +192,11 @@ ClassSymbol::linearizedOrder(vector<ClassAttributeSymbol*>& attributes,
   // of attributes, we simply concat the attributes in order
   for (vector<SymbolTable*>::iterator it = tables.begin();
        it != tables.end(); ++it) {
-    vector<Symbol*> clsAttrs;
-    (*it)->getSymbols(clsAttrs);
-    attributes.resize(attributes.size() + clsAttrs.size());
-    transform(
-        clsAttrs.begin(), clsAttrs.end(),
-        attributes.begin(),
-        util::poly_ptr_cast_functor<Symbol, ClassAttributeSymbol>::checked());
+    (*it)->getSymbols(attributes);
   }
 
   // methods are trickier, b/c they can override
+  map<MethodSymbol*, size_t> index;
   for (vector<SymbolTable*>::iterator it = tables.begin();
        it != tables.end(); ++it) {
     vector<FuncSymbol*> clsMethods;
@@ -139,9 +204,25 @@ ClassSymbol::linearizedOrder(vector<ClassAttributeSymbol*>& attributes,
     methods.reserve(methods.size() + clsMethods.size());
     for (vector<FuncSymbol*>::iterator fit = clsMethods.begin();
          fit != clsMethods.end(); ++fit) {
-      VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, (*fit));
-      MethodSymbol *msym = static_cast<MethodSymbol*>((*fit));
-      if (!msym->getOverrides()) methods.push_back(msym);
+      if (MethodSymbol *msym = dynamic_cast<MethodSymbol*>((*fit))) {
+        if (!msym->getOverrides()) {
+          map<MethodSymbol*, size_t>::iterator it =
+            index.find(msym);
+          assert(it == index.end());
+          index[msym] = methods.size();
+          methods.push_back(msym);
+        } else {
+          VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, msym->getOverrides());
+          // find the symbol being overridden, and replace it
+          map<MethodSymbol*, size_t>::iterator it =
+            index.find(static_cast<MethodSymbol*>(msym->getOverrides()));
+          assert(it != index.end());
+          methods[it->second] = msym;
+          index[msym] = it->second;
+        }
+      } else {
+        methods.push_back((*fit));
+      }
     }
   }
 }
@@ -153,7 +234,8 @@ ModuleSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
     throw TypeViolationException(
         "Cannot access imported modules of another module");
   }
-  return t.translate(ctx, moduleType->instantiate(ctx, params));
+  return t.translate(
+      ctx, moduleClassSymbol->getType()->instantiate(ctx, params));
 }
 
 }

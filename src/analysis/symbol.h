@@ -54,17 +54,41 @@ protected:
   SymbolTable* table;
 };
 
+class SlotMixin {
+public:
+  SlotMixin() : fieldIndex(-1) {}
+
+  size_t getFieldIndex() const
+    { return const_cast<SlotMixin*>(this)->getFieldIndexImpl(); }
+
+protected:
+  size_t getFieldIndexImpl();
+
+  virtual BaseSymbol* getThisSymbol() = 0;
+  virtual ClassSymbol* getClassSymbolForSlotCalc() = 0;
+
+  mutable ssize_t fieldIndex;
+
+private:
+  void checkCanGetIndex();
+};
+
 /**
  * Represents a location in memory, such as a variable, or a
  * object's field.
  */
-class Symbol : public BaseSymbol {
+class Symbol : public BaseSymbol, public SlotMixin {
   friend class SymbolTable;
 protected:
   Symbol(const std::string& name,
          SymbolTable*       table,
          InstantiatedType*  type)
-    : BaseSymbol(name, table), type(type) {}
+    : BaseSymbol(name, table),
+      promoteToRef(false),
+      type(type) {}
+
+  virtual BaseSymbol* getThisSymbol() { return this; }
+  virtual ClassSymbol* getClassSymbolForSlotCalc();
 
 public:
 
@@ -90,15 +114,21 @@ private:
 };
 
 class ClassAttributeSymbol : public Symbol {
-public:
+  friend class SymbolTable;
+protected:
   ClassAttributeSymbol(const std::string& name,
                        SymbolTable*       table,
                        InstantiatedType*  type,
                        ClassSymbol*       classSymbol)
     : Symbol(name, table, type), classSymbol(classSymbol) {}
 
+  virtual ClassSymbol* getClassSymbolForSlotCalc() { return classSymbol; }
+
+public:
   inline ClassSymbol* getClassSymbol() { return classSymbol; }
   inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
+
+  virtual bool isObjectField() const { return true; }
 
 private:
   ClassSymbol* classSymbol;
@@ -153,8 +183,9 @@ private:
   bool                native;
 };
 
-class MethodSymbol : public FuncSymbol {
-public:
+class MethodSymbol : public FuncSymbol, public SlotMixin {
+  friend class SymbolTable;
+protected:
   MethodSymbol(const std::string&         name,
                const InstantiatedTypeVec& typeParams,
                SymbolTable*               table,
@@ -165,6 +196,10 @@ public:
                FuncSymbol*                overrides)
     : FuncSymbol(name, typeParams, table, params, returnType, native),
       classSymbol(classSymbol), overrides(overrides) {}
+
+  virtual BaseSymbol* getThisSymbol() { return this; }
+  virtual ClassSymbol* getClassSymbolForSlotCalc() { return classSymbol; }
+public:
 
   virtual std::string getFullName() const;
 
@@ -220,8 +255,8 @@ public:
     return type->isCurrentScopeOnly();
   }
 
-  void linearizedOrder(std::vector<ClassAttributeSymbol*>& attributes,
-                       std::vector<MethodSymbol*>& methods);
+  void linearizedOrder(std::vector<Symbol*>& attributes,
+                       std::vector<FuncSymbol*>& methods);
 
 private:
   InstantiatedTypeVec typeParams;
@@ -238,10 +273,10 @@ protected:
   ModuleSymbol(const std::string& name,
                SymbolTable* table, /* defined */
                SymbolTable* moduleTable, /* module's root table */
-               Type *moduleType,
+               ClassSymbol* moduleClassSymbol,
                SemanticContext* origCtx /* the module which imported */)
     : BaseSymbol(name, table), moduleTable(moduleTable),
-      moduleType(moduleType), origCtx(origCtx) {}
+      moduleClassSymbol(moduleClassSymbol), origCtx(origCtx) {}
 
 public:
   inline SymbolTable*
@@ -249,8 +284,9 @@ public:
   inline const SymbolTable*
     getModuleSymbolTable() const { return moduleTable; }
 
-  inline Type* getModuleType() { return moduleType; }
-  inline const Type* getModuleType() const { return moduleType; }
+  inline ClassSymbol* getModuleClassSymbol() { return moduleClassSymbol; }
+  inline const ClassSymbol*
+    getModuleClassSymbol() const { return moduleClassSymbol; }
 
   /** This symbol should only be visible when the current ctx equals the
    * original (importing) context. This is to prevent seeing all of an
@@ -266,7 +302,7 @@ public:
 
 private:
   SymbolTable* moduleTable;
-  Type* moduleType;
+  ClassSymbol* moduleClassSymbol;
   SemanticContext* origCtx;
 };
 

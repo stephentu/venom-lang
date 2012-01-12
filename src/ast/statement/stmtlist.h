@@ -70,6 +70,8 @@ public:
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(StmtListNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
