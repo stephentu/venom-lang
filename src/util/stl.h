@@ -12,6 +12,8 @@
 #include <vector>
 #include <utility>
 
+#include <util/macros.h>
+
 namespace venom {
 namespace util {
 
@@ -179,6 +181,11 @@ inline OutputIter zip(InputIter1 first1, InputIter1 last1,
 }
 
 template <typename T>
+inline void reserve_extra(T& t, size_t extra) {
+  t.reserve(t.size() + extra);
+}
+
+template <typename T>
 inline void stack_clear(std::stack<T>& s) {
   while (!s.empty()) s.pop();
   assert(s.empty());
@@ -203,6 +210,23 @@ private:
 /** Useful Typedefs **/
 typedef std::vector<std::string>       StrVec;
 typedef const std::vector<std::string> ConstStrVec;
+
+/* polymorphic pointer cast functor */
+template <typename From, typename To,
+          bool AssertNotNull, bool AssertTypeOf>
+struct _poly_ptr_cast_functor {
+  inline To* operator()(From* from) const {
+    if (AssertNotNull) VENOM_ASSERT_NOT_NULL(from);
+    if (AssertTypeOf) VENOM_ASSERT_TYPEOF_PTR(To, from);
+    return AssertTypeOf ? static_cast<To*>(from) : dynamic_cast<To*>(from);
+  }
+};
+
+template <typename From, typename To>
+struct poly_ptr_cast_functor {
+  typedef _poly_ptr_cast_functor<From, To, true, true> checked;
+  typedef _poly_ptr_cast_functor<From, To, false, false> unchecked;
+};
 
 }
 }

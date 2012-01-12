@@ -16,8 +16,9 @@ namespace ast {
 
 void
 ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
-  VariableNode *var = dynamic_cast<VariableNode*>(variable);
-  assert(var);
+  assert(hasLocationContext(TopLevelFuncBody));
+  VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
+  VariableNode *var = static_cast<VariableNode*>(variable);
 
   // don't allow an attr to overshadow any decl
   // in a parent
@@ -39,7 +40,13 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
         symbols, var->getExplicitParameterizedTypeString());
   }
 
-  symbols->createSymbol(var->getName(), true, itype);
+  VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
+  ClassDeclNode *cdn = static_cast<ClassDeclNode*>(symbols->getOwner());
+  BaseSymbol *classSymbol = cdn->getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+
+  symbols->createClassAttributeSymbol(
+      var->getName(), itype, static_cast<ClassSymbol*>(classSymbol));
 }
 
 void
@@ -56,6 +63,9 @@ void
 ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
                              InstantiatedType* expected) {
   assert(!expected);
+  BaseSymbol *bs = variable->getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(ClassAttributeSymbol, bs);
+  ClassAttributeSymbol *sym = static_cast<ClassAttributeSymbol*>(bs);
   if (!value) {
     // replace
     //   attr x::T
@@ -67,17 +77,13 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
     //   0.0 (T = Double)
     //   False (T = Bool)
     //   Nil (otherwise)
-
-    BaseSymbol *bs = variable->getSymbol();
-    assert(bs);
-    assert(dynamic_cast<Symbol*>(bs));
-    Symbol *sym = static_cast<Symbol*>(bs);
     value = sym->getInstantiatedType()->getType()->createDefaultInitializer();
     value->initSymbolTable(symbols);
     // no need to call semantic check on value
   }
 
-  AssignNode::TypeCheckAssignment(ctx, symbols, variable, value, true);
+  AssignNode::TypeCheckAssignment(
+      ctx, symbols, variable, value, sym->getClassSymbol());
 }
 
 ClassAttrDeclNode*

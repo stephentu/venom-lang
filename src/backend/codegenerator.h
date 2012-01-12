@@ -2,6 +2,7 @@
 #define VENOM_BACKEND_CODE_GENERATOR_H
 
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -10,6 +11,7 @@
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
+#include <analysis/type.h>
 
 #include <backend/symbolicbytecode.h>
 
@@ -17,10 +19,17 @@
 #include <util/stl.h>
 
 namespace venom {
+
+namespace runtime {
+  /** Forward decl */
+  class venom_class_object;
+}
+
 namespace backend {
 
 /** Forward decl */
 class ObjectCode;
+class FunctionDescriptor;
 
 class Label {
   friend class CodeGenerator;
@@ -37,6 +46,11 @@ protected:
   int64_t index;
 };
 
+inline std::ostream& operator<<(std::ostream& o, const Label& l) {
+  o << "label_" << l.getIndex();
+  return o;
+}
+
 class SymbolReference {
 public:
   SymbolReference(size_t local_index) :
@@ -45,15 +59,146 @@ public:
     local(false), full_name(full_name) {}
 
   inline bool isLocal() const { return local; }
+
   inline size_t getLocalIndex() const {
-    assert(isLocal()); return local_index;
-  }
-  inline std::string& getFullName() { return full_name; }
-  inline const std::string& getFullName() const { return full_name; }
+    assert(isLocal()); return local_index; }
+
+  inline std::string& getFullName() {
+    assert(!isLocal()); return full_name; }
+  inline const std::string& getFullName() const {
+    assert(!isLocal()); return full_name; }
 private:
   bool local;
   size_t local_index;
   std::string full_name;
+};
+
+inline std::ostream& operator<<(std::ostream& o, const SymbolReference& ref) {
+  if (sref.isLocal()) {
+    o << ".local " << sref.getLocalIndex();
+  } else {
+    o << ".extern " << sref.getFullName();
+  }
+  return o;
+}
+
+class Constant {
+public:
+  Constant(const std::string& data) : str(true), data(data) {}
+  Constant(size_t classIdx) : str(false), classIdx(classIdx) {}
+
+  inline bool isString() const { return str; }
+
+  inline std::string& getData() {
+    assert(isString()); return data; }
+  inline const std::string& getData() const {
+    assert(isString()); return data; }
+
+  inline size_t getClassIdx() const {
+    assert(!isString()); return classIdx; }
+
+  inline bool operator<(const Constant& b) const {
+    if (isString()) {
+      // strings always ahed of symbols
+      return b.isString() ?
+        getData() < b.getData() : true;
+    } else {
+      return b.isString() ?
+        false : getClassIdx() < b.getClassIdx();
+    }
+  }
+  inline bool operator==(const Constant& b) const {
+    if (isString()) {
+      return b.isString() ?
+        getData() == b.getData() : false;
+    } else {
+      return b.isString() ?
+        false : getClassIdx() == b.getClassIdx();
+    }
+  }
+private:
+  bool str;
+  std::string data;
+  analysis::BaseSymbol* symbol;
+};
+
+inline std::ostream& operator<<(std::ostream& o, const Constant& konst) {
+  o << ".const ";
+  // TODO: escape string
+  if (konst.isString()) o << ".string \"" << konst.getData() << "\"";
+  else o << ".classref " << konst.getClassIdx();
+  return o;
+}
+
+class FunctionSignature {
+public:
+  // regular constructor
+  FunctionSignature(
+      const std::string& name,
+      const std::vector<uint32_t>& parameters,
+      uint32_t returnType,
+      uint64_t codeOffset) :
+    name(name), parameters(parameters),
+    returnType(returnType), codeOffset(codeOffset) {}
+
+  // method constructor
+  FunctionSignature(
+      const std::string& className,
+      const std::string& name,
+      const std::vector<uint32_t>& parameters,
+      uint32_t returnType,
+      uint64_t codeOffset) :
+    className(className), name(name), parameters(parameters),
+    returnType(returnType), codeOffset(codeOffset) {}
+
+  inline bool isMethod() const { return !className.empty(); }
+
+  inline std::string getFullName(const std::string& moduleName) const {
+    return isMethod() ?
+      moduleName + "." + className + "." + name :
+      moduleName + "." + name;
+  }
+
+  FunctionDescriptor* createFuncDescriptor(uint64_t globalOffset);
+
+  const std::string className;
+  const std::string name;
+  const std::vector<uint32_t> parameters;
+  const uint32_t returnType;
+  const uint64_t codeOffset;
+};
+
+class ClassSignature {
+public:
+  // the primitives have special indicies
+  static const uint32_t IntIndex   = 0xFFFFFFFFu;
+  static const uint32_t FloatIndex = IntIndex - 1u;
+  static const uint32_t BoolIndex  = FloatIndex - 1u;
+  static const uint32_t VoidIndex  = BoolIndex - 1u;
+
+  static inline bool IsSpecialIndex(uint32_t idx) {
+    return idx == IntIndex   ||
+           idx == FloatIndex ||
+           idx == BoolIndex  ||
+           idx == VoidIndex;
+  }
+
+  ClassSignature(
+      const std::string& name,
+      const std::vector<uint32_t>& attributes,
+      const std::vector<uint32_t>& methods)
+    : name(name), attributes(attributes), methods(methods) {}
+
+  runtime::venom_class_object* createClassObject(
+      const std::vector<FunctionDescriptor*>& referenceTable);
+
+  inline std::string getFullName(const std::string& moduleName) const {
+    return moduleName + "." + name;
+  }
+
+  const std::string name;
+  const std::vector<uint32_t> attributes;
+  const std::vector<uint32_t> methods;
 };
 
 /**
@@ -95,7 +240,7 @@ public:
   inline void resetLocalVariables() { local_variable_pool.reset(); }
 
   /** Returns an index used to reference into the constant pool */
-  size_t createConstant(const std::string& constant, bool& create);
+  size_t createConstant(const Constant& constant, bool& create);
 
   /** Enter local ClassSymbol into the class pool, and return an
    * index used to reference this class symbolically. The reference
@@ -146,6 +291,10 @@ public:
   void printDebugStream();
 
 private:
+
+  /** helper for createObjectCode() */
+  size_t getClassRefIndexFromType(analysis::Type* type);
+
   /** The context which this instance is generating code for */
   analysis::SemanticContext* ctx;
 
@@ -160,6 +309,10 @@ private:
   typedef std::map<size_t, std::pair<Label*, analysis::BaseSymbol*> >
     InstLabelSymbolPairMap;
   InstLabelSymbolPairMap instToFuncLabels;
+
+  /** Map function pool ref number to label */
+  typedef std::map<size_t, Label*> FuncIdxLabelMap;
+  FuncIdxLabelMap funcIdxToLabels;
 
   /** Instruction stream */
   std::vector<SymbolicInstruction*> instructions;
@@ -204,7 +357,7 @@ private:
   util::container_pool<analysis::Symbol*> local_variable_pool;
 
   /** Constant pool */
-  util::container_pool<std::string> constant_pool;
+  util::container_pool<Constant> constant_pool;
 
   /** Class pool - this is where the classes defined in this module
    * are organized */

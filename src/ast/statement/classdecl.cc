@@ -27,6 +27,12 @@ struct functor {
   SymbolTable*     st;
 };
 
+BaseSymbol*
+ClassDeclNode::getSymbol() {
+  TypeTranslator t;
+  return symbols->findClassSymbol(name, SymbolTable::NoRecurse, t);
+}
+
 void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
   if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {

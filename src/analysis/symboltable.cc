@@ -55,7 +55,7 @@ SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* parent,
                          const TypeMap& map, ASTNode* owner)
   : ctx(ctx),
     owner(owner),
-    parent(parent),
+    parents(parent ? util::vec1(parent) : vector<SymbolTable*>()),
     symbolContainer(
         parent ?
           util::vec1(&parent->symbolContainer) :
@@ -157,9 +157,17 @@ SymbolTable::findBaseSymbol(const string& name,
 
 Symbol*
 SymbolTable::createSymbol(const string&     name,
-                          bool              objectField,
                           InstantiatedType* type) {
-  Symbol *sym = new Symbol(name, this, objectField, type);
+  Symbol *sym = new Symbol(name, this, type);
+  symbolContainer.insert(name, sym);
+  return sym;
+}
+
+Symbol*
+SymbolTable::createClassAttributeSymbol(
+  const string& name, InstantiatedType* type, ClassSymbol* classSymbol) {
+
+  Symbol *sym = new ClassAttributeSymbol(name, this, type, classSymbol);
   symbolContainer.insert(name, sym);
   return sym;
 }
@@ -170,6 +178,11 @@ SymbolTable::findSymbol(const string& name, RecurseMode mode,
   Symbol *ret = NULL;
   symbolContainer.find(ret, name, mode, translator);
   return ret;
+}
+
+void
+SymbolTable::getSymbols(vector<Symbol*>& symbols) {
+  symbolContainer.getAll(symbols);
 }
 
 FuncSymbol*
@@ -185,11 +198,31 @@ SymbolTable::createFuncSymbol(const string&                    name,
 }
 
 FuncSymbol*
+SymbolTable::createMethodSymbol(const string&                    name,
+                                const vector<InstantiatedType*>& typeParams,
+                                const vector<InstantiatedType*>& params,
+                                InstantiatedType*                returnType,
+                                ClassSymbol*                     classSymbol,
+                                FuncSymbol*                       overrides,
+                                bool                             native) {
+  FuncSymbol *sym =
+    new MethodSymbol(name, typeParams, this, params,
+                     returnType, native, classSymbol, overrides);
+  funcContainer.insert(name, sym);
+  return sym;
+}
+
+FuncSymbol*
 SymbolTable::findFuncSymbol(const string& name, RecurseMode mode,
                             TypeTranslator& translator) {
   FuncSymbol *ret = NULL;
   funcContainer.find(ret, name, mode, translator);
   return ret;
+}
+
+void
+SymbolTable::getFuncSymbols(vector<FuncSymbol*>& symbols) {
+  funcContainer.getAll(symbols);
 }
 
 ClassSymbol*
@@ -213,6 +246,11 @@ SymbolTable::findClassSymbol(const string& name, RecurseMode mode,
   return ret;
 }
 
+void
+SymbolTable::getClassSymbols(vector<ClassSymbol*>& symbols) {
+  classContainer.getAll(symbols);
+}
+
 ModuleSymbol*
 SymbolTable::findModuleSymbol(const string& name, RecurseMode mode) {
   ModuleSymbol *ret = NULL;
@@ -228,6 +266,20 @@ SymbolTable::createModuleSymbol(const string& name, SymbolTable* moduleTable,
     new ModuleSymbol(name, this, moduleTable, moduleType, origCtx);
   moduleContainer.insert(name, sym);
   return sym;
+}
+
+void
+SymbolTable::getModuleSymbols(vector<ModuleSymbol*>& symbols) {
+  moduleContainer.getAll(symbols);
+}
+
+void
+SymbolTable::linearizedClassOrder(vector<SymbolTable*>& tables) {
+  for (vector<SymbolTable*>::iterator it = parents.begin() + 1;
+       it != parents.end(); ++it) {
+    (*it)->linearizedClassOrder(tables);
+  }
+  tables.push_back(this);
 }
 
 }

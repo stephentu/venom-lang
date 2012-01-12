@@ -52,19 +52,6 @@ Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
     translated;
 }
 
-bool FuncSymbol::isConstructor() const {
-  const ClassDeclNode *cdn =
-    dynamic_cast<const ClassDeclNode*>(getDefinedSymbolTable()->getOwner());
-  if (!cdn) return false;
-  return (cdn->getName() == name);
-}
-
-bool FuncSymbol::isMethod() const {
-  const ClassDeclNode *cdn =
-    dynamic_cast<const ClassDeclNode*>(getDefinedSymbolTable()->getOwner());
-  return cdn;
-}
-
 InstantiatedType*
 FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                  const InstantiatedTypeVec& params) {
@@ -115,6 +102,40 @@ ClassSymbol::isTopLevelClass() const {
   const ASTNode *owner = getDefinedSymbolTable()->getOwner();
   return !owner || (!owner->getEnclosingFuncNode() &&
                     !owner->getEnclosingClassNode());
+}
+
+void
+ClassSymbol::linearizedOrder(vector<ClassAttributeSymbol*>& attributes,
+                             vector<MethodSymbol*>& methods) {
+  vector<SymbolTable*> tables;
+  classTable->linearizedClassOrder(tables);
+
+  // attributes is easy, since there isn't any overriding
+  // of attributes, we simply concat the attributes in order
+  for (vector<SymbolTable*>::iterator it = tables.begin();
+       it != tables.end(); ++it) {
+    vector<Symbol*> clsAttrs;
+    (*it)->getSymbols(clsAttrs);
+    attributes.resize(attributes.size() + clsAttrs.size());
+    transform(
+        clsAttrs.begin(), clsAttrs.end(),
+        attributes.begin(),
+        util::poly_ptr_cast_functor<Symbol, ClassAttributeSymbol>::checked());
+  }
+
+  // methods are trickier, b/c they can override
+  for (vector<SymbolTable*>::iterator it = tables.begin();
+       it != tables.end(); ++it) {
+    vector<FuncSymbol*> clsMethods;
+    (*it)->getFuncSymbols(clsMethods);
+    methods.reserve(methods.size() + clsMethods.size());
+    for (vector<FuncSymbol*>::iterator fit = clsMethods.begin();
+         fit != clsMethods.end(); ++fit) {
+      VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, (*it));
+      MethodSymbol *msym = static_cast<MethodSymbol*>((*it));
+      if (!msym->getOverrides()) methods.push_back(msym);
+    }
+  }
 }
 
 InstantiatedType*

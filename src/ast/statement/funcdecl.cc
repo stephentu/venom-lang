@@ -109,14 +109,21 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     ctx->instantiateOrThrow(stmts->getSymbolTable(), ret_typename) :
     InstantiatedType::VoidType;
 
-  if (!isCtor() && (locCtx & ASTNode::TopLevelClassBody)) {
+  if (hasLocationContext(TopLevelClassBody)) {
     VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
+    ClassDeclNode *cdn = static_cast<ClassDeclNode*>(symbols->getOwner());
+    VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, cdn->getSymbol());
+    ClassSymbol *classSymbol = static_cast<ClassSymbol*>(cdn->getSymbol());
 
-    // check that type-signature matches for overrides
-    TypeTranslator t;
-    FuncSymbol *fs =
-      symbols->findFuncSymbol(name, SymbolTable::ClassParents, t);
-    if (fs && fs->isMethod()) {
+    if (isCtor()) {
+      symbols->createMethodSymbol(name, typeParamITypes, itypes,
+                                  retType, classSymbol, NULL);
+    } else {
+      // check that type-signature matches for overrides
+      TypeTranslator t;
+      FuncSymbol *fs =
+        symbols->findFuncSymbol(name, SymbolTable::ClassParents, t);
+      assert(fs->isMethod());
       InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
 
       vector<InstantiatedType*> fparams(itypes);
@@ -130,18 +137,19 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
             name + " of type " + overrideType->stringify() +
             " with type " + myType->stringify());
       }
+      symbols->createMethodSymbol(name, typeParamITypes, itypes,
+                                  retType, classSymbol, fs);
     }
+  } else {
+    symbols->createFuncSymbol(name, typeParamITypes, itypes, retType);
   }
-
-  // add symbol to current symtab
-  symbols->createFuncSymbol(name, typeParamITypes, itypes, retType);
 
   // add parameters to block (child) symtab
   for (size_t i = 0; i < params.size(); i++) {
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, params[i]);
     VariableNode *vn = static_cast<VariableNode*>(params[i]);
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), false, itypes[i]);
+        vn->getName(), itypes[i]);
   }
 }
 

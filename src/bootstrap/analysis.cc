@@ -80,37 +80,47 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 #undef _CREATE_FUNC
 
   SymbolTable *objSymTab = root->newChildScope(NULL);
-  objSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              InstantiatedTypeVec(),
-                              InstantiatedType::VoidType, true);
-  root->createClassSymbol("object", objSymTab, Type::ObjectType);
+  ClassSymbol *objectClassSym =
+    root->createClassSymbol("object", objSymTab, Type::ObjectType);
+  objSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                InstantiatedTypeVec(),
+                                InstantiatedType::VoidType,
+                                objectClassSym, NULL, true);
 
   // boxed primitives, with hidden names
   SymbolTable *IntSymTab = root->newChildScope(NULL);
-  IntSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              util::vec1(InstantiatedType::IntType),
-                              InstantiatedType::VoidType, true);
-  root->createClassSymbol("<Int>", IntSymTab, Type::BoxedIntType);
+  ClassSymbol *IntClassSym =
+    root->createClassSymbol("<Int>", IntSymTab, Type::BoxedIntType);
+  IntSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                util::vec1(InstantiatedType::IntType),
+                                InstantiatedType::VoidType,
+                                IntClassSym, NULL, true);
 
   SymbolTable *FloatSymTab = root->newChildScope(NULL);
-  FloatSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              util::vec1(InstantiatedType::FloatType),
-                              InstantiatedType::VoidType, true);
-  root->createClassSymbol("<Float>", FloatSymTab, Type::BoxedFloatType);
+  ClassSymbol *FloatClassSym =
+    root->createClassSymbol("<Float>", FloatSymTab, Type::BoxedFloatType);
+  FloatSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                  util::vec1(InstantiatedType::FloatType),
+                                  InstantiatedType::VoidType,
+                                  FloatClassSym, NULL, true);
 
   SymbolTable *BoolSymTab = root->newChildScope(NULL);
-  BoolSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              util::vec1(InstantiatedType::BoolType),
-                              InstantiatedType::VoidType, true);
-  root->createClassSymbol("<Bool>", BoolSymTab, Type::BoxedBoolType);
+  ClassSymbol *BoolClassSym =
+    root->createClassSymbol("<Bool>", BoolSymTab, Type::BoxedBoolType);
+  BoolSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                 util::vec1(InstantiatedType::BoolType),
+                                 InstantiatedType::VoidType,
+                                 BoolClassSym, NULL, true);
 
   SymbolTable *RefSymTab = root->newChildScope(NULL);
   vector<InstantiatedType*> RefTypeParam = createTypeParams(ctx, 1);
-  RefSymTab->createFuncSymbol("<ctor>", InstantiatedTypeVec(),
-                              util::vec1(RefTypeParam[0]),
-                              InstantiatedType::VoidType, true);
-  RefSymTab->createSymbol("value", true, RefTypeParam[0]);
-  root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
+  ClassSymbol *RefClassSym =
+    root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
+  RefSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                util::vec1(RefTypeParam[0]),
+                                InstantiatedType::VoidType, RefClassSym,
+                                NULL, true);
+  RefSymTab->createClassAttributeSymbol("value", RefTypeParam[0], RefClassSym);
 
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
                           createTypeParams(ctx, 1));

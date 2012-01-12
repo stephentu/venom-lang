@@ -168,27 +168,71 @@ class FunctionDescriptor {
   friend class ExecutionContext;
   friend class Instruction;
 public:
-  typedef runtime::venom_cell vcell;
-  typedef runtime::venom_ret_cell vrcell;
-  typedef ExecutionContext* exptr;
+  typedef runtime::venom_cell vc;
+  typedef runtime::venom_ret_cell vr;
+  typedef ExecutionContext* ec;
 
-  // TODO: more typedefs
-  typedef vrcell(*F0)(exptr);
-  typedef vrcell(*F1)(exptr,vcell);
-  typedef vrcell(*F2)(exptr,vcell,vcell);
-  typedef vrcell(*F3)(exptr,vcell,vcell,vcell);
-  typedef vrcell(*F4)(exptr,vcell,vcell,vcell,vcell);
-  typedef vrcell(*F5)(exptr,vcell,vcell,vcell,vcell,vcell);
-  typedef vrcell(*F6)(exptr,vcell,vcell,vcell,vcell,vcell,vcell);
-  typedef vrcell(*F7)(exptr,vcell,vcell,vcell,vcell,vcell,vcell,vcell);
-  typedef vrcell(*F8)(exptr,vcell,vcell,vcell,vcell,vcell,vcell,vcell,vcell);
+  /** 64 argument functions is the maximum that is supported
+   * by the system */
+  // TODO: implementation limitation
+  static const uint32_t MaxNumArgs = 64;
+
+  typedef vr(*F0) (ec);
+  typedef vr(*F1) (ec,vc);
+  typedef vr(*F2) (ec,vc,vc);
+  typedef vr(*F3) (ec,vc,vc,vc);
+  typedef vr(*F4) (ec,vc,vc,vc,vc);
+  typedef vr(*F5) (ec,vc,vc,vc,vc,vc);
+  typedef vr(*F6) (ec,vc,vc,vc,vc,vc,vc);
+  typedef vr(*F7) (ec,vc,vc,vc,vc,vc,vc,vc);
+  typedef vr(*F8) (ec,vc,vc,vc,vc,vc,vc,vc,vc);
+  typedef vr(*F9) (ec,vc,vc,vc,vc,vc,vc,vc,vc,vc);
+
+#define _10_VCS vc,vc,vc,vc,vc,vc,vc,vc,vc,vc
+#define _20_VCS _10_VCS,_10_VCS
+#define _30_VCS _20_VCS,_10_VCS
+#define _40_VCS _30_VCS,_10_VCS
+#define _50_VCS _40_VCS,_10_VCS
+#define _60_VCS _50_VCS,_10_VCS
+
+#define _IMPL_FCN_TYPEDEFS(prefix) \
+  typedef vr(*F ## prefix ## 0)(ec,_ ## prefix ## 0_VCS); \
+  typedef vr(*F ## prefix ## 1)(ec,_ ## prefix ## 0_VCS,vc); \
+  typedef vr(*F ## prefix ## 2)(ec,_ ## prefix ## 0_VCS,vc,vc); \
+  typedef vr(*F ## prefix ## 3)(ec,_ ## prefix ## 0_VCS,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 4)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 5)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 6)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 7)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 8)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc,vc,vc,vc,vc); \
+  typedef vr(*F ## prefix ## 9)(ec,_ ## prefix ## 0_VCS,vc,vc,vc,vc,vc,vc,vc,vc,vc);
+
+  _IMPL_FCN_TYPEDEFS(1);
+  _IMPL_FCN_TYPEDEFS(2);
+  _IMPL_FCN_TYPEDEFS(3);
+  _IMPL_FCN_TYPEDEFS(4);
+  _IMPL_FCN_TYPEDEFS(5);
+
+  typedef vr(*F60) (ec _60_VCS);
+  typedef vr(*F61) (ec,_60_VCS,vc);
+  typedef vr(*F62) (ec,_60_VCS,vc,vc);
+  typedef vr(*F63) (ec,_60_VCS,vc,vc,vc);
+  typedef vr(*F64) (ec,_60_VCS,vc,vc,vc,vc);
+
+#undef _IMPL_FCN_TYPEDEFS
+
+#undef _10_VCS
+#undef _20_VCS
+#undef _30_VCS
+#undef _40_VCS
+#undef _50_VCS
+#undef _60_VCS
 
   FunctionDescriptor(void* function_ptr, size_t num_args,
                      uint64_t arg_ref_cell_bitmap, bool native)
     : function_ptr(function_ptr), num_args(num_args),
       arg_ref_cell_bitmap(arg_ref_cell_bitmap), native(native) {
-    // TODO: implementation limitation
-    assert(num_args <= 64);
+    assert(num_args <= MaxNumArgs);
   }
 
   /** Accessors */

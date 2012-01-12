@@ -20,7 +20,7 @@ StringLiteralNode::typeCheckImpl(SemanticContext* ctx,
 void
 StringLiteralNode::codeGen(CodeGenerator& cg) {
   bool create;
-  size_t idx = cg.createConstant(value, create);
+  size_t idx = cg.createConstant(Constant(value), create);
   cg.emitInstU32(Instruction::PUSH_CONST, idx);
 }
 

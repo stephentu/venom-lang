@@ -24,7 +24,7 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
                                 SymbolTable*       symbols,
                                 ASTExpressionNode* variable,
                                 ASTExpressionNode* value,
-                                bool               objectField) {
+                                ClassSymbol*       classSymbol) {
   InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
   InstantiatedType *rhs = value->typeCheck(ctx, lhs);
   assert(rhs);
@@ -42,9 +42,13 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
   } else {
     VariableNode *vn = dynamic_cast<VariableNode*>(variable);
     assert(vn && !vn->getExplicitParameterizedTypeString());
-    symbols->createSymbol(vn->getName(), objectField, rhs);
+    if (classSymbol) {
+      symbols->createClassAttributeSymbol(vn->getName(), rhs, classSymbol);
+    } else {
+      symbols->createSymbol(vn->getName(), rhs);
+    }
     // go again, so we can set the static type on variable
-    TypeCheckAssignment(ctx, symbols, variable, value, objectField);
+    TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
   }
 }
 
@@ -159,7 +163,7 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 void
 AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   assert(value);
-  TypeCheckAssignment(ctx, symbols, variable, value, false);
+  TypeCheckAssignment(ctx, symbols, variable, value);
   checkExpectedType(expected);
 }
 

@@ -30,6 +30,13 @@ struct container_base {
     }
   }
 
+  bool find(const SearchType& t, size_t& result) {
+    typename map_type::iterator it = map.find(t);
+    if (it == map.end()) return false;
+    result = it->second;
+    return true;
+  }
+
   inline void reset() {
     vec.clear();
     map.clear();

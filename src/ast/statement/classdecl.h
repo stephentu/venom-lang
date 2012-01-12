@@ -68,6 +68,8 @@ public:
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
+  virtual analysis::BaseSymbol* getSymbol();
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {

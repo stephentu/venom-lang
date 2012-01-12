@@ -1,14 +1,63 @@
 #include <stdexcept>
 
 #include <ast/statement/node.h>
+
 #include <backend/codegenerator.h>
 #include <backend/linker.h>
+#include <backend/vm.h>
+
+#include <runtime/venomobject.h>
 
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::runtime;
 
 namespace venom {
 namespace backend {
+
+FunctionDescriptor*
+FunctionSignature::createFuncDescriptor(uint64_t globalOffset) {
+  // construct the argument ref count bitmap
+  uint64_t arg_ref_cell_bitmap = 0;
+  for (size_t i = 0; i < parameters.size(); i++) {
+    if (!ClassSignature::IsSpecialIndex(parameters[i])) {
+      arg_ref_cell_bitmap |= (0x1UL << i);
+    }
+  }
+  return new FunctionDescriptor(
+      (void*) (codeOffset + globalOffset),
+      parameters.size(),
+      arg_ref_cell_bitmap,
+      false);
+}
+
+venom_class_object*
+ClassSignature::createClassObject(
+    const vector<FunctionDescriptor*>& referenceTable) {
+
+  // construct ref_cell_bitmap
+  uint64_t ref_cell_bitmap = 0;
+  for (size_t i = 0; i < attributes.size(); i++) {
+    if (!IsSpecialIndex(attributes[i])) {
+      ref_cell_bitmap |= (0x1UL << i);
+    }
+  }
+
+  // construct vtable
+  FuncDescVec vtable(methods.size());
+  for (vector<uint32_t>::const_iterator it = methods.begin();
+       it != methods.end(); ++it) {
+    VENOM_CHECK_RANGE(*it, referenceTable.size());
+    vtable.push_back(referenceTable[*it]);
+  }
+
+  return new venom_class_object(
+      name,
+      sizeof(venom_object), // all user objects have base of venom_object size
+      attributes.size(),
+      ref_cell_bitmap,
+      vtable);
+}
 
 Label*
 CodeGenerator::newLabel() {
@@ -30,7 +79,7 @@ CodeGenerator::createLocalVariable(Symbol* symbol, bool& create) {
 }
 
 size_t
-CodeGenerator::createConstant(const string& constant, bool& create) {
+CodeGenerator::createConstant(const Constant& constant, bool& create) {
   return constant_pool.create(constant, create);
 }
 
@@ -68,6 +117,7 @@ CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
   if (create) {
     Label *start = newBoundLabel();
     instToFuncLabels[start->index] = make_pair(start, symbol);
+    funcIdxToLabels[func_pool.size() - 1] = start;
   }
 
   return idx;
@@ -131,13 +181,99 @@ CodeGenerator::emitInstBool(SymbolicInstruction::Opcode opcode, bool n0) {
   instructions.push_back(inst);
 }
 
+static inline uint32_t PrimitiveTypeToIndex(Type* type) {
+  assert(type->isPrimitive() || type->isVoid());
+  if (type->isInt()) return ClassSignature::IntIndex;
+  if (type->isFloat()) return ClassSignature::FloatIndex;
+  if (type->isBool()) return ClassSignature::BoolIndex;
+  if (type->isVoid()) return ClassSignature::VoidIndex;
+  VENOM_NOT_REACHED;
+}
+
+size_t
+CodeGenerator::getClassRefIndexFromType(Type* type) {
+  VENOM_ASSERT_NOT_NULL(type);
+  ClassSymbol* sym = type->getClassSymbol();
+  VENOM_ASSERT_NOT_NULL(sym);
+
+  // check if special primitive
+  if (type->isPrimitive() || type->isVoid()) {
+    return PrimitiveTypeToIndex(type);
+  } else {
+    size_t idx;
+    bool res = class_reference_table.find(sym, idx);
+    // TODO: do we need to possibly insert external refs here?
+    assert(res);
+    return idx;
+  }
+}
+
 ObjectCode*
 CodeGenerator::createObjectCode() {
   assert(ownership);
   ownership = false;
+
+  // build the class signature pool
+  vector<ClassSignature> classSigs;
+  classSigs.reserve(class_pool.vec.size());
+  for (vector<ClassSymbol*>::iterator it = class_pool.vec.begin();
+       it != class_pool.vec.end(); ++it) {
+
+    vector<ClassAttributeSymbol*> attributes;
+    vector<MethodSymbol*> methods;
+    ClassSymbol *csym = *it;
+    csym->linearizedOrder(attributes, methods);
+
+    vector<uint32_t> attrVec(attributes.size());
+    for (vector<ClassAttributeSymbol*>::iterator it = attributes.begin();
+         it != attributes.end(); ++it) {
+      attrVec.push_back(
+          getClassRefIndexFromType(
+            (*it)->getInstantiatedType()->getType()));
+    }
+
+    vector<uint32_t> methVec(methods.size());
+    for (vector<MethodSymbol*>::iterator it = methods.begin();
+         it != methods.end(); ++it) {
+      size_t idx;
+      bool res = func_reference_table.find(*it, idx);
+      assert(res);
+      methVec.push_back(idx);
+    }
+
+    classSigs.push_back(ClassSignature(csym->getName(), attrVec, methVec));
+  }
+
+  // build the function signature pool
+  vector<FunctionSignature> funcSigs;
+  funcSigs.reserve(func_pool.vec.size());
+  size_t idx = 0;
+  for (vector<FuncSymbol*>::iterator it = func_pool.vec.begin();
+       it != func_pool.vec.end(); ++it, ++idx) {
+
+    FuncSymbol *fsym = *it;
+
+    vector<uint32_t> paramVec(fsym->getParams().size());
+    for (vector<InstantiatedType*>::iterator it = fsym->getParams().begin();
+         it != fsym->getParams().end(); ++it) {
+      paramVec.push_back(
+          getClassRefIndexFromType((*it)->getType()));
+    }
+
+    funcSigs.push_back(
+        FunctionSignature(
+          fsym->getName(),
+          paramVec,
+          getClassRefIndexFromType(fsym->getReturnType()->getType()),
+          funcIdxToLabels[idx]->index));
+  }
+
   return new ObjectCode(
+      ctx->getFullModuleName(),
       constant_pool.vec,
+      classSigs,
       class_reference_table.vec,
+      funcSigs,
       func_reference_table.vec,
       instructions,
       labels);
@@ -150,17 +286,22 @@ CodeGenerator::printDebugStream() {
 
   cerr << "; constant pool" << endl;
   for (size_t i = 0; i < constant_pool.vec.size(); i++) {
-    // TODO: escape string
-    cerr << ".const" << i << " \"" << constant_pool.vec[i] << "\"" << endl;
+    cerr << i << ": " << constant_pool.vec[i] << endl;
   }
   cerr << endl;
 
   cerr << "; class pool" << endl;
-  // TODO: implement me
+  for (size_t i = 0; i < class_pool.vec.size(); i++) {
+    cerr << i << ": ";
+    ClassSymbol* csym = class_pool.vec[i];
+    cerr << csym->getName() << endl;
+  }
   cerr << endl;
 
   cerr << "; class reference table" << endl;
-  // TODO: implement me
+  for (size_t i = 0; i < class_reference_table.vec.size(); i++) {
+    cerr << ".classref " << class_reference_table.vec[i] << endl;
+  }
   cerr << endl;
 
   cerr << "; function pool" << endl;
@@ -173,13 +314,7 @@ CodeGenerator::printDebugStream() {
 
   cerr << "; function reference table" << endl;
   for (size_t i = 0; i < func_reference_table.vec.size(); i++) {
-    cerr << ".funcref ";
-    SymbolReference& sref = func_reference_table.vec[i];
-    if (sref.isLocal()) {
-      cerr << ".local " << sref.getLocalIndex() << endl;
-    } else {
-      cerr << ".extern " << sref.getFullName() << endl;
-    }
+    cerr << ".funcref " << func_reference_table.vec[i] << endl;
   }
   cerr << endl;
 
@@ -192,7 +327,7 @@ CodeGenerator::printDebugStream() {
     } else {
       InstLabelMap::iterator iit = instToLabels.find(index);
       if (iit != instToLabels.end()) {
-        cerr << "label_" << iit->second->index << ":" << endl;
+        cerr << *iit->second << ":" << endl;
       }
     }
     cerr << "  ";

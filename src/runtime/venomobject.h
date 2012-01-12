@@ -124,7 +124,7 @@ public:
     assert(n_cells <= 64);
   }
 
-  /** Fully qualified class name (ie a.b.c) */
+  /** Class name */
   const std::string name;
 
   /**

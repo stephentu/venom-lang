@@ -126,14 +126,16 @@ public:
 
   virtual std::string stringifyTypename() const { return name; }
 
+  // TODO: make these inline
   bool isInt() const;
   bool isFloat() const;
   bool isString() const;
   bool isBool() const;
+  bool isVoid() const;
 
   inline bool isNumeric() const { return isInt() || isFloat(); }
   inline bool isPrimitive() const { return isNumeric() || isBool(); }
-  inline bool isRefCounted() const { return !isPrimitive(); }
+  inline bool isRefCounted() const { return !isPrimitive() && !isVoid(); }
 
   bool isFunction() const;
   bool isClassType() const;

@@ -66,6 +66,9 @@ protected:
     assert(symbolContainer.parents.size() == funcContainer.parents.size());
     assert(funcContainer.parents.size() == classContainer.parents.size());
 
+    // assert our parent vec is consistent w/ the containers
+    assert(symbolContainer.parents.size() == parents.size());
+
     // finally, add the class parent
 
     symbolContainer.parents.push_back(&parent->symbolContainer);
@@ -93,8 +96,10 @@ public:
   inline ast::ASTNode* getOwner() { return owner; }
   inline const ast::ASTNode* getOwner() const { return owner; }
 
-  inline SymbolTable* getPrimaryParent() { return parent; }
-  inline const SymbolTable* getPrimaryParent() const { return parent; }
+  inline SymbolTable* getPrimaryParent() {
+    return parents.empty() ? NULL : parents.back(); }
+  inline const SymbolTable* getPrimaryParent() const {
+    return parents.empty() ? NULL : parents.back(); }
 
   inline SymbolTable*
   newChildScope(SemanticContext* ctx, ast::ASTNode* owner) {
@@ -144,13 +149,18 @@ public:
                  TypeTranslator& translator);
 
   Symbol*
-  createSymbol(const std::string& name,
-               bool               objectField,
-               InstantiatedType*  type);
+  createSymbol(const std::string& name, InstantiatedType* type);
+
+  Symbol*
+  createClassAttributeSymbol(const std::string& name,
+                             InstantiatedType* type,
+                             ClassSymbol* classSymbol);
 
   Symbol*
   findSymbol(const std::string& name, RecurseMode mode,
              TypeTranslator& translator);
+
+  void getSymbols(std::vector<Symbol*>& symbols);
 
   FuncSymbol*
   createFuncSymbol(const std::string&                    name,
@@ -160,8 +170,19 @@ public:
                    bool                                  native = false);
 
   FuncSymbol*
+  createMethodSymbol(const std::string&                    name,
+                     const std::vector<InstantiatedType*>& typeParams,
+                     const std::vector<InstantiatedType*>& params,
+                     InstantiatedType*                     returnType,
+                     ClassSymbol*                          classSymbol,
+                     FuncSymbol*                           overrides = NULL,
+                     bool                                  native = false);
+
+  FuncSymbol*
   findFuncSymbol(const std::string& name, RecurseMode mode,
                  TypeTranslator& translator);
+
+  void getFuncSymbols(std::vector<FuncSymbol*>& symbols);
 
   ClassSymbol*
   createClassSymbol(const std::string& name,
@@ -174,12 +195,18 @@ public:
   findClassSymbol(const std::string& name, RecurseMode mode,
                   TypeTranslator& translator);
 
+  void getClassSymbols(std::vector<ClassSymbol*>& symbols);
+
   ModuleSymbol*
   findModuleSymbol(const std::string& name, RecurseMode mode);
 
   ModuleSymbol*
   createModuleSymbol(const std::string& name, SymbolTable* moduleTable,
                      Type* moduleType, SemanticContext* origCtx);
+
+  void getModuleSymbols(std::vector<ModuleSymbol*>& symbols);
+
+  void linearizedClassOrder(std::vector<SymbolTable*>& tables);
 
 private:
   /** The module (context) this symbol table belongs to */
@@ -191,7 +218,7 @@ private:
   /** WARNING: while a SymbolTable can have multiple parents, only
    * one of its parents can have it as a child. This allows us to
    * prevent double-deletes when calling the destructor */
-  SymbolTable*              parent;
+  std::vector<SymbolTable*> parents;
   std::vector<SymbolTable*> children;
 
   static inline void AssertValidRecurseMode(RecurseMode mode) {
@@ -276,6 +303,12 @@ private:
         }
       }
       return false;
+    }
+
+    // only gets in current scope (non recursive)
+    void getAll(vector<S>& elems) {
+      elems.reserve(elems.size() + vec.size());
+      elems.insert(elems.end(), vec.begin(), vec.end());
     }
 
     std::vector<container<S>*> parents;

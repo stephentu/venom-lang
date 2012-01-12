@@ -11,6 +11,7 @@ namespace venom {
 namespace analysis {
 
 /** Forward decl */
+class ClassSymbol;
 class SemanticContext;
 class SymbolTable;
 class TypeTranslator;
@@ -61,14 +62,13 @@ class Symbol : public BaseSymbol {
 protected:
   Symbol(const std::string& name,
          SymbolTable*       table,
-         bool               objectField,
          InstantiatedType*  type)
-    : BaseSymbol(name, table), objectField(objectField), type(type) {}
+    : BaseSymbol(name, table), type(type) {}
 
 public:
-  inline bool isObjectField() const { return objectField; }
-  inline bool isPromoteToRef() const { return promoteToRef; }
 
+  // currently unused, but will be in the future
+  inline bool isPromoteToRef() const { return promoteToRef; }
   inline void markPromoteToRef() {
     assert(!isObjectField());
     promoteToRef = true;
@@ -81,10 +81,26 @@ public:
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
+  virtual bool isObjectField() const { return false; }
+
 private:
-  unsigned objectField : 1;
   unsigned promoteToRef : 1;
   InstantiatedType* type;
+};
+
+class ClassAttributeSymbol : public Symbol {
+public:
+  ClassAttributeSymbol(const std::string& name,
+                       SymbolTable*       table,
+                       InstantiatedType*  type,
+                       lassSymbol*        classSymbol)
+    : Symbol(name, table, type), classSymbol(classSymbol) {}
+
+  inline ClassSymbol* getClassSymbol() { return classSymbol; }
+  inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
+
+private:
+  ClassSymbol* classSymbol;
 };
 
 /**
@@ -125,15 +141,42 @@ public:
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
-  bool isConstructor() const;
+  virtual bool isConstructor() const { return false; }
 
-  bool isMethod() const;
+  virtual bool isMethod() const { return false; }
 
 private:
   InstantiatedTypeVec typeParams;
   InstantiatedTypeVec params;
   InstantiatedType*   returnType;
   bool                native;
+};
+
+class MethodSymbol : public FuncSymbol {
+public:
+  MethodSymbol(const std::string&         name,
+               const InstantiatedTypeVec& typeParams,
+               SymbolTable*               table,
+               const InstantiatedTypeVec& params,
+               InstantiatedType*          returnType,
+               bool                       native,
+               ClassSymbol*               classSymbol,
+               FuncSymbol*                overrides)
+    : FuncSymbol(name, typeParams, table, params, returnType, native),
+      classSym(classSym), overrides(overrides) {}
+
+  inline ClassSymbol* getClassSymbol() { return classSymbol; }
+  inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
+
+  inline FuncSymbol* getOverrides() { return overrides; }
+  inline const FuncSymbol* getOverrides() const { return overrides; }
+
+  virtual bool isConstructor() const { return name == "<ctor>"; }
+  virtual bool isMethod() const { return true; }
+
+private:
+  ClassSymbol* classSymbol;
+  FuncSymbol* overrides;
 };
 
 /**
@@ -173,6 +216,9 @@ public:
   virtual bool isCurrentScopeOnly() const {
     return type->isCurrentScopeOnly();
   }
+
+  void linearizedOrder(std::vector<ClassAttributeSymbol*>& attributes,
+                       std::vector<MethodSymbol*>& methods);
 
 private:
   InstantiatedTypeVec typeParams;

@@ -160,6 +160,7 @@ bool Type::isInt() const { return equals(*IntType); }
 bool Type::isFloat() const { return equals(*FloatType); }
 bool Type::isString() const { return equals(*StringType); }
 bool Type::isBool() const { return equals(*BoolType); }
+bool Type::isVoid() const { return equals(*VoidType); }
 
 bool Type::isFunction() const {
   for (vector<Type*>::const_iterator it = FuncTypes.begin();

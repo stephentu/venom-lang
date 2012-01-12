@@ -71,7 +71,7 @@ protected:
                       analysis::SymbolTable*     symbols,
                       ASTExpressionNode*         variable,
                       ASTExpressionNode*         value,
-                      bool                       objectField);
+                      analysis::ClassSymbol*     classSymbol = NULL);
 
 private:
   ASTExpressionNode* variable;
