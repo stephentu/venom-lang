@@ -1,6 +1,7 @@
 #ifndef VENOM_ANALYSIS_SYMBOLTABLE_H
 #define VENOM_ANALYSIS_SYMBOLTABLE_H
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
@@ -241,6 +242,7 @@ private:
     T t;
   };
 
+  // S is expected to be a pointer type
   template <typename S>
   class container {
   public:
@@ -251,14 +253,40 @@ private:
       assert(parents.size() == maps.size());
     }
 
+    ~container() {
+      util::delete_pointers(vec.begin(), vec.end());
+    }
+
     typedef std::map<std::string, S> map_type;
     typedef std::vector<S>           vec_type;
     map_type map;
     vec_type vec;
 
     inline void insert(const std::string& name, const S& elem) {
-      map[name] = elem;
-      vec.push_back(elem);
+      // TODO: insert is expensive now, in the case where
+      // we replace an element
+      std::pair< typename map_type::iterator, bool > res =
+        map.insert(typename map_type::value_type(name, elem));
+
+      if (res.second) {
+        // new elem inserted
+        vec.push_back(elem);
+      } else {
+        // overwrote old elem- replace it with the new one
+        S oldElem = res.first->second;
+        // TODO: this seems to work, but is it guaranteed to work
+        // across various implementations?
+        res.first->second = elem;
+        typename vec_type::iterator pos =
+          std::find(vec.begin(), vec.end(), oldElem);
+        assert(pos != vec.end());
+        vec[pos - vec.begin()] = elem;
+
+        // free up the old element
+        delete oldElem;
+      }
+
+      assert(map.size() == vec.size());
     }
 
     inline bool find(S& elem, const std::string& name,

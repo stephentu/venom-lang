@@ -169,8 +169,6 @@ AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 
 void
 AssignNode::codeGen(CodeGenerator& cg) {
-  value->codeGen(cg);
-
   // TODO: we need to check these conditions actually
   // hold (during static analysis)
   BaseSymbol* bs = variable->getSymbol();
@@ -180,6 +178,7 @@ AssignNode::codeGen(CodeGenerator& cg) {
   bool refCnt = variable->getStaticType()->isRefCounted();
   if (sym->isModuleLevelSymbol() || sym->isObjectField()) {
     variable->codeGen(cg);
+    value->codeGen(cg);
     size_t slotIdx = sym->getFieldIndex();
     cg.emitInstU32(
         refCnt ?
@@ -187,6 +186,7 @@ AssignNode::codeGen(CodeGenerator& cg) {
           Instruction::SET_ATTR_OBJ,
         slotIdx);
   } else {
+    value->codeGen(cg);
     // no codegen for variable, since we can just store directly
     // into the local variable array
     bool create;

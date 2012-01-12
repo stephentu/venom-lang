@@ -322,7 +322,7 @@ CodeGenerator::printDebugStream() {
 
   cerr << "; class reference table" << endl;
   for (size_t i = 0; i < class_reference_table.vec.size(); i++) {
-    cerr << ".classref " << class_reference_table.vec[i] << endl;
+    cerr << i << ": .classref " << class_reference_table.vec[i] << endl;
   }
   cerr << endl;
 
@@ -336,7 +336,7 @@ CodeGenerator::printDebugStream() {
 
   cerr << "; function reference table" << endl;
   for (size_t i = 0; i < func_reference_table.vec.size(); i++) {
-    cerr << ".funcref " << func_reference_table.vec[i] << endl;
+    cerr << i << ": .funcref " << func_reference_table.vec[i] << endl;
   }
   cerr << endl;
 

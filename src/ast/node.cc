@@ -113,6 +113,7 @@ ASTNode::rewriteReturn(SemanticContext* ctx) { VENOM_NOT_REACHED; }
 ASTNode*
 ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
   assert(replacement);
+  replacement->setLocationContext(getLocationContext());
   replacement->initSymbolTable(getSymbolTable());
   replacement->semanticCheck(ctx);
   if (ASTStatementNode *stmt =
