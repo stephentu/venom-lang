@@ -24,11 +24,6 @@ protected:
   ~venom_string() { releaseData(); }
 
 private:
-  static backend::FunctionDescriptor* InitDescriptor;
-  static backend::FunctionDescriptor* ReleaseDescriptor;
-  static backend::FunctionDescriptor* CtorDescriptor;
-  static backend::FunctionDescriptor* StringifyDescriptor;
-
   inline void initData(const char *data, size_t n) {
     this->data = (char *) malloc(n);
     this->size = n;
@@ -43,7 +38,13 @@ private:
       size = 0;
     }
   }
+
 public:
+  static backend::FunctionDescriptor* const InitDescriptor;
+  static backend::FunctionDescriptor* const ReleaseDescriptor;
+  static backend::FunctionDescriptor* const CtorDescriptor;
+  static backend::FunctionDescriptor* const StringifyDescriptor;
+
   static venom_class_object StringClassTable;
 
   inline std::string getData() const {

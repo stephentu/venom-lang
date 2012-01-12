@@ -38,10 +38,17 @@ void ExecutionContext::execute(Callback& callback) {
 }
 
 struct const_init_functor {
-  inline venom_cell* operator()(const string& s) const {
-    venom_string *sptr = new venom_string(s);
-    sptr->incRef();
-    return new venom_cell(sptr);
+  inline venom_cell* operator()(const ExecConstant& konst) const {
+    if (konst.isLeft()) {
+      venom_string *sptr = new venom_string(konst.left());
+      sptr->incRef();
+      return new venom_cell(sptr);
+    } else {
+      venom_class_object* class_obj = konst.right();
+      venom_object* obj = venom_object::allocObj(class_obj);
+      obj->incRef();
+      return new venom_cell(obj);
+    }
   }
 };
 

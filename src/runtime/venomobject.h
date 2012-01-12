@@ -122,7 +122,7 @@ public:
                      const std::vector<backend::FunctionDescriptor*>& vtable)
     : name(name), sizeof_obj_base(sizeof_obj_base),
       n_cells(n_cells), ref_cell_bitmap(ref_cell_bitmap),
-      cppInit(cppInit), cppRelease(cppRelease), vtable(vtable) {
+      cppInit(cppInit), cppRelease(cppRelease), ctor(ctor), vtable(vtable) {
     // TODO: implementation limitation for now
     assert(n_cells <= 64);
   }
@@ -191,14 +191,26 @@ public:
   static venom_object* Nil;
   static ref_ptr<venom_object> NilPtr;
 
-private:
-  static backend::FunctionDescriptor* InitDescriptor;
-  static backend::FunctionDescriptor* ReleaseDescriptor;
-  static backend::FunctionDescriptor* CtorDescriptor;
-  static backend::FunctionDescriptor* StringifyDescriptor;
+  static backend::FunctionDescriptor* const InitDescriptor;
+  static backend::FunctionDescriptor* const ReleaseDescriptor;
+  static backend::FunctionDescriptor* const CtorDescriptor;
+  static backend::FunctionDescriptor* const StringifyDescriptor;
 
-public:
   static venom_class_object ObjClassTable;
+
+  /**
+   * Does *NOT* call the venom level ctor, only calls the
+   * CPP level init. Also, does not incRef()
+   */
+  static inline venom_object* allocObj(venom_class_object* class_obj) {
+    assert(class_obj);
+    size_t s =
+      venom_object_sizeof(
+          class_obj->sizeof_obj_base, class_obj->n_cells);
+    venom_object *obj = (venom_object *) operator new (s);
+    new (obj) venom_object(class_obj);
+    return obj;
+  }
 
   venom_object(venom_class_object* class_obj);
   ~venom_object();

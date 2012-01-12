@@ -130,7 +130,7 @@ unsafe_compile(const string& fname, fstream& infile,
 }
 
 static void exec(SemanticContext& ctx) {
-  Linker linker(GetBuiltinFunctionMap());
+  Linker linker(GetBuiltinFunctionMap(), GetBuiltinClassMap());
   vector<ObjectCode*> objs;
   ctx.collectObjectCode(objs);
   Executable *exec = linker.link(objs);

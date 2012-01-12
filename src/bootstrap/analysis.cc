@@ -1,6 +1,12 @@
 #include <analysis/type.h>
+
 #include <bootstrap/analysis.h>
+
+#include <runtime/box.h>
 #include <runtime/builtin.h>
+#include <runtime/venomobject.h>
+#include <runtime/venomstring.h>
+
 #include <util/stl.h>
 
 using namespace std;
@@ -174,12 +180,12 @@ Linker::ClassObjMap GetBuiltinClassMap() {
   Linker::ClassObjMap ret;
   // TODO: dynamically load this stuff, instead of hardcode
 
-  ret["<prelude>.object"] = venom_object::ObjClassTable;
-  ret["<prelude>.string"] = venom_string::StringClassTable;
+  ret["<prelude>.object"] = &venom_object::ObjClassTable;
+  ret["<prelude>.string"] = &venom_string::StringClassTable;
 
-  ret["<prelude>.<Int>"]   = venom_integer::IntegerClassTable;
-  ret["<prelude>.<Float>"] = venom_integer::FloatClassTable;
-  ret["<prelude>.<Bool>"]  = venom_integer::BoolClassTable;
+  ret["<prelude>.<Int>"]   = &venom_integer::IntegerClassTable;
+  ret["<prelude>.<Float>"] = &venom_double::DoubleClassTable;
+  ret["<prelude>.<Bool>"]  = &venom_boolean::BooleanClassTable;
 
   return ret;
 }

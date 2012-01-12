@@ -17,10 +17,10 @@ class _either {
 public:
   /** Left constructor */
   _either(const Left& leftItem) :
-    _left(true) : leftItem(leftItem) {}
+    _left(true), leftItem(leftItem) {}
   /** Right constructor */
   _either(const Right& rightItem) :
-    _left(false) : rightItem(rightItem) {}
+    _left(false), rightItem(rightItem) {}
 
   inline bool isLeft() const { return _left; }
   inline bool isRight() const { return !_left; }
@@ -50,19 +50,19 @@ public:
     _either<Left, Right>(rightItem) {}
 
   inline bool operator<(const _either_comparable<Left, Right>& b) const {
-    if (isLeft()) {
+    if (this->isLeft()) {
       // left always ahead of right
-      return b.isLeft() ? left() < b.left() : true;
+      return b.isLeft() ? this->left() < b.left() : true;
     } else {
-      return b.isLeft() ? false : right() < b.right();
+      return b.isLeft() ? false : this->right() < b.right();
     }
   }
 
-  inline bool operator==(const Constant& b) const {
-    if (isLeft()) {
-      return b.isLeft() ? left() == b.left() : false;
+  inline bool operator==(const _either_comparable<Left, Right>& b) const {
+    if (this->isLeft()) {
+      return b.isLeft() ? this->left() == b.left() : false;
     } else {
-      return b.isLeft() ? false : right() == b.right();
+      return b.isLeft() ? false : this->right() == b.right();
     }
   }
 };

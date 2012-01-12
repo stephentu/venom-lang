@@ -7,6 +7,7 @@
 #include <ast/expression/variable.h>
 #include <ast/statement/assign.h>
 #include <ast/statement/classattrdecl.h>
+#include <ast/statement/classdecl.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -43,7 +44,7 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
   VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
   ClassDeclNode *cdn = static_cast<ClassDeclNode*>(symbols->getOwner());
   BaseSymbol *classSymbol = cdn->getSymbol();
-  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, classSymbol);
 
   symbols->createClassAttributeSymbol(
       var->getName(), itype, static_cast<ClassSymbol*>(classSymbol));

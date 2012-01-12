@@ -71,7 +71,7 @@ public:
   inline const std::string& getFullName() const { return right(); }
 };
 
-inline std::ostream& operator<<(std::ostream& o, const SymbolReference& ref) {
+inline std::ostream& operator<<(std::ostream& o, const SymbolReference& sref) {
   if (sref.isLocal()) {
     o << ".local " << sref.getLocalIndex();
   } else {
@@ -92,7 +92,7 @@ public:
   inline bool isClassSingleton() const { return isRight(); }
 
   inline std::string& getData() { return left(); }
-  inline const std::string& getData() const { return left; }
+  inline const std::string& getData() const { return left(); }
 
   inline size_t getClassIdx() const { return right(); }
 };
@@ -136,11 +136,11 @@ public:
 
   FunctionDescriptor* createFuncDescriptor(uint64_t globalOffset);
 
-  const std::string className;
-  const std::string name;
-  const std::vector<uint32_t> parameters;
-  const uint32_t returnType;
-  const uint64_t codeOffset;
+  std::string className;
+  std::string name;
+  std::vector<uint32_t> parameters;
+  uint32_t returnType;
+  uint64_t codeOffset;
 };
 
 class ClassSignature {
@@ -161,8 +161,9 @@ public:
   ClassSignature(
       const std::string& name,
       const std::vector<uint32_t>& attributes,
+      uint32_t ctor,
       const std::vector<uint32_t>& methods)
-    : name(name), attributes(attributes), methods(methods) {}
+    : name(name), attributes(attributes), ctor(ctor), methods(methods) {}
 
   runtime::venom_class_object* createClassObject(
       const std::vector<FunctionDescriptor*>& referenceTable);
@@ -171,9 +172,10 @@ public:
     return moduleName + "." + name;
   }
 
-  const std::string name;
-  const std::vector<uint32_t> attributes;
-  const std::vector<uint32_t> methods;
+  std::string name;
+  std::vector<uint32_t> attributes;
+  uint32_t ctor;
+  std::vector<uint32_t> methods;
 };
 
 /**

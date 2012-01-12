@@ -74,7 +74,7 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
       }
       InstantiatedType *itype = ctx->instantiateOrThrow(
             symbols, var->getExplicitParameterizedTypeString());
-      symbols->createSymbol(var->getName(), false, itype);
+      symbols->createSymbol(var->getName(), itype);
     } else {
       // if there is no type string, then only create a new
       // declaration if the symbol doesn't exist anywhere in the scope
@@ -103,7 +103,7 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
       if (!symbols->isDefined(
             var->getName(), SymbolTable::Location,
             SymbolTable::AllowCurrentScope)) {
-        symbols->createSymbol(var->getName(), false, NULL);
+        symbols->createSymbol(var->getName(), NULL);
       }
     }
   }

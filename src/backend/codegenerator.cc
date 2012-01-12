@@ -24,9 +24,16 @@ FunctionSignature::createFuncDescriptor(uint64_t globalOffset) {
       arg_ref_cell_bitmap |= (0x1UL << i);
     }
   }
+
+  if (isMethod()) {
+    // make room for the self object
+    arg_ref_cell_bitmap <<= 1;
+    arg_ref_cell_bitmap |= 0x1;
+  }
+
   return new FunctionDescriptor(
       (void*) (codeOffset + globalOffset),
-      parameters.size(),
+      isMethod() ? parameters.size() + 1 : parameters.size(),
       arg_ref_cell_bitmap,
       false);
 }
@@ -51,11 +58,15 @@ ClassSignature::createClassObject(
     vtable.push_back(referenceTable[*it]);
   }
 
+  VENOM_CHECK_RANGE(ctor, referenceTable.size());
   return new venom_class_object(
       name,
       sizeof(venom_object), // all user objects have base of venom_object size
       attributes.size(),
       ref_cell_bitmap,
+      venom_object::ObjClassTable.cppInit,
+      venom_object::ObjClassTable.cppRelease,
+      referenceTable[ctor],
       vtable);
 }
 
@@ -117,7 +128,7 @@ CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
   if (create) {
     Label *start = newBoundLabel();
     instToFuncLabels[start->index] = make_pair(start, symbol);
-    funcIdxToLabels[func_pool.size() - 1] = start;
+    funcIdxToLabels[func_pool.vec.size() - 1] = start;
   }
 
   return idx;
@@ -241,7 +252,18 @@ CodeGenerator::createObjectCode() {
       methVec.push_back(idx);
     }
 
-    classSigs.push_back(ClassSignature(csym->getName(), attrVec, methVec));
+    // find ctor
+    TypeTranslator t;
+    FuncSymbol* ctor =
+      csym->getClassSymbolTable()->findFuncSymbol(
+          "<ctor>", SymbolTable::NoRecurse, t);
+    VENOM_ASSERT_NOT_NULL(ctor);
+    size_t ctorIdx;
+    bool res = func_reference_table.find(ctor, ctorIdx);
+    assert(res);
+
+    classSigs.push_back(
+        ClassSignature(csym->getName(), attrVec, ctorIdx, methVec));
   }
 
   // build the function signature pool

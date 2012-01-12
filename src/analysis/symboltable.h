@@ -83,7 +83,7 @@ protected:
 
 public:
   /** Create the root symbol table. Does *NOT* take ownership of ctx */
-  SymbolTable(SemanticContext *ctx) : ctx(ctx), owner(NULL), parent(NULL) {}
+  SymbolTable(SemanticContext *ctx) : ctx(ctx), owner(NULL) {}
 
   ~SymbolTable() {
     // delete children
@@ -306,7 +306,7 @@ private:
     }
 
     // only gets in current scope (non recursive)
-    void getAll(vector<S>& elems) {
+    void getAll(std::vector<S>& elems) {
       elems.reserve(elems.size() + vec.size());
       elems.insert(elems.end(), vec.begin(), vec.end());
     }

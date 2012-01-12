@@ -38,7 +38,7 @@ public:
              const RefTable& func_reference_table,
              const IStream& instructions,
              const LabelVec& labels) :
-    moduleName(moduleName)
+    moduleName(moduleName),
     constant_pool(constant_pool),
     class_pool(class_pool),
     class_reference_table(class_reference_table),
@@ -124,11 +124,7 @@ public:
     user_func_descs(user_func_descs),
     user_class_objs(user_class_objs) {}
 
-  ~Executable() {
-    util::delete_pointers(instructions.begin(), instructions.end());
-    util::delete_pointers(user_func_descs.begin(), user_func_descs.end());
-    util::delete_pointers(user_class_objs.begin(), user_class_objs.end());
-  }
+  ~Executable();
 
 protected:
   /** un-initialized constant pool (only holds the data) */
@@ -152,7 +148,7 @@ public:
   typedef std::vector<ObjectCode*> ObjCodeVec;
   typedef std::vector<size_t> MapTbl;
   typedef std::map<std::string, FunctionDescriptor*> FuncDescMap;
-  typedef std::map<std::string, venom_class_object*> ClassObjMap;
+  typedef std::map<std::string, runtime::venom_class_object*> ClassObjMap;
 
   Linker(const FuncDescMap& builtin_function_map,
          const ClassObjMap& builtin_class_map) :

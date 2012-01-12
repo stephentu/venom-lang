@@ -22,6 +22,8 @@ NewBootstrapSymbolTable(analysis::SemanticContext* ctx);
 
 backend::Linker::FuncDescMap GetBuiltinFunctionMap();
 
+backend::Linker::ClassObjMap GetBuiltinClassMap();
+
 }
 }
 

@@ -27,7 +27,7 @@ ForStmtNode::registerSymbol(SemanticContext* ctx) {
   // (of unknown type)
   VariableNode *vn = dynamic_cast<VariableNode*>(variable);
   assert(vn);
-  stmts->getSymbolTable()->createSymbol(vn->getName(), false, NULL);
+  stmts->getSymbolTable()->createSymbol(vn->getName(), NULL);
 }
 
 void
@@ -48,11 +48,11 @@ ForStmtNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   // now the type information is available, set it
   if (iterableType->getType()->equals(*Type::ListType)) {
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), false, iterableType->getParams().front());
+        vn->getName(), iterableType->getParams().front());
   } else {
     // string type
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), false, InstantiatedType::StringType);
+        vn->getName(), InstantiatedType::StringType);
   }
   stmts->typeCheck(ctx);
   checkExpectedType(expected);

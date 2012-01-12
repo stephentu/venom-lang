@@ -13,6 +13,12 @@ using namespace venom::runtime;
 namespace venom {
 namespace backend {
 
+Executable::~Executable() {
+  util::delete_pointers(instructions.begin(), instructions.end());
+  util::delete_pointers(user_func_descs.begin(), user_func_descs.end());
+  util::delete_pointers(user_class_objs.begin(), user_class_objs.end());
+}
+
 struct constant_table_functor {
   constant_table_functor(util::container_pool<ExecConstant>* exec_const_pool)
     : exec_const_pool(exec_const_pool) {}
@@ -58,9 +64,9 @@ Executable* Linker::link(const ObjCodeVec& objs) {
     ObjectCode* obj = objs[i];
     ObjectCode::IStream& insts = obj->getInstructions();
     FuncDescVec& objFuncDescVec = localFuncDescriptors[i];
-    objFuncDescVec.reserve(obj->getFuncPool().begin());
+    objFuncDescVec.reserve(obj->getFuncPool().size());
     for (vector<FunctionSignature>::iterator it = obj->getFuncPool().begin();
-         it != obj->getFuncPool()->end(); ++it) {
+         it != obj->getFuncPool().end(); ++it) {
       FunctionDescriptor *desc = it->createFuncDescriptor(acc);
       objFuncDescVec.push_back(desc);
       // TODO: assert that this is a *new* entry
@@ -86,7 +92,7 @@ Executable* Linker::link(const ObjCodeVec& objs) {
       if (!fref.isLocal()) {
         FuncDescMap::iterator it =
           funcDescMap.find(fref.getFullName());
-        if (it == func_desc_map.end()) {
+        if (it == funcDescMap.end()) {
           throw LinkerException(
               "No external function symbol: " + fref.getFullName());
         }
@@ -107,7 +113,7 @@ Executable* Linker::link(const ObjCodeVec& objs) {
     Executable::ClassObjVec& classObjVec = localClassObjs[i];
     FuncDescVec& refTableVec = func_map_tables[i];
     classObjVec.reserve(obj->getClassPool().size());
-    for (vector<ClassSignature>::iterator it = obj->getClassPool().size();
+    for (vector<ClassSignature>::iterator it = obj->getClassPool().begin();
          it != obj->getClassPool().end(); ++it) {
       venom_class_object* classObj = it->createClassObject(refTableVec);
       classObjVec.push_back(classObj);
@@ -137,8 +143,8 @@ Executable* Linker::link(const ObjCodeVec& objs) {
         }
         refTableVec.push_back(it->second);
       } else {
-        VENOM_CHECK_RANGE(fref.getLocalIndex(), localClassObjs.size());
-        refTableVec.push_back(localClassObjs[fref.getLocalIndex()]);
+        VENOM_CHECK_RANGE(fref.getLocalIndex(), classObjVec.size());
+        refTableVec.push_back(classObjVec[fref.getLocalIndex()]);
       }
     }
   }
@@ -192,7 +198,7 @@ Executable* Linker::link(const ObjCodeVec& objs) {
   return new Executable(
         exec_const_pool.vec,
         Executable::IStream::BuildFrom(execInsts),
-        util::flatten_vec(localFuncDesc),
+        util::flatten_vec(localFuncDescriptors),
         util::flatten_vec(localClassObjs));
 }
 

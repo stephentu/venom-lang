@@ -130,8 +130,8 @@ inline bool is_unique(Iter begin, Iter end) {
 template <typename T>
 inline std::vector<T> flatten_vec(const std::vector< std::vector<T> >& vecs) {
   std::vector<T> result;
-  for (std::vector< std::vector<T> >::iterator it = vecs.begin();
-       it != vecs.end(); ++it) {
+  typename std::vector< std::vector<T> >::const_iterator it = vecs.begin();
+  for (; it != vecs.end(); ++it) {
     result.reserve(result.size() + (*it).size());
     result.insert(result.end(), (*it).begin(), (*it).end());
   }

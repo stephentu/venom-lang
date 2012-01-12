@@ -9,6 +9,12 @@
 #include <util/macros.h>
 
 namespace venom {
+
+namespace analysis {
+  /** Forward decl */
+  class ClassSymbol;
+}
+
 namespace ast {
 
 class AssignNode : public ASTStatementNode {

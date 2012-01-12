@@ -94,7 +94,7 @@ public:
   ClassAttributeSymbol(const std::string& name,
                        SymbolTable*       table,
                        InstantiatedType*  type,
-                       lassSymbol*        classSymbol)
+                       ClassSymbol*       classSymbol)
     : Symbol(name, table, type), classSymbol(classSymbol) {}
 
   inline ClassSymbol* getClassSymbol() { return classSymbol; }
@@ -164,7 +164,7 @@ public:
                ClassSymbol*               classSymbol,
                FuncSymbol*                overrides)
     : FuncSymbol(name, typeParams, table, params, returnType, native),
-      classSym(classSym), overrides(overrides) {}
+      classSymbol(classSymbol), overrides(overrides) {}
 
   virtual std::string getFullName() const;
 

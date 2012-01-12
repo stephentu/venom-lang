@@ -13,6 +13,9 @@ namespace runtime {
 
 template <typename Primitive>
 class venom_box_base : public venom_object {
+  friend class venom_integer;
+  friend class venom_double;
+  friend class venom_boolean;
 public:
   venom_box_base(Primitive primitive, venom_class_object* class_obj)
     : venom_object(class_obj), primitive(primitive) {}
@@ -35,12 +38,12 @@ protected:
 };
 
 class venom_integer : public venom_box_base<int64_t> {
-private:
-  static backend::FunctionDescriptor* InitDescriptor;
-  static backend::FunctionDescriptor* ReleaseDescriptor;
-  static backend::FunctionDescriptor* CtorDescriptor;
-  static backend::FunctionDescriptor* StringifyDescriptor;
 public:
+  static backend::FunctionDescriptor* const InitDescriptor;
+  static backend::FunctionDescriptor* const ReleaseDescriptor;
+  static backend::FunctionDescriptor* const CtorDescriptor;
+  static backend::FunctionDescriptor* const StringifyDescriptor;
+
   static venom_class_object IntegerClassTable;
   venom_integer(int64_t value) :
     venom_box_base<int64_t>(value, &IntegerClassTable) {}
@@ -60,12 +63,12 @@ public:
 };
 
 class venom_double : public venom_box_base<double> {
-private:
-  static backend::FunctionDescriptor* InitDescriptor;
-  static backend::FunctionDescriptor* ReleaseDescriptor;
-  static backend::FunctionDescriptor* CtorDescriptor;
-  static backend::FunctionDescriptor* StringifyDescriptor;
 public:
+  static backend::FunctionDescriptor* const InitDescriptor;
+  static backend::FunctionDescriptor* const ReleaseDescriptor;
+  static backend::FunctionDescriptor* const CtorDescriptor;
+  static backend::FunctionDescriptor* const StringifyDescriptor;
+
   static venom_class_object DoubleClassTable;
   venom_double(double value) :
     venom_box_base<double>(value, &DoubleClassTable) {}
@@ -88,12 +91,12 @@ public:
 };
 
 class venom_boolean : public venom_box_base<bool> {
-private:
-  static backend::FunctionDescriptor* InitDescriptor;
-  static backend::FunctionDescriptor* ReleaseDescriptor;
-  static backend::FunctionDescriptor* CtorDescriptor;
-  static backend::FunctionDescriptor* StringifyDescriptor;
 public:
+  static backend::FunctionDescriptor* const InitDescriptor;
+  static backend::FunctionDescriptor* const ReleaseDescriptor;
+  static backend::FunctionDescriptor* const CtorDescriptor;
+  static backend::FunctionDescriptor* const StringifyDescriptor;
+
   static venom_class_object BooleanClassTable;
   venom_boolean(bool value) :
     venom_box_base<bool>(value, &BooleanClassTable) {}
@@ -107,7 +110,7 @@ public:
   static venom_ret_cell
   stringify(backend::ExecutionContext* ctx, venom_cell self) {
     std::stringstream buf;
-    buf << (asSelf(self)->primitive ?  "True" : "False");
+    buf << (asSelf(self)->primitive ? "True" : "False");
     return venom_ret_cell(new venom_string(buf.str()));
   }
 };

@@ -139,8 +139,8 @@ ClassSymbol::linearizedOrder(vector<ClassAttributeSymbol*>& attributes,
     methods.reserve(methods.size() + clsMethods.size());
     for (vector<FuncSymbol*>::iterator fit = clsMethods.begin();
          fit != clsMethods.end(); ++fit) {
-      VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, (*it));
-      MethodSymbol *msym = static_cast<MethodSymbol*>((*it));
+      VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, (*fit));
+      MethodSymbol *msym = static_cast<MethodSymbol*>((*fit));
       if (!msym->getOverrides()) methods.push_back(msym);
     }
   }

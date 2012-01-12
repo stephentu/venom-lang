@@ -174,14 +174,7 @@ bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
   InstFormatIPtr *self = asFormatIPtr();
   venom_class_object* class_obj =
     reinterpret_cast<venom_class_object*>(self->N0);
-  assert(class_obj);
-
-  size_t s =
-    venom_object::venom_object_sizeof(
-        class_obj->sizeof_obj_base, class_obj->n_cells);
-
-  venom_object *obj = (venom_object *) operator new (s);
-  new (obj) venom_object(class_obj);
+  venom_object* obj = venom_object::allocObj(class_obj);
   obj->incRef();
   ctx.program_stack.push(venom_cell(obj));
   return true;

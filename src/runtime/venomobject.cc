@@ -36,16 +36,16 @@ void venom_cell::AssertNonZeroRefCount(const venom_cell& cell) {
 venom_object* venom_object::Nil(NULL);
 ref_ptr<venom_object> venom_object::NilPtr(NULL);
 
-FunctionDescriptor* venom_object::InitDescriptor(
+FunctionDescriptor* const venom_object::InitDescriptor(
     new FunctionDescriptor((void*)init, 1, 0x1, true));
 
-FunctionDescriptor* venom_object::ReleaseDescriptor(
+FunctionDescriptor* const venom_object::ReleaseDescriptor(
     new FunctionDescriptor((void*)release, 1, 0x1, true));
 
-FunctionDescriptor* venom_object::CtorDescriptor(
+FunctionDescriptor* const venom_object::CtorDescriptor(
     new FunctionDescriptor((void*)ctor, 1, 0x1, true));
 
-FunctionDescriptor* venom_object::StringifyDescriptor(
+FunctionDescriptor* const venom_object::StringifyDescriptor(
     new FunctionDescriptor((void*)stringify, 1, 0x1, true));
 
 venom_class_object venom_object::ObjClassTable(
