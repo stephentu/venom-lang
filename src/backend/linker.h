@@ -20,6 +20,8 @@ namespace backend {
 /** Forward decl */
 class FunctionDescriptor;
 
+// TODO: labels are going to have to go, when we want to
+// serialize an ObjectCode
 class ObjectCode {
 public:
   typedef std::vector<Constant> ConstPool;
@@ -28,6 +30,7 @@ public:
   typedef std::vector<SymbolReference> RefTable;
   typedef std::vector<FunctionSignature> FuncSigPool;
   typedef std::vector<ClassSignature> ClassSigPool;
+  typedef std::map<std::string, size_t> NameOffsetMap;
 
   /** takes ownership of instructions + labels */
   ObjectCode(const std::string& moduleName,
@@ -37,6 +40,7 @@ public:
              const FuncSigPool& func_pool,
              const RefTable& func_reference_table,
              const IStream& instructions,
+             const NameOffsetMap& nameOffsetMap,
              const LabelVec& labels) :
     moduleName(moduleName),
     constant_pool(constant_pool),
@@ -45,6 +49,7 @@ public:
     func_pool(func_pool),
     func_reference_table(func_reference_table),
     instructions(instructions),
+    nameOffsetMap(nameOffsetMap),
     labels(labels) {}
 
   ~ObjectCode() {
@@ -74,6 +79,9 @@ public:
   inline IStream& getInstructions() { return instructions; }
   inline const IStream& getInstructions() const { return instructions; }
 
+  inline NameOffsetMap& getNameOffsetMap() { return nameOffsetMap; }
+  inline const NameOffsetMap& getNameOffsetMap() const { return nameOffsetMap; }
+
 private:
   std::string moduleName;
 
@@ -86,6 +94,8 @@ private:
   RefTable func_reference_table;
 
   IStream instructions;
+  NameOffsetMap nameOffsetMap;
+
   LabelVec labels;
 };
 
@@ -115,21 +125,31 @@ public:
   Executable( /** Args for execution - takes ownership of instructions */
              const ConstPool& constant_pool,
              const IStream& instructions,
+             uint64_t mainOffset,
 
              /* Args for mem mgnt- takes ownership of these pointers */
              const FuncDescVec& user_func_descs,
              const ClassObjVec& user_class_objs) :
     constant_pool(constant_pool),
     instructions(instructions),
+    mainOffset(mainOffset),
     user_func_descs(user_func_descs),
-    user_class_objs(user_class_objs) {}
+    user_class_objs(user_class_objs) {
+    assert(mainOffset < instructions.size());
+  }
 
   ~Executable();
+
+  inline Instruction** startingInst() {
+    return instructions.begin() + mainOffset;
+  }
 
 protected:
   /** un-initialized constant pool (only holds the data) */
   ConstPool constant_pool;
+
   IStream instructions;
+  uint64_t mainOffset; // where is <main> located, offset in the istream
 
   FuncDescVec user_func_descs;
   ClassObjVec user_class_objs;
@@ -155,6 +175,8 @@ public:
     builtin_function_map(builtin_function_map),
     builtin_class_map(builtin_class_map) {}
 
+  /** objs must be non-empty. objs[0] is assumed to be
+   * the main module */
   Executable* link(const ObjCodeVec& objs);
 
 private:

@@ -182,6 +182,13 @@ ClassSymbol::isTopLevelClass() const {
                     !owner->getEnclosingClassNode());
 }
 
+bool
+ClassSymbol::isModuleClassSymbol() const {
+  return type->getParams() == 0 &&
+    type->instantiate()
+        ->isSubtypeOf(*InstantiatedType::ModuleType);
+}
+
 void
 ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
                              vector<FuncSymbol*>& methods) {

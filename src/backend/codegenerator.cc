@@ -58,7 +58,7 @@ ClassSignature::createClassObject(
     vtable.push_back(referenceTable[*it]);
   }
 
-  VENOM_CHECK_RANGE(ctor, referenceTable.size());
+  if (ctor != -1) VENOM_CHECK_RANGE(size_t(ctor), referenceTable.size());
   return new venom_class_object(
       name,
       sizeof(venom_object), // all user objects have base of venom_object size
@@ -66,7 +66,7 @@ ClassSignature::createClassObject(
       ref_cell_bitmap,
       venom_object::ObjClassTable.cppInit,
       venom_object::ObjClassTable.cppRelease,
-      referenceTable[ctor],
+      ctor == -1 ? venom_object::CtorDescriptor : referenceTable[ctor],
       vtable);
 }
 
@@ -98,7 +98,8 @@ size_t
 CodeGenerator::enterLocalClass(ClassSymbol* symbol, bool& create) {
   // assert local class
   assert(symbol->getDefinedSymbolTable()->belongsTo(
-         ctx->getModuleRoot()->getSymbolTable()));
+         ctx->getModuleRoot()->getSymbolTable()) ||
+         symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable());
   return class_reference_table.createLocal(symbol, create);
 }
 
@@ -112,8 +113,9 @@ CodeGenerator::enterExternalClass(ClassSymbol* symbol, bool& create) {
 
 size_t
 CodeGenerator::enterClass(ClassSymbol* symbol, bool& create) {
-  return symbol->getDefinedSymbolTable()->belongsTo(
-         ctx->getModuleRoot()->getSymbolTable()) ?
+  return (symbol->getDefinedSymbolTable()->belongsTo(
+          ctx->getModuleRoot()->getSymbolTable()) ||
+          symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable()) ?
      enterLocalClass(symbol, create) : enterExternalClass(symbol, create);
 }
 
@@ -235,7 +237,8 @@ CodeGenerator::createObjectCode() {
     ClassSymbol *csym = *it;
     csym->linearizedOrder(attributes, methods);
 
-    vector<uint32_t> attrVec(attributes.size());
+    vector<uint32_t> attrVec;
+    attrVec.reserve(attributes.size());
     for (vector<Symbol*>::iterator it = attributes.begin();
          it != attributes.end(); ++it) {
       attrVec.push_back(
@@ -243,7 +246,8 @@ CodeGenerator::createObjectCode() {
             (*it)->getInstantiatedType()->getType()));
     }
 
-    vector<uint32_t> methVec(methods.size());
+    vector<uint32_t> methVec;
+    methVec.reserve(methods.size());
     for (vector<FuncSymbol*>::iterator it = methods.begin();
          it != methods.end(); ++it) {
       size_t idx;
@@ -253,14 +257,19 @@ CodeGenerator::createObjectCode() {
     }
 
     // find ctor
-    TypeTranslator t;
-    FuncSymbol* ctor =
-      csym->getClassSymbolTable()->findFuncSymbol(
-          "<ctor>", SymbolTable::NoRecurse, t);
-    VENOM_ASSERT_NOT_NULL(ctor);
-    size_t ctorIdx;
-    bool res = func_reference_table.find(ctor, ctorIdx);
-    assert(res);
+    int32_t ctorIdx = -1;
+
+    if (!csym->isModuleClassSymbol()) {
+      TypeTranslator t;
+      FuncSymbol* ctor =
+        csym->getClassSymbolTable()->findFuncSymbol(
+            "<ctor>", SymbolTable::NoRecurse, t);
+      VENOM_ASSERT_NOT_NULL(ctor);
+      size_t idx;
+      bool res = func_reference_table.find(ctor, idx);
+      assert(res);
+      ctorIdx = idx;
+    }
 
     classSigs.push_back(
         ClassSignature(csym->getName(), attrVec, ctorIdx, methVec));
@@ -275,7 +284,8 @@ CodeGenerator::createObjectCode() {
 
     FuncSymbol *fsym = *it;
 
-    vector<uint32_t> paramVec(fsym->getParams().size());
+    vector<uint32_t> paramVec;
+    paramVec.reserve(fsym->getParams().size());
     for (vector<InstantiatedType*>::iterator it = fsym->getParams().begin();
          it != fsym->getParams().end(); ++it) {
       paramVec.push_back(
@@ -290,6 +300,13 @@ CodeGenerator::createObjectCode() {
           funcIdxToLabels[idx]->index));
   }
 
+  // build name -> inst offset map
+  ObjectCode::NameOffsetMap nameOffsetMap;
+  for (InstLabelSymbolPairMap::iterator it = instToFuncLabels.begin();
+       it != instToFuncLabels.end(); ++it) {
+    nameOffsetMap[it->second.second->getName()] = it->first;
+  }
+
   return new ObjectCode(
       ctx->getFullModuleName(),
       constant_pool.vec,
@@ -298,6 +315,7 @@ CodeGenerator::createObjectCode() {
       funcSigs,
       func_reference_table.vec,
       instructions,
+      nameOffsetMap,
       labels);
 }
 

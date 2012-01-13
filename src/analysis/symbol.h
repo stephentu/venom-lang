@@ -255,6 +255,8 @@ public:
     return type->isCurrentScopeOnly();
   }
 
+  bool isModuleClassSymbol() const;
+
   void linearizedOrder(std::vector<Symbol*>& attributes,
                        std::vector<FuncSymbol*>& methods);
 

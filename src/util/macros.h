@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-#if NDEBUG
+#ifdef NDEBUG
   #define venom_pointer_cast static_cast
 #else
   #define venom_pointer_cast dynamic_cast
@@ -126,13 +126,17 @@
     } \
   }
 
-#define VENOM_TRACE(e) std::cerr << "TRACE: " << (e) << std::endl
-
 /** Requires RTTI + type to be polymorphic */
 #define VENOM_ASSERT_TYPEOF(type, expr) \
   assert(dynamic_cast<type>((expr)))
 
 #define VENOM_ASSERT_TYPEOF_PTR(type, expr) \
   VENOM_ASSERT_TYPEOF(type*, expr)
+
+#ifdef DO_TRACE
+  #define VENOM_TRACE(e) std::cerr << "TRACE: " << (e) << std::endl
+#else
+  #define VENOM_TRACE(e)
+#endif
 
 #endif /* VENOM_UTIL_MACROS_H */

@@ -74,7 +74,7 @@ venom_object::venom_object(venom_class_object* class_obj)
   // simulate calling the class constructor
   // we *must* bump the ref count here, so that we don't end up destructing the
   // object when virtualDispatch is finished
-  virtualDispatch(ExecutionContext::current_context(), 0);
+  dispatchInit(ExecutionContext::current_context());
   assert(count == 1);
 }
 
@@ -89,7 +89,7 @@ venom_object::~venom_object() {
   // simulate virtual destructor
   // we *must* bump the ref count here, so that we don't end up destructing the
   // object again (infinitely) when virtualDispatch is finished
-  virtualDispatch(ExecutionContext::current_context(), 1);
+  dispatchRelease(ExecutionContext::current_context());
   assert(count == 1);
 
   // destroy the cells
@@ -106,7 +106,7 @@ venom_object::~venom_object() {
 }
 
 string venom_object::stringifyNativeOnly() const {
-  FunctionDescriptor *desc = class_obj->vtable[2];
+  FunctionDescriptor *desc = class_obj->vtable[0];
   assert(desc);
   if (desc->isNative()) {
     assert(desc->getNumArgs() == 1);

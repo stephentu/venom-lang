@@ -119,7 +119,7 @@ StmtListNode::codeGen(CodeGenerator& cg) {
 
     // need to register the module class
     bool create;
-    cg.enterClass(msym->getModuleClassSymbol(), create);
+    cg.enterLocalClass(msym->getModuleClassSymbol(), create);
     assert(create);
   }
   ASTNode::codeGen(cg);

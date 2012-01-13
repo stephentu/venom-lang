@@ -11,27 +11,21 @@ namespace venom {
 namespace backend {
 
 void ExecutionContext::execute(Callback& callback) {
+  assert(program_counter);
   assert(*program_counter);
   util::ScopedBoolean sb(is_executing);
   util::ScopedVariable<ExecutionContext*> sv(_current, this);
   scoped_constants sc(this);
 
-  new_frame();
+  new_frame(NULL); // denotes when <main> returns
   while (true) {
-    if ((*program_counter)->execute(*this)) program_counter++;
-    if (program_counter == code->instructions.end()) {
+    if (VENOM_UNLIKELY((*program_counter)->execute(*this))) program_counter++;
+    if (VENOM_UNLIKELY(program_counter == NULL)) {
       // end of stream
-      if (!program_stack.empty()) {
-        venom_cell ret = program_stack.top();
-        program_stack.pop();
-        assert(program_stack.empty());
-        callback.handleResult(ret); // takes care of decRef()-ing ret
-      } else {
-        callback.noResult();
-      }
-      pop_frame();
       assert(local_variables_stack.empty());
       assert(local_variables_ref_info_stack.empty());
+      assert(ret_addr_stack.empty());
+      callback.noResult();
       return;
     }
   }
@@ -74,19 +68,18 @@ void ExecutionContext::resumeExecution(Instruction** pc) {
   assert(pc);
   assert(is_executing);
   assert(constant_pool);
-  // push the current pc as the ret addr
-  program_stack.push(venom_cell(int64_t(program_counter)));
-  // new frame
+
   size_t return_size = local_variables_stack.size();
-  new_frame();
+  // push the current pc as the ret addr
+  new_frame(program_counter);
   // set the pc
   program_counter = pc;
   while (true) {
-    if ((*program_counter)->execute(*this)) program_counter++;
+    if (VENOM_UNLIKELY((*program_counter)->execute(*this))) program_counter++;
     // check frame size
     size_t cur_size = local_variables_stack.size();
     assert(cur_size >= return_size);
-    if (cur_size == return_size) {
+    if (VENOM_UNLIKELY(cur_size == return_size)) {
       // break execution
       break;
     }
@@ -94,20 +87,21 @@ void ExecutionContext::resumeExecution(Instruction** pc) {
 }
 
 void ExecutionContext::resumeExecution(venom_object* obj, size_t index) {
-
+  assert(obj);
   FunctionDescriptor *desc = obj->getClassObj()->vtable.at(index);
   resumeExecution(obj, desc);
 }
 
 void ExecutionContext::resumeExecution(venom_object* obj,
                                        FunctionDescriptor* desc) {
+  assert(obj);
   assert(desc);
   obj->incRef();
   program_stack.push(venom_cell(obj));
   desc->dispatch(this);
 }
 
-void ExecutionContext::pop_frame() {
+Instruction** ExecutionContext::pop_frame() {
   // must decRef() the cells on the stack which need it
   vector<venom_cell>& locVars = local_variables();
   vector<bool>& refInfo = local_variables_ref_info();
@@ -120,6 +114,11 @@ void ExecutionContext::pop_frame() {
 
   local_variables_stack.pop();
   local_variables_ref_info_stack.pop();
+  Instruction** ret_addr = ret_addr_stack.top();
+  ret_addr_stack.pop();
+
+  AssertProgramFrameSanity();
+  return ret_addr;
 }
 
 // TODO: replace this with a thread-local

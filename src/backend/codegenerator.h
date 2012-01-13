@@ -161,9 +161,11 @@ public:
   ClassSignature(
       const std::string& name,
       const std::vector<uint32_t>& attributes,
-      uint32_t ctor,
+      int32_t ctor,
       const std::vector<uint32_t>& methods)
-    : name(name), attributes(attributes), ctor(ctor), methods(methods) {}
+    : name(name), attributes(attributes), ctor(ctor), methods(methods) {
+    assert(ctor == -1 || ctor >= 0);
+  }
 
   runtime::venom_class_object* createClassObject(
       const std::vector<FunctionDescriptor*>& referenceTable);
@@ -174,7 +176,7 @@ public:
 
   std::string name;
   std::vector<uint32_t> attributes;
-  uint32_t ctor;
+  int32_t ctor;
   std::vector<uint32_t> methods;
 };
 

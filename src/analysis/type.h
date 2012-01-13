@@ -27,9 +27,11 @@ class SymbolTable;
  * (see InstantiatedType for instantiations of Type)
  */
 class Type {
+  friend class ClassSymbol;
   friend class InstantiatedType;
   friend class SemanticContext;
   friend class SymbolTable;
+
 protected:
   /** Does NOT take ownership of symbol nor parent **/
   Type(const std::string& name,
@@ -183,10 +185,10 @@ public:
   instantiate(SemanticContext* ctx,
               const std::vector<InstantiatedType*>& params);
 
-private:
-
+protected:
   InstantiatedType* instantiate();
 
+private:
   /** Regular (not fully qualified) */
   std::string       name;
 

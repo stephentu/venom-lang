@@ -57,7 +57,7 @@ public:
   /** Does *not* take ownership of executable */
   ExecutionContext(Executable* code)
     : code(code),
-      program_counter(code->instructions.begin()),
+      program_counter(code->startingInst()),
       constant_pool(NULL),
       is_executing(false) {}
 
@@ -125,12 +125,14 @@ protected:
     return local_variables_ref_info_stack.top();
   }
 
-  inline void new_frame() {
+  inline void new_frame(Instruction** ret_addr) {
+    AssertProgramFrameSanity();
     local_variables_stack.push(std::vector<runtime::venom_cell>());
     local_variables_ref_info_stack.push(std::vector<bool>());
+    ret_addr_stack.push(ret_addr);
   }
 
-  void pop_frame();
+  Instruction** pop_frame();
 
   /** Linked program */
   Executable* code;
@@ -149,6 +151,8 @@ protected:
 
   std::stack< std::vector<bool> > local_variables_ref_info_stack;
 
+  std::stack< Instruction** > ret_addr_stack;
+
   /** Is this context currently executing? */
   bool is_executing;
 
@@ -157,6 +161,15 @@ protected:
    * TODO: make thread local
    */
   static ExecutionContext* _current;
+
+private:
+  inline void AssertProgramFrameSanity() const {
+    // assert all the frames are equal in size
+    assert(local_variables_stack.size() ==
+           local_variables_ref_info_stack.size());
+    assert(local_variables_ref_info_stack.size() ==
+           ret_addr_stack.size());
+  }
 };
 
 /**

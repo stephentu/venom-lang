@@ -52,6 +52,8 @@ struct inst_sum_functor {
 };
 
 Executable* Linker::link(const ObjCodeVec& objs) {
+  assert(!objs.empty());
+
   // go through each local function in each obj (in order),
   // and create FunctionDescriptors, which point to the
   // global offset in the executable instruction stream
@@ -195,9 +197,15 @@ Executable* Linker::link(const ObjCodeVec& objs) {
     acc += insts.size();
   }
 
+  // grab main address out
+  ObjectCode::NameOffsetMap::iterator it =
+    objs[0]->getNameOffsetMap().find("<main>");
+  assert(it != objs[0]->getNameOffsetMap().end());
+
   return new Executable(
         exec_const_pool.vec,
         Executable::IStream::BuildFrom(execInsts),
+        it->second,
         util::flatten_vec(localFuncDescriptors),
         util::flatten_vec(localClassObjs));
 }

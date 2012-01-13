@@ -72,9 +72,12 @@ public:
    *      -> obj ; incRef(obj)
    *
    *   CALL N0
-   *      -> ret_pc ; pc = N0
+   *      -> ; pc = N0
    *   CALL_NATIVE N0
    *      [aN, aN-1, ..., a1, a0] -> ret_value ; N0(a0, a1, ..., aN-1, aN)
+   *
+   *   RET
+   *      -> ; pc = ret_addr
    *
    *   JUMP N0
    *      -> ; pc = next_pc + N0
@@ -277,9 +280,6 @@ public:
    *
    *   SET_ARRAY_ACCESS
    *     // TODO: spec and implement
-   *
-   *   RET
-   *     opnd0, opnd1 -> opnd1 ; PC = opnd0
    */
 
 #define OPCODE_DEFINER_ZERO(x) \
@@ -293,6 +293,7 @@ public:
     x(ALLOC_OBJ) \
     x(CALL) \
     x(CALL_NATIVE) \
+    x(RET) \
     x(JUMP) \
 
 #define OPCODE_DEFINER_ONE(x) \
@@ -378,7 +379,6 @@ public:
     x(SET_ATTR_OBJ) \
     x(SET_ATTR_OBJ_REF) \
     x(SET_ARRAY_ACCESS) \
-    x(RET) \
 
 #define OPCODE_DEFINER(x) \
     OPCODE_DEFINER_ZERO(x) \

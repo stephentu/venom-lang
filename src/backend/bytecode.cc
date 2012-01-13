@@ -68,6 +68,8 @@ bool Instruction::execute(ExecutionContext& ctx) {
 */
 
 bool Instruction::execute(ExecutionContext& ctx) {
+  VENOM_TRACE(stringify(opcode));
+
   switch (opcode) {
 
 #define HANDLE_ZERO(a) \
@@ -182,10 +184,8 @@ bool Instruction::ALLOC_OBJ_impl(ExecutionContext& ctx) {
 
 bool Instruction::CALL_impl(ExecutionContext& ctx) {
   InstFormatIPtr *self = asFormatIPtr();
-  // push ret address
-  ctx.program_stack.push(venom_cell(int64_t(ctx.program_counter + 1)));
   // create new local variable frame
-  ctx.new_frame();
+  ctx.new_frame(ctx.program_counter + 1);
   // set PC
   FunctionDescriptor *desc = reinterpret_cast<FunctionDescriptor*>(self->N0);
   ctx.program_counter =
@@ -199,6 +199,12 @@ bool Instruction::CALL_NATIVE_impl(ExecutionContext& ctx) {
   assert(desc->isNative());
   desc->dispatch(&ctx);
   return true;
+}
+
+bool Instruction::RET_impl(ExecutionContext& ctx) {
+  Instruction** ret_addr = ctx.pop_frame();
+  ctx.program_counter = ret_addr;
+  return false;
 }
 
 bool Instruction::JUMP_impl(ExecutionContext& ctx) {
@@ -469,10 +475,8 @@ bool Instruction::CALL_VIRTUAL_impl(ExecutionContext& ctx, venom_cell& opnd0) {
     desc->dispatch(&ctx);
     return true;
   } else {
-    // push ret address
-    ctx.program_stack.push(venom_cell(int64_t(ctx.program_counter + 1)));
     // create new local variable frame
-    ctx.new_frame();
+    ctx.new_frame(ctx.program_counter + 1);
     // set PC
     ctx.program_counter =
       ctx.code->instructions.begin() + int64_t(desc->getFunctionPtr());
@@ -647,11 +651,9 @@ bool Instruction::SET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0
   venom_cell::AssertNonZeroRefCount(opnd0);
   venom_cell::AssertNonZeroRefCount(opnd1);
   InstFormatU32 *self = asFormatU32();
-#ifndef NDEBUG
   // make sure the obj's cell is actually meant for references
   assert(opnd0.asRawObject()->getClassObj()->ref_cell_bitmap
         & (0x1 << self->N0));
-#endif
   venom_cell& old = opnd0.asRawObject()->cell(self->N0);
 #ifndef NDEBUG
   if (old.asRawObject() == opnd1.asRawObject()) {
@@ -669,12 +671,7 @@ bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0
   VENOM_UNIMPLEMENTED;
 }
 
-bool Instruction::RET_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
-  ctx.program_counter = reinterpret_cast<Instruction**>(opnd0.asInt());
-  ctx.program_stack.push(opnd1);
-  ctx.pop_frame();
-  return false;
-}
+
 
 }
 }
