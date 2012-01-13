@@ -72,6 +72,8 @@ protected:
 
     // finally, add the class parent
 
+    parents.push_back(parent);
+
     symbolContainer.parents.push_back(&parent->symbolContainer);
     symbolContainer.maps.push_back(typeMap);
 
@@ -98,9 +100,9 @@ public:
   inline const ast::ASTNode* getOwner() const { return owner; }
 
   inline SymbolTable* getPrimaryParent() {
-    return parents.empty() ? NULL : parents.back(); }
+    return parents.empty() ? NULL : parents.front(); }
   inline const SymbolTable* getPrimaryParent() const {
-    return parents.empty() ? NULL : parents.back(); }
+    return parents.empty() ? NULL : parents.front(); }
 
   inline SymbolTable*
   newChildScope(SemanticContext* ctx, ast::ASTNode* owner) {

@@ -1,0 +1,22 @@
+class A 
+  attr value::int
+  def self(value::int) = self.value = value; end
+  def go() = print(value); end
+  def stringify() -> string = "hello"; end
+end
+a = A(20);
+a.go();
+print(a);
+class B end
+print (B());
+class C <- A
+  def self(value::int) : super(value) = end
+  def go() = 
+    print ("from C");
+    super.go();
+  end
+end
+a = C(30);
+a.go();
+print(a);
+print(a.value);

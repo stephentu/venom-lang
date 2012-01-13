@@ -51,7 +51,8 @@ ClassSignature::createClassObject(
   }
 
   // construct vtable
-  FuncDescVec vtable(methods.size());
+  FuncDescVec vtable;
+  vtable.reserve(methods.size());
   for (vector<uint32_t>::const_iterator it = methods.begin();
        it != methods.end(); ++it) {
     VENOM_CHECK_RANGE(*it, referenceTable.size());
@@ -241,11 +242,8 @@ CodeGenerator::getClassRefIndexFromType(Type* type) {
   if (type->isPrimitive() || type->isVoid()) {
     return PrimitiveTypeToIndex(type);
   } else {
-    size_t idx;
-    bool res = class_reference_table.find(sym, idx);
-    // TODO: do we need to possibly insert external refs here?
-    VENOM_ASSERT(res);
-    return idx;
+    bool create;
+    return enterClass(sym, create);
   }
 }
 
@@ -278,9 +276,8 @@ CodeGenerator::createObjectCode() {
     methVec.reserve(methods.size());
     for (vector<FuncSymbol*>::iterator it = methods.begin();
          it != methods.end(); ++it) {
-      size_t idx;
-      bool res = func_reference_table.find(*it, idx);
-      VENOM_ASSERT(res);
+      bool create;
+      size_t idx = enterFunction(*it, create);
       methVec.push_back(idx);
     }
 
@@ -391,7 +388,13 @@ CodeGenerator::printDebugStream() {
        it != instructions.end(); ++it, ++index) {
     InstLabelSymbolPairMap::iterator iit = instToFuncLabels.find(index);
     if (iit != instToFuncLabels.end()) {
-      cerr << iit->second.second->getName() << ":" << endl;
+      BaseSymbol* bs = iit->second.second;
+      if (MethodSymbol* ms = dynamic_cast<MethodSymbol*>(bs)) {
+        cerr << ms->getClassSymbol()->getName() << "."
+             << ms->getName() << ":" << endl;
+      } else {
+        cerr << bs->getName() << ":" << endl;
+      }
     } else {
       InstLabelMap::iterator iit = instToLabels.find(index);
       if (iit != instToLabels.end()) {

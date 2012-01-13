@@ -281,6 +281,16 @@ FuncDeclNode::codeGen(CodeGenerator& cg) {
   //                                          \/
   // ret_addr | argN | argN-1 | ... | arg1 | arg0
 
+  if (hasLocationContext(TopLevelClassBody)) {
+    // must store the "this" pointer away first
+    Symbol* temp = cg.createTemporaryVariable();
+    bool create;
+    size_t idx = cg.createLocalVariable(temp, create);
+    assert(create);
+    assert(idx == 0);
+    cg.emitInstU32(Instruction::STORE_LOCAL_VAR_REF, idx);
+  }
+
   for (ExprNodeVec::iterator it = params.begin();
        it != params.end(); ++it) {
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, *it);

@@ -9,8 +9,11 @@
 #include <ast/statement/classattrdecl.h>
 #include <ast/statement/classdecl.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -85,6 +88,27 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
 
   AssignNode::TypeCheckAssignment(
       ctx, symbols, variable, value, sym->getClassSymbol());
+}
+
+ASTNode*
+ClassAttrDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  for (size_t i = 1; i < getNumKids(); i++) {
+    ASTNode* kid = getNthKid(i);
+    if (!kid) continue;
+    ASTNode* rep = kid->rewriteLocal(ctx, mode);
+    if (rep) {
+      assert(rep != kid);
+      setNthKid(i, rep);
+      delete kid;
+    }
+  }
+  return NULL;
+}
+
+void
+ClassAttrDeclNode::codeGen(CodeGenerator& cg) {
+  // no-op - the assignments should have been copied into the
+  // ctor
 }
 
 ClassAttrDeclNode*

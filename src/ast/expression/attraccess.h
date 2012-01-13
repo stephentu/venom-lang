@@ -19,6 +19,9 @@ public:
     delete primary;
   }
 
+  inline ASTExpressionNode* getPrimary() { return primary; }
+  inline const ASTExpressionNode* getPrimary() const { return primary; }
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {

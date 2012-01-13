@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <utility>
 
+#include <ast/expression/attraccess.h>
 #include <ast/expression/functioncall.h>
+#include <ast/expression/variable.h>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -199,8 +201,27 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
       // lookup the method index in the vtable
       VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);
       MethodSymbol* ms = static_cast<MethodSymbol*>(fs);
-      size_t slotIdx = ms->getFieldIndex();
-      cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
+
+      // pattern match to see if we are dealing with
+      // super.meth( ). this case + ctors are the only case
+      // where we don't use virtual dispatch for methods
+      bool isSuperInvoke = false;
+      if (AttrAccessNode* attrAccess =
+          dynamic_cast<AttrAccessNode*>(primary)) {
+        if (dynamic_cast<VariableSuperNode*>(attrAccess->getPrimary())) {
+          isSuperInvoke = true;
+        }
+      }
+
+      if (ms->isConstructor() || isSuperInvoke) {
+        // ctors are not invoked virtually
+        cg.emitInstU32(
+            !ms->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,
+            fidx);
+      } else {
+        size_t slotIdx = ms->getFieldIndex();
+        cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
+      }
     } else {
       cg.emitInstU32(
           !fs->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,

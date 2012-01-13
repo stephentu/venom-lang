@@ -142,7 +142,8 @@ VariableSelfNode::typeCheckImpl(SemanticContext* ctx,
 
 void
 VariableSelfNode::codeGen(CodeGenerator& cg) {
-  VENOM_UNIMPLEMENTED;
+  // self is always slot 0
+  cg.emitInstU32(Instruction::LOAD_LOCAL_VAR_REF, 0);
 }
 
 VariableSelfNode*
@@ -175,7 +176,8 @@ VariableSuperNode::typeCheckImpl(SemanticContext* ctx,
 
 void
 VariableSuperNode::codeGen(CodeGenerator& cg) {
-  VENOM_UNIMPLEMENTED;
+  // super (self) is always slot 0
+  cg.emitInstU32(Instruction::LOAD_LOCAL_VAR_REF, 0);
 }
 
 VariableSuperNode*

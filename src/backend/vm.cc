@@ -145,7 +145,8 @@ void FunctionDescriptor::dispatch(ExecutionContext* ctx) {
     default: VENOM_UNIMPLEMENTED;
     }
   } else {
-    ctx->resumeExecution(reinterpret_cast<Instruction**>(function_ptr));
+    ctx->resumeExecution(
+        ctx->code->instructions.begin() + int64_t(function_ptr));
   }
 }
 

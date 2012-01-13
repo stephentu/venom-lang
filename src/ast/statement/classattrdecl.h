@@ -46,6 +46,11 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected);
 
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
+
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassAttrDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {

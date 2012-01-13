@@ -114,6 +114,7 @@ public:
 
 class Executable {
   friend class ExecutionContext;
+  friend class FunctionDescriptor;
   friend class Instruction;
 public:
   typedef std::vector<ExecConstant> ConstPool;
@@ -162,8 +163,8 @@ public:
 };
 
 class Linker {
-  friend class ObjectCode;
   friend class Executable;
+  friend class ObjectCode;
 public:
   typedef std::vector<ObjectCode*> ObjCodeVec;
   typedef std::vector<size_t> MapTbl;
