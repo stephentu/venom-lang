@@ -1,6 +1,7 @@
 *.d
 *.o
 *.swp
+.DS_Store
 conf
 tags
 location.hh
