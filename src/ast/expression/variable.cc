@@ -50,7 +50,9 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
 
 ASTNode*
 VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
-  if (mode != CanonicalRefs) return ASTNode::rewriteLocal(ctx, mode);
+  if (mode != CanonicalRefs) {
+    return ASTExpressionNode::rewriteLocal(ctx, mode);
+  }
 
   BaseSymbol *bs = getSymbol();
   assert(bs);

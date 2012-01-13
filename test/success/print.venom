@@ -1,0 +1,13 @@
+x = "hello world";
+y = 2 + 2;
+z = 2.123 + 5;
+a = 7 % 4;
+b = a > 5;
+c = 0.0;
+
+print (x);
+print (y);
+print (z);
+print (a);
+print (b);
+print (c);

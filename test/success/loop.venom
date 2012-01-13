@@ -1,0 +1,12 @@
+i = 0;
+while i < 10 do
+  x = i + 5;
+  if x > 10 then
+    print (x);
+    print ("x > 10");
+  else
+    print (x);
+    print ("x <= 10");
+  end
+  i = i + 1;
+end

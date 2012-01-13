@@ -1,0 +1,11 @@
+def fibn(x::int) -> int = 
+  if x == 0 or x == 1 then x;
+  else fibn(x - 1) + fibn(x - 2); end
+end
+print (fibn(0));
+print (fibn(1));
+print (fibn(2));
+print (fibn(5));
+print (fibn(8));
+print (fibn(10));
+#print (fibn(30));

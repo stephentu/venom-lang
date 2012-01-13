@@ -12,6 +12,7 @@
 
 #include <util/macros.h>
 
+using namespace std;
 using namespace venom::analysis;
 using namespace venom::backend;
 
@@ -109,6 +110,11 @@ ASTNode::codeGen(CodeGenerator& cg) {
 
 ASTNode*
 ASTNode::rewriteReturn(SemanticContext* ctx) { VENOM_NOT_REACHED; }
+
+void
+ASTNode::printStderr() const {
+  const_cast<ASTNode*>(this)->print(cerr, 0);
+}
 
 ASTNode*
 ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {

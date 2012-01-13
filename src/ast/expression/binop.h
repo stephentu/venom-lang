@@ -79,8 +79,7 @@ public:
   virtual void codeGen(backend::CodeGenerator& cg);
 
   virtual void print(std::ostream& o, size_t indent = 0) {
-    // TODO: stringify the type
-    o << "(binop " << int(type) << " ";
+    o << "(binop " << StringifyType(type) << " ";
     left->print(o, indent);
     o << " ";
     right->print(o, indent);

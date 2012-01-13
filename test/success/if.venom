@@ -1,0 +1,8 @@
+x = 20;
+if x < 15 then
+  print ("x < 15");
+elsif x < 20 then
+  print ("x < 20");
+else
+  print ("x >= 20");
+end
