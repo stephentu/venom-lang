@@ -159,13 +159,13 @@ bool Instruction::PUSH_CONST_impl(ExecutionContext& ctx) {
 
 bool Instruction::LOAD_LOCAL_VAR_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
-  ctx.program_stack.push(ctx.local_variables()[self->N0]);
+  ctx.program_stack.push(ctx.local_variable(self->N0));
   return true;
 }
 
 bool Instruction::LOAD_LOCAL_VAR_REF_impl(ExecutionContext& ctx) {
   InstFormatU32 *self = asFormatU32();
-  venom_cell &cell = ctx.local_variables()[self->N0];
+  venom_cell &cell = ctx.local_variable(self->N0);
   venom_cell::AssertNonZeroRefCount(cell);
   cell.incRef();
   ctx.program_stack.push(cell);
@@ -225,35 +225,41 @@ bool Instruction::POP_CELL_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  assert(ctx.local_variables().size() == ctx.local_variables_ref_info().size());
+  assert(ctx.local_variables_stack.size() ==
+         ctx.local_variables_ref_info_stack.size());
 
   InstFormatU32 *self = asFormatU32();
-  vector<venom_cell> &vars = ctx.local_variables();
-  if (VENOM_UNLIKELY(self->N0 >= vars.size())) {
-    vars.resize(self->N0 + 1);
-    vector<bool> &refInfo = ctx.local_variables_ref_info();
-    refInfo.resize(self->N0 + 1, false);
+  size_t last_offset = ctx.frame_offset.top();
+  if (VENOM_UNLIKELY(last_offset + self->N0 >=
+                     ctx.local_variables_stack.size())) {
+    ctx.local_variables_stack.resize(
+        last_offset + self->N0 + 1);
+    ctx.local_variables_ref_info_stack.resize(
+        last_offset + self->N0 + 1, false);
   }
 
-  assert(!ctx.local_variables_ref_info()[self->N0]);
-  vars[self->N0] = opnd0;
+  assert(!ctx.local_variables_ref_info(self->N0));
+  ctx.local_variable(self->N0) = opnd0;
   return true;
 }
 
 bool Instruction::STORE_LOCAL_VAR_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
   venom_cell::AssertNonZeroRefCount(opnd0);
-  assert(ctx.local_variables().size() == ctx.local_variables_ref_info().size());
+  assert(ctx.local_variables_stack.size() ==
+         ctx.local_variables_ref_info_stack.size());
 
   InstFormatU32 *self = asFormatU32();
-  vector<venom_cell> &vars = ctx.local_variables();
-  vector<bool> &refInfo = ctx.local_variables_ref_info();
-  if (VENOM_UNLIKELY(self->N0 >= vars.size())) {
-    vars.resize(self->N0 + 1);
-    refInfo.resize(self->N0 + 1, false);
+  size_t last_offset = ctx.frame_offset.top();
+  if (VENOM_UNLIKELY(last_offset + self->N0 >=
+                     ctx.local_variables_stack.size())) {
+    ctx.local_variables_stack.resize(
+        last_offset + self->N0 + 1);
+    ctx.local_variables_ref_info_stack.resize(
+        last_offset + self->N0 + 1, false);
   }
 
-  venom_cell& old = vars[self->N0];
-  if (refInfo[self->N0]) {
+  venom_cell& old = ctx.local_variable(self->N0);
+  if (ctx.local_variable_ref_info(self->N0)) {
 #ifndef NDEBUG
     if (old.asRawObject() == opnd0.asRawObject()) {
       // self assignment should *not* be a problem
@@ -263,6 +269,7 @@ bool Instruction::STORE_LOCAL_VAR_REF_impl(ExecutionContext& ctx, venom_cell& op
     old.decRef();
   }
   old = opnd0;
+  ctx.local_variables_ref_info_stack[last_offset + self->N0] = true;
   return true;
 }
 
@@ -670,8 +677,6 @@ bool Instruction::SET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0
 bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
   VENOM_UNIMPLEMENTED;
 }
-
-
 
 }
 }

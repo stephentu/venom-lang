@@ -111,24 +111,24 @@ protected:
 
   void resumeExecution(runtime::venom_object* obj, FunctionDescriptor* desc);
 
-  inline std::vector<runtime::venom_cell>& local_variables() {
-    return local_variables_stack.top();
+  inline runtime::venom_cell& local_variable(size_t n) {
+    return local_variables_stack[frame_offset.top() + n];
   }
-  inline const std::vector<runtime::venom_cell>& local_variables() const {
-    return local_variables_stack.top();
+  inline const runtime::venom_cell& local_variable(size_t n) const {
+    return local_variables_stack[frame_offset.top() + n];
   }
 
-  inline std::vector<bool>& local_variables_ref_info() {
-    return local_variables_ref_info_stack.top();
-  }
-  inline const std::vector<bool>& local_variables_ref_info() const {
-    return local_variables_ref_info_stack.top();
+  inline bool local_variable_ref_info(size_t n) const {
+    return local_variables_ref_info_stack[frame_offset.top() + n];
   }
 
   inline void new_frame(Instruction** ret_addr) {
     AssertProgramFrameSanity();
-    local_variables_stack.push(std::vector<runtime::venom_cell>());
-    local_variables_ref_info_stack.push(std::vector<bool>());
+
+    local_variables_stack.reserve(local_variables_stack.size() + 16);
+    local_variables_ref_info_stack.reserve(local_variables_stack.size() + 16);
+
+    frame_offset.push(local_variables_stack.size());
     ret_addr_stack.push(ret_addr);
   }
 
@@ -147,9 +147,11 @@ protected:
   program_stack_type program_stack;
 
   /** Program frames - created per function invocation */
-  std::stack< std::vector<runtime::venom_cell> > local_variables_stack;
+  std::vector< runtime::venom_cell > local_variables_stack;
 
-  std::stack< std::vector<bool> > local_variables_ref_info_stack;
+  std::vector< bool > local_variables_ref_info_stack;
+
+  std::stack< size_t > frame_offset;
 
   std::stack< Instruction** > ret_addr_stack;
 
@@ -164,11 +166,15 @@ protected:
 
 private:
   inline void AssertProgramFrameSanity() const {
-    // assert all the frames are equal in size
     assert(local_variables_stack.size() ==
            local_variables_ref_info_stack.size());
-    assert(local_variables_ref_info_stack.size() ==
-           ret_addr_stack.size());
+
+    assert(frame_offset.size() == ret_addr_stack.size());
+  }
+  inline void primeStacks() {
+    // TODO: tune these constants
+    local_variables_stack.reserve(2048);
+    local_variables_ref_info_stack.reserve(2048);
   }
 };
 

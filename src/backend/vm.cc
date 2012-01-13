@@ -17,6 +17,7 @@ void ExecutionContext::execute(Callback& callback) {
   util::ScopedVariable<ExecutionContext*> sv(_current, this);
   scoped_constants sc(this);
 
+  primeStacks();
   new_frame(NULL); // denotes when <main> returns
   while (true) {
     if (VENOM_UNLIKELY((*program_counter)->execute(*this))) program_counter++;
@@ -24,6 +25,7 @@ void ExecutionContext::execute(Callback& callback) {
       // end of stream
       assert(local_variables_stack.empty());
       assert(local_variables_ref_info_stack.empty());
+      assert(frame_offset.empty());
       assert(ret_addr_stack.empty());
       callback.noResult();
       return;
@@ -103,19 +105,23 @@ void ExecutionContext::resumeExecution(venom_object* obj,
 
 Instruction** ExecutionContext::pop_frame() {
   // must decRef() the cells on the stack which need it
-  vector<venom_cell>& locVars = local_variables();
-  vector<bool>& refInfo = local_variables_ref_info();
 
-  assert(locVars.size() == refInfo.size());
+  assert(local_variables_stack.size() ==
+         local_variables_ref_info_stack.size());
 
-  for (size_t i = 0; i < locVars.size(); i++) {
-    if (refInfo[i]) locVars[i].decRef();
+  size_t last_offset = frame_offset.top();
+  for (size_t i = last_offset; i < local_variables_stack.size(); i++) {
+    if (local_variables_ref_info_stack[i]) {
+      local_variables_stack[i].decRef();
+    }
   }
 
-  local_variables_stack.pop();
-  local_variables_ref_info_stack.pop();
+  local_variables_stack.resize(last_offset);
+  local_variables_ref_info_stack.resize(last_offset);
+
   Instruction** ret_addr = ret_addr_stack.top();
   ret_addr_stack.pop();
+  frame_offset.pop();
 
   AssertProgramFrameSanity();
   return ret_addr;
