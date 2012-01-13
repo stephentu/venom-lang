@@ -216,7 +216,17 @@ public:
   /** Returns an index used to reference into the local variable table */
   size_t createLocalVariable(analysis::Symbol* symbol, bool& create);
 
-  inline void resetLocalVariables() { local_variable_pool.reset(); }
+  inline void resetLocalVariables() {
+    util::delete_pointers(temporary_symbols.begin(), temporary_symbols.end());
+    temporary_symbols.clear();
+    local_variable_pool.reset();
+  }
+
+  /** Symbol returned has no symbol table and no type */
+  analysis::Symbol* createTemporaryVariable();
+
+  /** symbol must have come from createTemporaryVariable() */
+  void returnTemporaryVariable(analysis::Symbol* symbol);
 
   /** Returns an index used to reference into the constant pool */
   size_t createConstant(const Constant& constant, bool& create);
@@ -334,6 +344,13 @@ private:
 
   /** Local variables */
   util::container_pool<analysis::Symbol*> local_variable_pool;
+
+  /** all created temporary symbols
+   * (including those on loan and those available) */
+  std::set<analysis::Symbol*> temporary_symbols;
+
+  /** currently available temporary symbols */
+  std::set<analysis::Symbol*> available_temporary_symbols;
 
   /** Constant pool */
   util::container_pool<Constant> constant_pool;

@@ -125,7 +125,57 @@ void
 FunctionCallNode::codeGen(CodeGenerator& cg) {
   InstantiatedType *funcType = primary->getStaticType();
   if (funcType->getType()->isClassType()) {
-    VENOM_UNIMPLEMENTED;
+    // new object
+    BaseSymbol *bs = primary->getSymbol();
+    VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+    ClassSymbol* csym = static_cast<ClassSymbol*>(bs);
+    TypeTranslator t;
+    FuncSymbol* ctorSym =
+      csym->getClassSymbolTable()->findFuncSymbol(
+          "<ctor>", SymbolTable::NoRecurse, t);
+    VENOM_ASSERT_NOT_NULL(ctorSym);
+
+    bool create;
+    size_t classIdx = cg.enterClass(csym, create);
+
+    // allocate the object
+    cg.emitInstU32(Instruction::ALLOC_OBJ, classIdx);
+
+    // store the obj in a temp location
+    Symbol* tempSym = cg.createTemporaryVariable();
+    size_t tempIdx = cg.createLocalVariable(tempSym, create);
+    cg.emitInstU32(Instruction::STORE_LOCAL_VAR_REF, tempIdx);
+
+    // push arguments to ctor onto stack in reverse order
+    for (ExprNodeVec::reverse_iterator it = args.rbegin();
+         it != args.rend(); ++it) {
+      (*it)->codeGen(cg);
+    }
+
+    // push the "this" pointer, from temp storage
+    cg.emitInstU32(Instruction::LOAD_LOCAL_VAR_REF, tempIdx);
+
+    // call the ctor (directly, not as a virtual method)
+    size_t refIdx = cg.enterFunction(ctorSym, create);
+    cg.emitInstU32(
+        ctorSym->isNative() ?
+          Instruction::CALL_NATIVE :
+          Instruction::CALL,
+        refIdx);
+
+    // ctors return void, so we need to pop off the null cell
+    cg.emitInst(Instruction::POP_CELL_REF);
+
+    // move the constructed obj onto the top of stack
+    cg.emitInstU32(Instruction::LOAD_LOCAL_VAR_REF, tempIdx);
+
+    // TODO: we could store a null into the temp location, to invalidate the
+    // reference to this obj. but since venom does not do support strict
+    // ref-count semantics, it is not necessary for correctness
+
+    // return the temp location, to be re-used
+    cg.returnTemporaryVariable(tempSym);
+
   } else {
     // push arguments onto stack in reverse order
     for (ExprNodeVec::reverse_iterator it = args.rbegin();
@@ -142,12 +192,15 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
     FuncSymbol *fs = static_cast<FuncSymbol*>(bs);
     bool create;
     size_t fidx = cg.enterFunction(fs, create);
-    assert(!create || fs->isNative());
     if (fs->isMethod()) {
       // emit the "this" pointer
       primary->codeGen(cg);
-      // TODO: lookup the method index in the vtable
-      VENOM_UNIMPLEMENTED;
+
+      // lookup the method index in the vtable
+      VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);
+      MethodSymbol* ms = static_cast<MethodSymbol*>(fs);
+      size_t slotIdx = ms->getFieldIndex();
+      cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
     } else {
       cg.emitInstU32(
           !fs->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,

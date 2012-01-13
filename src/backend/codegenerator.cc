@@ -89,6 +89,34 @@ CodeGenerator::createLocalVariable(Symbol* symbol, bool& create) {
   return local_variable_pool.create(symbol, create);
 }
 
+Symbol*
+CodeGenerator::createTemporaryVariable() {
+  if (available_temporary_symbols.empty()) {
+    Symbol* ret = new Symbol("", NULL, NULL);
+    temporary_symbols.insert(ret);
+    return ret;
+  } else {
+    set<Symbol*>::iterator it = available_temporary_symbols.begin();
+    Symbol* ret = *it;
+    available_temporary_symbols.erase(it);
+    return ret;
+  }
+}
+
+void
+CodeGenerator::returnTemporaryVariable(Symbol* symbol) {
+  // must have created a temp variable using
+  // createTemporaryVariable()
+  assert(temporary_symbols.find(symbol) != temporary_symbols.end());
+
+  // must not be a symbol which is already considered
+  // available
+  assert(available_temporary_symbols.find(symbol) ==
+         available_temporary_symbols.end());
+
+  available_temporary_symbols.insert(symbol);
+}
+
 size_t
 CodeGenerator::createConstant(const Constant& constant, bool& create) {
   return constant_pool.create(constant, create);

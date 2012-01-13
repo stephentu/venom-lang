@@ -212,6 +212,10 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
     for (vector<FuncSymbol*>::iterator fit = clsMethods.begin();
          fit != clsMethods.end(); ++fit) {
       if (MethodSymbol *msym = dynamic_cast<MethodSymbol*>((*fit))) {
+        if (msym->isConstructor()) {
+          // don't include constructors
+          continue;
+        }
         if (!msym->getOverrides()) {
           map<MethodSymbol*, size_t>::iterator it =
             index.find(msym);

@@ -8,6 +8,12 @@
 #include <analysis/type.h>
 
 namespace venom {
+
+namespace backend {
+  /** Forward decl */
+  class CodeGenerator;
+}
+
 namespace analysis {
 
 /** Forward decl */
@@ -78,6 +84,7 @@ private:
  * object's field.
  */
 class Symbol : public BaseSymbol, public SlotMixin {
+  friend class backend::CodeGenerator;
   friend class SymbolTable;
 protected:
   Symbol(const std::string& name,
@@ -257,6 +264,7 @@ public:
 
   bool isModuleClassSymbol() const;
 
+  /** Does *NOT* include constructor in methods */
   void linearizedOrder(std::vector<Symbol*>& attributes,
                        std::vector<FuncSymbol*>& methods);
 
