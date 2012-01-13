@@ -219,6 +219,7 @@ public:
   inline void resetLocalVariables() {
     util::delete_pointers(temporary_symbols.begin(), temporary_symbols.end());
     temporary_symbols.clear();
+    available_temporary_symbols.clear();
     local_variable_pool.reset();
   }
 

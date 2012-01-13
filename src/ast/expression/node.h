@@ -78,6 +78,9 @@ public:
       typeCheckImpl(ctx, expectedType = expected, typeParams = typeParamArgs);
   }
 
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
+
   VENOM_AST_TYPED_CLONE(ASTExpressionNode)
 
 protected:

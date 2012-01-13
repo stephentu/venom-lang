@@ -28,7 +28,8 @@ class ClassDeclNode;
 template <typename T>
 struct _CloneFunctor {
   typedef T* result_type;
-  inline T* operator()(T* ptr) const { return ptr->clone(); }
+  inline T* operator()(T* ptr) const
+    { T* ret = ptr->clone(); assert(ret); return ret; }
 };
 
 #define VENOM_AST_CLONE_FUNCTOR(type) \
@@ -131,15 +132,19 @@ public:
 
   /** Tree re-writing **/
 
+  /** Order is important- rewrites must be run in this order
+   * for correctness */
   enum RewriteMode {
     CanonicalRefs, // rewrite module level vars into attr access +
                    // un-qualified attrs x into self.x
 
+    ModuleMain,    // rewrite module level statements into a <main>
+                   // function
+
     FunctionReturns, // rewrite all stmt expr returns into explicit
                      // return statements
 
-    ModuleMain,    // rewrite module level statements into a <main>
-                   // function
+    BoxPrimitives, // box primitives when necessary
   };
 
   /**

@@ -18,6 +18,7 @@ public:
                    const ExprNodeVec&   args)
     : primary(primary), typeArgs(typeArgs), args(args) {
     primary->addLocationContext(ASTNode::FunctionCall);
+    for (size_t i = 0; i < args.size(); i++) assert(args[i] != NULL);
   }
 
   ~FunctionCallNode() {

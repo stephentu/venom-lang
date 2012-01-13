@@ -50,8 +50,7 @@ SymbolNode::print(ostream& o, size_t indent) {
 
 SymbolNode*
 SymbolNode::cloneImpl() {
-  // cannot clone symbol node
-  VENOM_NOT_REACHED;
+  return new SymbolNode(symbol, staticType, expectedType);
 }
 
 }

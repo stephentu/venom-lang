@@ -126,23 +126,16 @@ ExecutionContext* ExecutionContext::_current(NULL);
 
 void FunctionDescriptor::dispatch(ExecutionContext* ctx) {
   assert(ctx);
+
   if (native) {
     switch (num_args) {
-    case 0: {
-      F0 f = reinterpret_cast<F0>(function_ptr);
-      venom_ret_cell ret = f(ctx);
-      ctx->program_stack.push(ret);
-      break;
-    }
-    case 1: {
-      F1 f = reinterpret_cast<F1>(function_ptr);
-      venom_cell arg0 = ctx->program_stack.top(); ctx->program_stack.pop();
-      venom_ret_cell ret = f(ctx, arg0);
-      ctx->program_stack.push(ret);
-      if (arg_ref_cell_bitmap & 0x1) arg0.decRef();
-      break;
-    }
-    // TODO: more arguments...
+
+#include <backend/dispatch_cases.inc>
+
+    // TODO: This is quite messy/fragile - we should really replace this with
+    // some inline assembly. Also, right now g++'s limit is a 59-argument
+    // function, so we can't do any more than w/o inline assembly.
+
     default: VENOM_UNIMPLEMENTED;
     }
   } else {

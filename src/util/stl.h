@@ -174,7 +174,8 @@ typename Iter::value_type reducel(Iter begin, Iter end, BinaryFunctor f) {
 template <typename Iter, typename Functor>
 inline std::vector<typename Functor::result_type>
 transform_vec(Iter begin, Iter end, Functor f) {
-  std::vector<typename Functor::result_type> res(end - begin);
+  std::vector<typename Functor::result_type> res;
+  res.reserve(end - begin);
   while (begin != end) {
     res.push_back(f(*begin));
     ++begin;

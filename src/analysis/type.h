@@ -50,58 +50,58 @@ public:
   virtual ~Type();
 
   /** Built-in types **/
-  static Type* AnyType;
-  static Type* IntType;
-  static Type* BoolType;
-  static Type* FloatType;
-  static Type* StringType;
-  static Type* VoidType;
+  static Type* const AnyType;
+  static Type* const IntType;
+  static Type* const BoolType;
+  static Type* const FloatType;
+  static Type* const StringType;
+  static Type* const VoidType;
 
-  static Type* Func0Type;
-  static Type* Func1Type;
-  static Type* Func2Type;
-  static Type* Func3Type;
-  static Type* Func4Type;
-  static Type* Func5Type;
-  static Type* Func6Type;
-  static Type* Func7Type;
-  static Type* Func8Type;
-  static Type* Func9Type;
+  static Type* const Func0Type;
+  static Type* const Func1Type;
+  static Type* const Func2Type;
+  static Type* const Func3Type;
+  static Type* const Func4Type;
+  static Type* const Func5Type;
+  static Type* const Func6Type;
+  static Type* const Func7Type;
+  static Type* const Func8Type;
+  static Type* const Func9Type;
 
-  static Type* Func10Type;
-  static Type* Func11Type;
-  static Type* Func12Type;
-  static Type* Func13Type;
-  static Type* Func14Type;
-  static Type* Func15Type;
-  static Type* Func16Type;
-  static Type* Func17Type;
-  static Type* Func18Type;
-  static Type* Func19Type;
+  static Type* const Func10Type;
+  static Type* const Func11Type;
+  static Type* const Func12Type;
+  static Type* const Func13Type;
+  static Type* const Func14Type;
+  static Type* const Func15Type;
+  static Type* const Func16Type;
+  static Type* const Func17Type;
+  static Type* const Func18Type;
+  static Type* const Func19Type;
 
-  static Type* ObjectType;
+  static Type* const ObjectType;
 
   /** Boxed primitive types */
-  static Type* BoxedIntType;
-  static Type* BoxedBoolType;
-  static Type* BoxedFloatType;
+  static Type* const BoxedIntType;
+  static Type* const BoxedBoolType;
+  static Type* const BoxedFloatType;
 
   /** Ref type */
-  static Type* RefType;
+  static Type* const RefType;
 
   /** Special type which represents a class type */
-  static Type* ClassType;
+  static Type* const ClassType;
 
   /** Special type which represents a module type */
-  static Type* ModuleType;
+  static Type* const ModuleType;
 
   /** Special type which is the subtype of EVERY type */
-  static Type* BoundlessType;
+  static Type* const BoundlessType;
 
   /** Special types which have syntactic sugar constructs
    * built into the grammar */
-  static Type* ListType;
-  static Type* MapType;
+  static Type* const ListType;
+  static Type* const MapType;
 
   static const std::vector<Type*> FuncTypes;
 
@@ -134,6 +134,7 @@ public:
   bool isString() const;
   bool isBool() const;
   bool isVoid() const;
+  bool isAny() const;
 
   inline bool isNumeric() const { return isInt() || isFloat(); }
   inline bool isPrimitive() const { return isNumeric() || isBool(); }
@@ -266,18 +267,18 @@ protected:
 public:
 
   /** Instantiations of built-in types **/
-  static InstantiatedType* AnyType;
-  static InstantiatedType* IntType;
-  static InstantiatedType* BoolType;
-  static InstantiatedType* FloatType;
-  static InstantiatedType* StringType;
-  static InstantiatedType* VoidType;
-  static InstantiatedType* ObjectType;
-  static InstantiatedType* BoxedIntType;
-  static InstantiatedType* BoxedBoolType;
-  static InstantiatedType* BoxedFloatType;
-  static InstantiatedType* ModuleType;
-  static InstantiatedType* BoundlessType;
+  static InstantiatedType* const AnyType;
+  static InstantiatedType* const IntType;
+  static InstantiatedType* const BoolType;
+  static InstantiatedType* const FloatType;
+  static InstantiatedType* const StringType;
+  static InstantiatedType* const VoidType;
+  static InstantiatedType* const ObjectType;
+  static InstantiatedType* const BoxedIntType;
+  static InstantiatedType* const BoxedBoolType;
+  static InstantiatedType* const BoxedFloatType;
+  static InstantiatedType* const ModuleType;
+  static InstantiatedType* const BoundlessType;
 
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
@@ -290,6 +291,7 @@ public:
   inline bool isFloat() const { return getType()->isFloat(); }
   inline bool isString() const { return getType()->isString(); }
   inline bool isBool() const { return getType()->isBool(); }
+  inline bool isAny() const { return getType()->isAny(); }
 
   inline bool isNumeric() const { return getType()->isNumeric(); }
   inline bool isPrimitive() const { return getType()->isPrimitive(); }

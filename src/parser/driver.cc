@@ -100,26 +100,22 @@ unsafe_compile(const string& fname, fstream& infile,
     cerr << endl;
   }
 
-  pctx.stmts->rewriteLocal(&ctx, ASTNode::CanonicalRefs);
-  if (global_compile_opts.print_ast) {
-    cerr << "After rewrite local stage (CanonicalRefs):" << endl;
-    pctx.stmts->print(cerr);
-    cerr << endl;
-  }
+#define _IMPL_REWRITE_LOCAL(stage) \
+  do { \
+    pctx.stmts->rewriteLocal(&ctx, ASTNode::stage); \
+    if (global_compile_opts.print_ast) { \
+      cerr << "After rewrite local stage (" << #stage << "):" << endl; \
+      pctx.stmts->print(cerr); \
+      cerr << endl; \
+    } \
+  } while (0)
 
-  pctx.stmts->rewriteLocal(&ctx, ASTNode::ModuleMain);
-  if (global_compile_opts.print_ast) {
-    cerr << "After rewrite local stage (ModuleMain):" << endl;
-    pctx.stmts->print(cerr);
-    cerr << endl;
-  }
+  _IMPL_REWRITE_LOCAL(CanonicalRefs);
+  _IMPL_REWRITE_LOCAL(ModuleMain);
+  _IMPL_REWRITE_LOCAL(FunctionReturns);
+  _IMPL_REWRITE_LOCAL(BoxPrimitives);
 
-  pctx.stmts->rewriteLocal(&ctx, ASTNode::FunctionReturns);
-  if (global_compile_opts.print_ast) {
-    cerr << "After rewrite local stage (FunctionReturns):" << endl;
-    pctx.stmts->print(cerr);
-    cerr << endl;
-  }
+#undef _IMPL_REWRITE_LOCAL
 
   if (global_compile_opts.semantic_check_only) return;
 

@@ -2,7 +2,9 @@
 #include <sstream>
 
 #include <analysis/semanticcontext.h>
+#include <ast/expression/functioncall.h>
 #include <ast/expression/node.h>
+#include <ast/expression/symbolnode.h>
 #include <util/stl.h>
 
 using namespace std;
@@ -34,6 +36,46 @@ string ParameterizedTypeString::stringify() const {
 ParameterizedTypeString* ParameterizedTypeString::clone() {
   return new ParameterizedTypeString(names,
       util::transform_vec(params.begin(), params.end(), CloneFunctor()));
+}
+
+ASTNode*
+ASTExpressionNode::rewriteLocal(SemanticContext* ctx,
+                                RewriteMode mode) {
+  if (mode != BoxPrimitives) return ASTNode::rewriteLocal(ctx, mode);
+
+  // recurse on children
+  ASTNode* rep = ASTNode::rewriteLocal(ctx, mode);
+  VENOM_ASSERT_NULL(rep);
+
+  // if the expected type is any, and the
+  // static type is a primitive, then we need to box
+  assert(getStaticType());
+
+  if (getExpectedType() &&
+      getExpectedType()->isAny() &&
+      getStaticType()->isPrimitive()) {
+    ClassSymbol* boxClass = NULL;
+    if (getStaticType()->isInt()) {
+      boxClass = Type::BoxedIntType->getClassSymbol();
+    } else if (getStaticType()->isFloat()) {
+      boxClass = Type::BoxedFloatType->getClassSymbol();
+    } else if (getStaticType()->isBool()) {
+      boxClass = Type::BoxedBoolType->getClassSymbol();
+    } else assert(false);
+    assert(boxClass);
+
+    TypeTranslator t;
+    FunctionCallNode* rep =
+      new FunctionCallNode(
+          new SymbolNode(
+            boxClass,
+            boxClass->bind(ctx, t, InstantiatedTypeVec()),
+            NULL),
+          TypeStringVec(),
+          util::vec1(this->clone()));
+    return replace(ctx, rep);
+  }
+  return NULL;
 }
 
 void

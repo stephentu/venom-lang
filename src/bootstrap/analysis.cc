@@ -173,6 +173,11 @@ Linker::FuncDescMap GetBuiltinFunctionMap() {
   ret["<prelude>.string.<ctor>"]    = venom_string::CtorDescriptor;
   ret["<prelude>.string.stringify"] = venom_string::StringifyDescriptor;
 
+  // box methods
+  ret["<prelude>.<Int>.<ctor>"] = venom_integer::CtorDescriptor;
+  ret["<prelude>.<Float>.<ctor>"] = venom_double::CtorDescriptor;
+  ret["<prelude>.<Bool>.<ctor>"] = venom_boolean::CtorDescriptor;
+
   return ret;
 }
 
