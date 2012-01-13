@@ -123,19 +123,21 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
       TypeTranslator t;
       FuncSymbol *fs =
         symbols->findFuncSymbol(name, SymbolTable::ClassParents, t);
-      assert(fs->isMethod());
-      InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
+      if (fs) {
+        assert(fs->isMethod());
+        InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
 
-      vector<InstantiatedType*> fparams(itypes);
-      fparams.push_back(retType);
-      InstantiatedType *myType =
-        Type::FuncTypes.at(itypes.size())->instantiate(ctx, fparams);
+        vector<InstantiatedType*> fparams(itypes);
+        fparams.push_back(retType);
+        InstantiatedType *myType =
+          Type::FuncTypes.at(itypes.size())->instantiate(ctx, fparams);
 
-      if (!overrideType->equals(*myType)) {
-        throw SemanticViolationException(
-            "Overriding type signatures do not match: Cannot override method " +
-            name + " of type " + overrideType->stringify() +
-            " with type " + myType->stringify());
+        if (!overrideType->equals(*myType)) {
+          throw SemanticViolationException(
+              "Overriding type signatures do not match: Cannot override method " +
+              name + " of type " + overrideType->stringify() +
+              " with type " + myType->stringify());
+        }
       }
       symbols->createMethodSymbol(name, typeParamITypes, itypes,
                                   retType, classSymbol, fs);

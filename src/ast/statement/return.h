@@ -51,6 +51,11 @@ public:
     o << ")";
   }
 
+protected:
+  virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx) {
+    return NULL;
+  }
+
 private:
   ASTExpressionNode* expr;
 };

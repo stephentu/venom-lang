@@ -27,15 +27,11 @@ DEPS := $(ALLOBJFILES:.o=.d)
 all: venom
 
 .PHONY: test
-test: test-compile test-bytecode
+test: test-compile
 
 .PHONY: test-compile
 test-compile: test/venom-test
 	test/venom-test
-
-.PHONY: test-bytecode
-test-bytecode: test/venom-bytecode-test
-	test/venom-bytecode-test
 
 # Generate scanner and parser
 
@@ -63,13 +59,10 @@ venom: $(GENOBJFILES) $(ALLOBJFILES) venom.o
 test/venom-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-test.o
 	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-test.o
 
-test/venom-bytecode-test: $(GENOBJFILES) $(ALLOBJFILES) test/venom-bytecode-test.o
-	$(CXX) $(LDFLAGS) -o $@ $(ALLOBJFILES) test/venom-bytecode-test.o
-
 GENFILES = parser.cc parser.h scanner.cc location.hh position.hh stack.hh
 GENERATED_SRCS = $(addprefix parser/,$(GENFILES))
 
-BINARIES = venom test/venom-test test/venom-bytecode-test
+BINARIES = venom test/venom-test 
 BINARIES_OBJ = $(addsuffix .o,$(BINARIES))
 BINARIES_DEPS = $(addsuffix .d,$(BINARIES))
 

@@ -17,7 +17,7 @@ namespace ast {
 
 void
 ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
-  assert(hasLocationContext(TopLevelFuncBody));
+  assert(hasLocationContext(TopLevelClassBody));
   VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
   VariableNode *var = static_cast<VariableNode*>(variable);
 

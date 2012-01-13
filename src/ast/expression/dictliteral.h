@@ -43,6 +43,11 @@ public:
     return false;
   }
 
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode) {
+    return ASTNode::rewriteLocal(ctx, mode);
+  }
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(DictPair)
 
 protected:
