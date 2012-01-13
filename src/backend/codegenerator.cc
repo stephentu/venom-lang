@@ -244,7 +244,7 @@ CodeGenerator::getClassRefIndexFromType(Type* type) {
     size_t idx;
     bool res = class_reference_table.find(sym, idx);
     // TODO: do we need to possibly insert external refs here?
-    assert(res);
+    VENOM_ASSERT(res);
     return idx;
   }
 }
@@ -280,7 +280,7 @@ CodeGenerator::createObjectCode() {
          it != methods.end(); ++it) {
       size_t idx;
       bool res = func_reference_table.find(*it, idx);
-      assert(res);
+      VENOM_ASSERT(res);
       methVec.push_back(idx);
     }
 
@@ -295,7 +295,7 @@ CodeGenerator::createObjectCode() {
       VENOM_ASSERT_NOT_NULL(ctor);
       size_t idx;
       bool res = func_reference_table.find(ctor, idx);
-      assert(res);
+      VENOM_ASSERT(res);
       ctorIdx = idx;
     }
 

@@ -26,15 +26,15 @@
   (std::string(__PRETTY_FUNCTION__) + \
    std::string(" (" __FILE__ ":" _LINEHACK(__LINE__) ")"))
 
-#define VENOM_ASSERT_NOT_NULL(ptr) \
+#define VENOM_ASSERT(expr) \
   do { \
-    if ((ptr) == NULL) assert((ptr) != NULL); \
+    typeof (expr) _expr = (expr); \
+    if (!_expr) assert(_expr); \
   } while (0)
 
-#define VENOM_ASSERT_NULL(ptr) \
-  do { \
-    if ((ptr) != NULL) assert((ptr) == NULL); \
-  } while (0)
+#define VENOM_ASSERT_NOT_NULL(ptr) VENOM_ASSERT(ptr)
+
+#define VENOM_ASSERT_NULL(ptr) VENOM_ASSERT(!(ptr))
 
 #define VENOM_SAFE_RETURN(array, idx) \
   do { \
