@@ -7,8 +7,6 @@ end
 a = A(20);
 a.go();
 print(a);
-class B end
-print (B());
 class C <- A
   def self(value::int) : super(value) = end
   def go() = 

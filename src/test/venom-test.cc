@@ -16,6 +16,7 @@
 #include <ast/statement/node.h>
 #include <parser/driver.h>
 #include <util/filesystem.h>
+#include <util/stl.h>
 
 using namespace std;
 using namespace venom;
@@ -58,14 +59,55 @@ inline string pad(const string& orig, size_t s) {
 }
 
 void run_test(bool success, const string& srcfile, size_t alignSize) {
+  // check to see if an .stdout file exists for srcfile.
+  // if so, then we want to do execution also
+  //
+  // TODO: do the same for stderr
+  string stdoutFname = util::strip_extension(srcfile) + ".stdout";
+  fstream stdoutFile(stdoutFname.c_str());
+  string childOutput;
+  string childExpect;
+
+  bool capture;
+  if (success && stdoutFile.good()) {
+    global_compile_opts.semantic_check_only = false;
+    capture = true;
+
+    // slurp the file into childExpect
+    stringstream buf;
+    buf << stdoutFile.rdbuf();
+    childExpect = buf.str();
+  } else {
+    global_compile_opts.semantic_check_only = true;
+    capture = false;
+  }
+
   Timer t;
 
   // run test in separate process, so that any nasty errors don't
   // break the whole test suite
+  int fds[2];
+  if (capture) {
+    if (pipe(fds) != 0) {
+      cerr << "Fatal error: could not pipe (errno: " << errno << ")" << endl;
+      exit(1);
+    }
+  }
+
   pid_t pid = fork();
   int status;
   if (pid == 0) {
     // child
+
+    if (capture) {
+      close(fds[0]);
+      if (dup2(fds[1], STDOUT_FILENO) == -1) {
+        cerr << "Fatal error: could not dup2 (errno: " << errno << ")" << endl;
+        exit(1);
+      }
+      close(fds[1]);
+    }
+
     compile_result result;
     bool res = compile_and_exec(srcfile, result);
     _exit(res ? 0 : 1); // *must* be _exit() *not* exit()
@@ -75,10 +117,25 @@ void run_test(bool success, const string& srcfile, size_t alignSize) {
     exit(1);
   } else {
     // parent
+
+    if (capture) {
+      close(fds[1]);
+    }
+
     pid_t ret = waitpid(pid, &status, 0);
     if (ret == -1) {
       cerr << "Fatal error: waitpid (errno: " << errno << ")" << endl;
       exit(1);
+    }
+
+    if (capture) {
+      stringstream ss;
+      char buf[1024];
+      ssize_t n;
+      while ((n = read(fds[0], buf, sizeof(buf))) > 0) {
+        ss << string(buf, n);
+      }
+      childOutput = ss.str();
     }
   }
 
@@ -88,6 +145,11 @@ void run_test(bool success, const string& srcfile, size_t alignSize) {
   } else if (WIFSIGNALED(status)) {
     res = false;
   } else VENOM_NOT_REACHED;
+
+  if (res && capture) {
+    // compare outputs
+    res = childExpect == childOutput;
+  }
 
   double exec_ms = t.lap_ms();
   cout.setf(ios::fixed, ios::floatfield);
@@ -116,7 +178,6 @@ struct max_size_functor_t {
 
 void run_tests(bool success, const vector<string>& srcfiles, const string& import_path) {
   global_compile_opts.venom_import_path = import_path;
-  global_compile_opts.semantic_check_only = true;
   vector<string>::const_iterator largest =
     max_element(srcfiles.begin(), srcfiles.end(), max_size_functor);
   for (vector<string>::const_iterator it = srcfiles.begin();
