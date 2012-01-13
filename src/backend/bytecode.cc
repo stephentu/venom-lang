@@ -238,7 +238,7 @@ bool Instruction::STORE_LOCAL_VAR_impl(ExecutionContext& ctx, venom_cell& opnd0)
         last_offset + self->N0 + 1, false);
   }
 
-  assert(!ctx.local_variables_ref_info(self->N0));
+  assert(!ctx.local_variable_ref_info(self->N0));
   ctx.local_variable(self->N0) = opnd0;
   return true;
 }
