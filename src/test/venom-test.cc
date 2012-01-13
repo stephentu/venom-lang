@@ -1,12 +1,17 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 
+#include <errno.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <ast/statement/node.h>
 #include <parser/driver.h>
@@ -53,9 +58,37 @@ inline string pad(const string& orig, size_t s) {
 }
 
 void run_test(bool success, const string& srcfile, size_t alignSize) {
-  compile_result result;
   Timer t;
-  bool res = compile_and_exec(srcfile, result);
+
+  // run test in separate process, so that any nasty errors don't
+  // break the whole test suite
+  pid_t pid = fork();
+  int status;
+  if (pid == 0) {
+    // child
+    compile_result result;
+    bool res = compile_and_exec(srcfile, result);
+    _exit(res ? 0 : 1); // *must* be _exit() *not* exit()
+  } else if (pid < 0) {
+    // error in fork
+    cerr << "Fatal error: could not fork (errno: " << errno << ")" << endl;
+    exit(1);
+  } else {
+    // parent
+    pid_t ret = waitpid(pid, &status, 0);
+    if (ret == -1) {
+      cerr << "Fatal error: waitpid (errno: " << errno << ")" << endl;
+      exit(1);
+    }
+  }
+
+  bool res;
+  if (WIFEXITED(status)) {
+    res = WEXITSTATUS(status) == 0;
+  } else if (WIFSIGNALED(status)) {
+    res = false;
+  } else VENOM_NOT_REACHED;
+
   double exec_ms = t.lap_ms();
   cout.setf(ios::fixed, ios::floatfield);
   cout.precision(3);
