@@ -4,7 +4,7 @@
 #include <analysis/semanticcontext.h>
 #include <ast/expression/functioncall.h>
 #include <ast/expression/node.h>
-#include <ast/expression/symbolnode.h>
+#include <ast/expression/synthetic/symbolnode.h>
 #include <util/stl.h>
 
 using namespace std;

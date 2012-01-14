@@ -1,5 +1,5 @@
 #include <ast/expression/attraccess.h>
-#include <ast/expression/symbolnode.h>
+#include <ast/expression/synthetic/symbolnode.h>
 #include <ast/expression/variable.h>
 #include <ast/statement/classdecl.h>
 

@@ -11,10 +11,11 @@
 #include <ast/expression/binop.h>
 #include <ast/expression/unop.h>
 
-#include <ast/expression/symbolnode.h>
 #include <ast/expression/variable.h>
 
 #include <ast/expression/attraccess.h>
 #include <ast/expression/arrayaccess.h>
 
 #include <ast/expression/functioncall.h>
+
+#include <ast/expression/synthetic/include.h>

@@ -1,4 +1,4 @@
-#include <ast/expression/symbolnode.h>
+#include <ast/expression/synthetic/symbolnode.h>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
