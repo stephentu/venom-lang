@@ -285,6 +285,9 @@ private:
   /** helper for createObjectCode() */
   size_t getClassRefIndexFromType(analysis::Type* type);
 
+  /** helper for createClass() */
+  bool isLocalSymbol(const analysis::BaseSymbol* symbol) const;
+
   /** The context which this instance is generating code for */
   analysis::SemanticContext* ctx;
 

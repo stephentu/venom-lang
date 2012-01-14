@@ -266,6 +266,14 @@ protected:
 
 public:
 
+#ifdef NDEBUG
+  static inline void AssertNoTypeParamPlaceholders(
+      const InstantiatedType* type) {}
+#else
+  static void AssertNoTypeParamPlaceholders(
+      const InstantiatedType* type);
+#endif /* NDEBUG */
+
   /** Instantiations of built-in types **/
   static InstantiatedType* const AnyType;
   static InstantiatedType* const IntType;
@@ -283,9 +291,15 @@ public:
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 
-  inline std::vector<InstantiatedType*>& getParams() { return params; }
-  inline const std::vector<InstantiatedType*>&
-    getParams() const { return params; }
+  inline std::vector<InstantiatedType*>& getParams()
+    { return params; }
+  inline const std::vector<InstantiatedType*>& getParams() const
+    { return params; }
+
+  inline ClassSymbol* getClassSymbol()
+    { return getType()->getClassSymbol(); }
+  inline const ClassSymbol* getClassSymbol() const
+    { return getType()->getClassSymbol(); }
 
   inline bool isInt() const { return getType()->isInt(); }
   inline bool isFloat() const { return getType()->isFloat(); }

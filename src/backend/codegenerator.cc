@@ -126,25 +126,20 @@ CodeGenerator::createConstant(const Constant& constant, bool& create) {
 size_t
 CodeGenerator::enterLocalClass(ClassSymbol* symbol, bool& create) {
   // assert local class
-  assert(symbol->getDefinedSymbolTable()->belongsTo(
-         ctx->getModuleRoot()->getSymbolTable()) ||
-         symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable());
+  assert(isLocalSymbol(symbol));
   return class_reference_table.createLocal(symbol, create);
 }
 
 size_t
 CodeGenerator::enterExternalClass(ClassSymbol* symbol, bool& create) {
   // assert external class
-  assert(!symbol->getDefinedSymbolTable()->belongsTo(
-         ctx->getModuleRoot()->getSymbolTable()));
+  assert(!isLocalSymbol(symbol));
   return class_reference_table.createExternal(symbol, create);
 }
 
 size_t
 CodeGenerator::enterClass(ClassSymbol* symbol, bool& create) {
-  return (symbol->getDefinedSymbolTable()->belongsTo(
-          ctx->getModuleRoot()->getSymbolTable()) ||
-          symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable()) ?
+  return isLocalSymbol(symbol) ?
      enterLocalClass(symbol, create) : enterExternalClass(symbol, create);
 }
 
@@ -245,6 +240,13 @@ CodeGenerator::getClassRefIndexFromType(Type* type) {
     bool create;
     return enterClass(sym, create);
   }
+}
+
+bool
+CodeGenerator::isLocalSymbol(const BaseSymbol* symbol) const {
+  return (symbol->getDefinedSymbolTable()->belongsTo(
+            ctx->getModuleRoot()->getSymbolTable()) ||
+          symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable());
 }
 
 ObjectCode*
