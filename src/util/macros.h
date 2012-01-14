@@ -119,8 +119,13 @@
   #define VENOM_IDGEN __LINE__
 #endif
 
+// This hack is necessary to get the identifier generated
+// correctly with VENOM_IDGEN
+#define _CONCAT0(a, b) a ## b
+#define _CONCAT(a, b) _CONCAT0(a, b)
+
 #define VENOM_COMPILE_TIME_ASSERT(pred) \
-  struct venom_ct_assert ## VENOM_IDGEN { \
+  struct _CONCAT(venom_ct_assert_, VENOM_IDGEN) { \
     void asserter() { \
       switch (pred) { case 0: case (pred): default: break; } \
     } \
