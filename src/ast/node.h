@@ -204,7 +204,7 @@ public:
   virtual void print(std::ostream& o, size_t indent = 0) = 0;
 
   /**
-   * Print to stdout, for debugging in gdb. Purposefully defined
+   * Print to stderr, for debugging in gdb. Purposefully defined
    * const for maximum usefulness
    *
    * Definition is not in header, so it doesn't get inlined

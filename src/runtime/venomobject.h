@@ -310,6 +310,21 @@ inline std::ostream& operator<<(std::ostream& o, const venom_object& obj) {
   return o;
 }
 
+template <typename T>
+class venom_self_cast {
+protected:
+
+  // TODO: not sure to take venom_cell by ref, or by value
+
+  static inline T* asSelf(venom_cell self) {
+    return static_cast<T*>(self.asRawObject());
+  }
+
+  static inline T& asSelfRef(venom_cell self) {
+    return *asSelf(self);
+  }
+};
+
 }
 }
 

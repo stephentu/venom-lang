@@ -12,7 +12,10 @@ namespace venom {
 namespace runtime {
 
 template <typename Primitive>
-class venom_box_base : public venom_object {
+class venom_box_base :
+  public venom_object,
+  public venom_self_cast< venom_box_base< Primitive > > {
+
   friend class venom_integer;
   friend class venom_double;
   friend class venom_boolean;
@@ -30,10 +33,6 @@ public:
     return venom_ret_cell(Nil);
   }
 protected:
-  static inline venom_box_base<Primitive>* asSelf(venom_cell self) {
-    return static_cast< venom_box_base<Primitive>* >(self.asRawObject());
-  }
-
   Primitive primitive;
 };
 

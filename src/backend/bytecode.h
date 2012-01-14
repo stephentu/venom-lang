@@ -151,9 +151,6 @@ public:
    *   GET_ATTR_OBJ_REF N0
    *     opnd0 -> opnd0.attr[N0] ; incRef(opnd0.attr[N0]), decRef(opnd0)
    *
-   *   GET_ARRAY_ACCESS
-   *     // TODO: spec and implement
-   *
    *   DUP N0
    *     opnd0 -> opnd0, opnd0, ..., opnd0 (N0 + 1 instances)
    *   DUP_REF N0
@@ -278,8 +275,21 @@ public:
    *     opnd0, opnd1 -> ; decRef(opnd0.attr[N0]),
    *                       opnd0.attr[N0] = opnd1, decRef(opnd0)
    *
+   *   GET_ARRAY_ACCESS
+   *     opnd0, opnd1 -> opnd0[opnd1] ; decRef(opnd0)
+   *   GET_ARRAY_ACCESS_REF
+   *     opnd0, opnd1 -> opnd0[opnd1] ; incRef(opnd0[opnd1]), decRef(opnd0)
+   *
+   * Three operand instructions:
+   *
    *   SET_ARRAY_ACCESS
-   *     // TODO: spec and implement
+   *     opnd0, opnd1, opnd2 ->
+   *        ; opnd0[opnd1] = opnd2,  decRef(opnd0)
+   *   SET_ARRAY_ACCESS_REF
+   *     opnd0, opnd1, opnd2 ->
+   *        ; incRef(opnd2), decRef(opnd0[opnd1]),
+   *          opnd0[opnd1] = opnd2, decRef(opnd0)
+   *
    */
 
 #define OPCODE_DEFINER_ZERO(x) \
@@ -325,7 +335,6 @@ public:
     x(TEST_REF) \
     x(GET_ATTR_OBJ) \
     x(GET_ATTR_OBJ_REF) \
-    x(GET_ARRAY_ACCESS) \
     x(DUP) \
     x(DUP_REF) \
     x(CALL_VIRTUAL) \
@@ -378,12 +387,18 @@ public:
     x(BINOP_BIT_RSHIFT_INT) \
     x(SET_ATTR_OBJ) \
     x(SET_ATTR_OBJ_REF) \
+    x(GET_ARRAY_ACCESS) \
+    x(GET_ARRAY_ACCESS_REF) \
+
+#define OPCODE_DEFINER_THREE(x) \
     x(SET_ARRAY_ACCESS) \
+    x(SET_ARRAY_ACCESS_REF) \
 
 #define OPCODE_DEFINER(x) \
     OPCODE_DEFINER_ZERO(x) \
     OPCODE_DEFINER_ONE(x) \
     OPCODE_DEFINER_TWO(x) \
+    OPCODE_DEFINER_THREE(x) \
 
   enum Opcode {
 #define OPND(a) a,
@@ -418,7 +433,9 @@ public:
    * even though we will delete Instruction* pointers which
    * point to subclasses. This is because all subclasses
    * only contain primitive data, so we don't need to call any
-   * special destructors */
+   * special destructors (the memory allocator will free the
+   * appropriate number of bytes).
+   */
   ~Instruction() {}
 
   /** Execute this instruction given the execution context.  Returns true if
@@ -430,6 +447,8 @@ public:
 private:
   Opcode opcode;
 
+  /** TODO: pass venom_cell by reference or value? Need to benchmark */
+
 #define DECL_ZERO(a) \
   bool a ## _impl(ExecutionContext& ctx);
 
@@ -440,13 +459,19 @@ private:
   bool a ## _impl(ExecutionContext& ctx, runtime::venom_cell& opnd0, \
       runtime::venom_cell& opnd1);
 
+#define DECL_THREE(a) \
+  bool a ## _impl(ExecutionContext& ctx, runtime::venom_cell& opnd0, \
+      runtime::venom_cell& opnd1, runtime::venom_cell& opnd2);
+
   OPCODE_DEFINER_ZERO(DECL_ZERO)
   OPCODE_DEFINER_ONE(DECL_ONE)
   OPCODE_DEFINER_TWO(DECL_TWO)
+  OPCODE_DEFINER_THREE(DECL_THREE)
 
 #undef DECL_ZERO
 #undef DECL_ONE
 #undef DECL_TWO
+#undef DECL_THREE
 
  InstFormatU32* asFormatU32();
  InstFormatI32* asFormatI32();

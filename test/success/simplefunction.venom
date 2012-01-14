@@ -1,0 +1,7 @@
+x = 1;
+def f(x::int) -> int = x + 1; end
+x = x + 2;
+y = f(x);
+print ("hello, world");
+print(x);
+print(f(x));

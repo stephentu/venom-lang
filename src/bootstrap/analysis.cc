@@ -38,6 +38,8 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // TODO: passing NULL for the owner AST node is a hack for now
   //       we need to either build fake AST nodes, or create a new
   //       data structure to represent a scope
+  // TODO: fill this information in dynamically- this is one of the most
+  //       fragile parts of the system
 
   // any is the root of the class hierarchy. primitive types derive from any
   // assigning a primitive to an any type, however, causes boxing of the
@@ -146,8 +148,35 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
                           createTypeParams(ctx, 1));
 
-  root->createClassSymbol("list", root->newChildScope(NULL), Type::ListType,
-                          createTypeParams(ctx, 1));
+  SymbolTable *ListSymTab = root->newChildScope(NULL);
+  vector<InstantiatedType*> ListTypeParam = createTypeParams(ctx, 1);
+  ClassSymbol *ListClassSym =
+    root->createClassSymbol("list", ListSymTab, Type::ListType, ListTypeParam);
+  ListSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                   InstantiatedTypeVec(),
+                                   InstantiatedType::VoidType, ListClassSym,
+                                   NULL, true);
+  ListSymTab->createMethodSymbol("stringify", InstantiatedTypeVec(),
+                                   InstantiatedTypeVec(),
+                                   InstantiatedType::StringType, ListClassSym,
+                                   objStringifyFuncSym, true);
+  ListSymTab->createMethodSymbol("get", InstantiatedTypeVec(),
+                                   util::vec1(InstantiatedType::IntType),
+                                   ListTypeParam[0], ListClassSym,
+                                   NULL, true);
+  ListSymTab->createMethodSymbol("set", InstantiatedTypeVec(),
+                                   util::vec2(InstantiatedType::IntType, ListTypeParam[0]),
+                                   InstantiatedType::VoidType, ListClassSym,
+                                   NULL, true);
+  ListSymTab->createMethodSymbol("append", InstantiatedTypeVec(),
+                                   util::vec1(ListTypeParam[0]),
+                                   InstantiatedType::VoidType, ListClassSym,
+                                   NULL, true);
+  ListSymTab->createMethodSymbol("size", InstantiatedTypeVec(),
+                                   InstantiatedTypeVec(),
+                                   InstantiatedType::IntType, ListClassSym,
+                                   NULL, true);
+
   root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType,
                           createTypeParams(ctx, 2));
 

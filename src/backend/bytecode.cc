@@ -1,5 +1,6 @@
 #include <backend/bytecode.h>
 #include <backend/vm.h>
+#include <runtime/venomlist.h>
 #include <util/macros.h>
 
 using namespace std;
@@ -93,13 +94,27 @@ bool Instruction::execute(ExecutionContext& ctx) {
       return a ## _impl(ctx, opnd0, opnd1); \
     }
 
+#define HANDLE_THREE(a) \
+    case a: { \
+      ExecutionContext::program_stack_type& pstack = ctx.program_stack; \
+      venom_cell opnd2 = pstack.top(); \
+      pstack.pop(); \
+      venom_cell opnd1 = pstack.top(); \
+      pstack.pop(); \
+      venom_cell opnd0 = pstack.top(); \
+      pstack.pop(); \
+      return a ## _impl(ctx, opnd0, opnd1, opnd2); \
+    }
+
     OPCODE_DEFINER_ZERO(HANDLE_ZERO)
     OPCODE_DEFINER_ONE(HANDLE_ONE)
     OPCODE_DEFINER_TWO(HANDLE_TWO)
+    OPCODE_DEFINER_THREE(HANDLE_THREE)
 
 #undef HANDLE_ZERO
 #undef HANDLE_ONE
 #undef HANDLE_TWO
+#undef HANDLE_THREE
 
   default: assert(false);
   }
@@ -427,8 +442,13 @@ bool Instruction::TEST_REF_impl(ExecutionContext& ctx, venom_cell& opnd0) {
 }
 
 bool Instruction::GET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0) {
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
+
   ctx.program_stack.push(opnd0.asRawObject()->cell(self->N0));
+
+  opnd0.decRef();
   return true;
 }
 
@@ -436,16 +456,14 @@ bool Instruction::GET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0
   CheckNullPointer(opnd0);
   venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
+
   venom_cell& cell = opnd0.asRawObject()->cell(self->N0);
   venom_cell::AssertNonZeroRefCount(cell);
   cell.incRef();
   ctx.program_stack.push(cell);
+
   opnd0.decRef();
   return true;
-}
-
-bool Instruction::GET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0) {
-  VENOM_UNIMPLEMENTED;
 }
 
 bool Instruction::DUP_impl(ExecutionContext& ctx, venom_cell& opnd0) {
@@ -643,11 +661,9 @@ bool Instruction::SET_ATTR_OBJ_impl(ExecutionContext& ctx, venom_cell& opnd0, ve
   CheckNullPointer(opnd0);
   venom_cell::AssertNonZeroRefCount(opnd0);
   InstFormatU32 *self = asFormatU32();
-#ifndef NDEBUG
   // make sure the obj's cell is actually meant for primitives
   assert(!(opnd0.asRawObject()->getClassObj()->ref_cell_bitmap
         & (0x1 << self->N0)));
-#endif
   opnd0.asRawObject()->cell(self->N0) = opnd1;
   opnd0.decRef();
   return true;
@@ -674,8 +690,54 @@ bool Instruction::SET_ATTR_OBJ_REF_impl(ExecutionContext& ctx, venom_cell& opnd0
   return true;
 }
 
-bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
-  VENOM_UNIMPLEMENTED;
+bool Instruction::GET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+
+  // directly access the array instead of calling the virtual method get()
+  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  ctx.program_stack.push(l->elems.at(opnd1.asInt()));
+
+  opnd0.decRef();
+  return true;
+}
+
+bool Instruction::GET_ARRAY_ACCESS_REF_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1) {
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+
+  // directly access the array instead of calling the virtual method get()
+  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  venom_cell cell = l->elems.at(opnd1.asInt());
+  venom_cell::AssertNonZeroRefCount(cell);
+  cell.incRef();
+  ctx.program_stack.push(cell);
+
+  opnd0.decRef();
+  return true;
+}
+
+bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1, venom_cell& opnd2) {
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+  // directly access the array instead of calling the virtual method set()
+  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  l->elems.at(opnd1.asInt()) = opnd2;
+  opnd0.decRef();
+  return true;
+}
+
+bool Instruction::SET_ARRAY_ACCESS_REF_impl(ExecutionContext& ctx, venom_cell& opnd0, venom_cell& opnd1, venom_cell& opnd2) {
+  CheckNullPointer(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd0);
+  venom_cell::AssertNonZeroRefCount(opnd2);
+  // directly access the array instead of calling the virtual method set()
+  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  venom_cell &old = l->elems.at(opnd1.asInt());
+  old.decRef();
+  old = opnd2;
+  opnd0.decRef();
+  return true;
 }
 
 }
