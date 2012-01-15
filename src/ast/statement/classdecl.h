@@ -12,39 +12,26 @@
 #include <util/macros.h>
 
 namespace venom {
-
-namespace analysis {
-  /** Forward decl */
-  class Type;
-}
-
 namespace ast {
 
 class ClassDeclNode : public ASTStatementNode {
 public:
-  /** Takes ownership of parents and stmts */
-  ClassDeclNode(const std::string&   name,
-                const TypeStringVec& parents,
-                const util::StrVec&  typeParams,
-                ASTStatementNode*    stmts)
-    : name(name), parents(parents),
-      typeParams(typeParams), stmts(stmts) {
+  ClassDeclNode(const std::string& name,
+                ASTStatementNode* stmts)
+    : name(name), stmts(stmts) {
     stmts->addLocationContext(ASTNode::TopLevelClassBody);
   }
 
   ~ClassDeclNode() {
-    util::delete_pointers(parents.begin(), parents.end());
     delete stmts;
   }
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
-  inline TypeStringVec& getParents() { return parents; }
-  inline const TypeStringVec& getParents() const { return parents; }
+  virtual std::vector<analysis::InstantiatedType*> getParents() const = 0;
 
-  inline util::StrVec& getTypeParams() { return typeParams; }
-  inline util::ConstStrVec& getTypeParams() const { return typeParams; }
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
   virtual size_t getNumKids() const { return 1; }
 
@@ -63,31 +50,56 @@ public:
     return true;
   }
 
-  virtual void registerSymbol(analysis::SemanticContext* ctx);
-
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
   virtual analysis::BaseSymbol* getSymbol();
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
+protected:
+  void registerClassSymbol(
+      analysis::SemanticContext* ctx,
+      const std::vector<analysis::InstantiatedType*>& parentTypes,
+      const std::vector<analysis::InstantiatedType*>& typeParamTypes);
 
-  virtual void print(std::ostream& o, size_t indent = 0) {
-    o << "(class" << std::endl << util::indent(indent + 1);
-    o << "(type-params (" <<
-      util::join(typeParams.begin(), typeParams.end(), ",") <<
-      "))" << std::endl << util::indent(indent + 1);
-    stmts->print(o, indent + 1);
-    o << ")";
+  std::string       name;
+  ASTStatementNode* stmts;
+};
+
+/** comes from the parser */
+class ClassDeclNodeParser : public ClassDeclNode {
+public:
+  /** Takes ownership of parents */
+  ClassDeclNodeParser(const std::string&   name,
+                      const TypeStringVec& parents,
+                      const util::StrVec&  typeParams,
+                      ASTStatementNode*    stmts)
+    : ClassDeclNode(name, stmts),
+      parents(parents), typeParams(typeParams) {}
+
+  ~ClassDeclNodeParser() {
+    util::delete_pointers(parents.begin(), parents.end());
   }
 
-private:
-  std::string        name;
-  TypeStringVec      parents;
-  util::StrVec       typeParams;
-  ASTStatementNode*  stmts;
+  virtual std::vector<analysis::InstantiatedType*> getParents() const
+    { assert(parents.size() == parentTypes.size());
+      return parentTypes; }
 
-  std::vector<analysis::Type*> typeParamTypes;
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
+    { assert(typeParams.size() == typeParamTypes.size());
+      return typeParamTypes; }
+
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNodeParser)
+
+  virtual void print(std::ostream& o, size_t indent = 0);
+
+private:
+  TypeStringVec parents;
+  util::StrVec  typeParams;
+
+  std::vector<analysis::InstantiatedType*> parentTypes;
+  std::vector<analysis::InstantiatedType*> typeParamTypes;
 };
 
 }

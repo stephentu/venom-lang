@@ -252,6 +252,22 @@ struct poly_ptr_cast_functor {
   typedef _poly_ptr_cast_functor<From, To, false, false> unchecked;
 };
 
+template <typename T>
+struct _stringify_functor_ptr {
+  inline std::string operator()(const T* t) const { return t->stringify(); }
+};
+
+template <typename T>
+struct _stringify_functor_ref {
+  inline std::string operator()(const T& t) const { return t.stringify(); }
+};
+
+template <typename T>
+struct stringify_functor {
+  typedef _stringify_functor_ptr<T> ptr;
+  typedef _stringify_functor_ref<T> ref;
+};
+
 }
 }
 

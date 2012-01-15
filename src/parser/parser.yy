@@ -210,7 +210,7 @@ ctordeclstmt : "def" "self" '(' paramlist ')' '=' stmtlist "end"
 
 classdeclstmt : "class" IDENTIFIER typeparams inheritance classbodystmtlist "end"
                 {
-                  $$ = new ast::ClassDeclNode(*$2, *$4, *$3, $5);
+                  $$ = new ast::ClassDeclNodeParser(*$2, *$4, *$3, $5);
                   delete $2; delete $3; delete $4;
                 }
 

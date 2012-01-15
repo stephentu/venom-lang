@@ -335,19 +335,14 @@ InstantiatedType::mostCommonType(InstantiatedType* other) {
   return ret;
 }
 
-struct stringify_functor_t {
-  inline string operator()(const InstantiatedType* t) const {
-    return t->stringify();
-  }
-} stringify_functor;
-
 string InstantiatedType::stringify() const {
   stringstream buf;
   buf << type->stringifyTypename();
   if (!params.empty()) {
     buf << "{";
     vector<string> s(params.size());
-    transform(params.begin(), params.end(), s.begin(), stringify_functor);
+    transform(params.begin(), params.end(), s.begin(),
+              util::stringify_functor<InstantiatedType>::ptr());
     buf << util::join(s.begin(), s.end(), ",");
     buf << "}";
   }

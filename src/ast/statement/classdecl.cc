@@ -16,93 +16,8 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
-struct functor {
-  functor(SemanticContext* ctx, SymbolTable* st)
-    : ctx(ctx), st(st) {}
-  inline
-  InstantiatedType* operator()(const ParameterizedTypeString* t) const {
-    return ctx->instantiateOrThrow(st, t);
-  }
-  SemanticContext* ctx;
-  SymbolTable*     st;
-};
-
-BaseSymbol*
-ClassDeclNode::getSymbol() {
-  TypeTranslator t;
-  return symbols->findClassSymbol(name, SymbolTable::NoRecurse, t);
-}
-
-void ClassDeclNode::registerSymbol(SemanticContext* ctx) {
-  // check to see if this class is already defined in this scope
-  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
-    throw SemanticViolationException(
-        "Class " + name + " already defined");
-  }
-
-  if (parents.size() > 1) {
-    throw SemanticViolationException(
-        "Multiple inheritance currently not supported");
-  }
-
-  // type params
-  assert(typeParamTypes.empty());
-  InstantiatedTypeVec typeParamITypes;
-  for (size_t pos = 0; pos < typeParams.size(); pos++) {
-    // add all the type params into the body's symtab
-    Type *type = ctx->createTypeParam(typeParams[pos], pos);
-    typeParamTypes.push_back(type);
-    typeParamITypes.push_back(type->instantiate(ctx));
-    stmts->getSymbolTable()->createClassSymbol(
-        typeParams[pos],
-        ctx->getRootSymbolTable()->newChildScope(NULL),
-        type);
-  }
-
-  // check to see if all parents are defined
-  // use stmts's symtab to capture the parameterized types
-  vector<InstantiatedType*> parentTypes(parents.size());
-  transform(parents.begin(), parents.end(),
-            parentTypes.begin(), functor(ctx, stmts->getSymbolTable()));
-
-  if (parents.empty()) {
-    // if no explicit parents declared, parent is object
-    parentTypes.push_back(InstantiatedType::ObjectType);
-  }
-
-  // Define this class's symbol. This MUST happen before semantic checks
-  // on the children (to support self-references)
-  // TODO: support multiple inheritance
-  Type *type = ctx->createType(name, parentTypes.front(), typeParams.size());
-  symbols->createClassSymbol(name, stmts->getSymbolTable(),
-                             type, typeParamITypes);
-
-  // link the stmts symbol table to the parents symbol tables
-  for (vector<InstantiatedType*>::iterator it = parentTypes.begin();
-       it != parentTypes.end(); ++it) {
-    TypeMap map;
-    // we only do this check so we can avoid failing the assert() for now,
-    // for builtin classes
-    if (!(*it)->getParams().empty()) {
-      // build the type map
-      ClassDeclNode *pcdn =
-        dynamic_cast<ClassDeclNode*>((*it)->getClassSymbolTable()->getOwner());
-      // TODO: this assert won't work for built-ins
-      assert(pcdn);
-      // TODO: STL style
-      assert(pcdn->getTypeParams().size() == (*it)->getParams().size());
-      for (size_t i = 0; i < pcdn->getTypeParams().size(); i++) {
-        map.push_back(
-            InstantiatedTypePair(pcdn->typeParamTypes[i]->instantiate(ctx),
-                                 (*it)->getParams()[i]));
-      }
-    }
-    stmts->getSymbolTable()->addClassParent(
-        (*it)->getClassSymbolTable(), map);
-  }
-}
-
-void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
+void
+ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   if (doRegister) {
     registerSymbol(ctx);
   }
@@ -134,9 +49,116 @@ void ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   assert(stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t));
 }
 
-ClassDeclNode*
-ClassDeclNode::cloneImpl() {
-  return new ClassDeclNode(
+BaseSymbol*
+ClassDeclNode::getSymbol() {
+  TypeTranslator t;
+  return symbols->findClassSymbol(name, SymbolTable::NoRecurse, t);
+}
+
+void
+ClassDeclNode::registerClassSymbol(
+    SemanticContext* ctx,
+    const vector<InstantiatedType*>& parentTypes,
+    const vector<InstantiatedType*>& typeParamTypes) {
+
+  // Define this class's symbol. This MUST happen before semantic checks
+  // on the children (to support self-references)
+  // TODO: support multiple inheritance
+  Type *type =
+    ctx->createType(name, parentTypes.front(), typeParamTypes.size());
+  symbols->createClassSymbol(name, stmts->getSymbolTable(),
+                             type, typeParamTypes);
+
+  // link the stmts symbol table to the parents symbol tables
+  for (vector<InstantiatedType*>::const_iterator it = parentTypes.begin();
+       it != parentTypes.end(); ++it) {
+    TypeMap map;
+    // we only do this check so we can avoid failing the assert() for now,
+    // for builtin classes
+    if (!(*it)->getParams().empty()) {
+      // build the type map
+      ClassDeclNode *pcdn =
+        dynamic_cast<ClassDeclNode*>((*it)->getClassSymbolTable()->getOwner());
+      // TODO: this assert won't work for built-ins
+      assert(pcdn);
+      // TODO: STL style
+      assert(pcdn->getTypeParams().size() == (*it)->getParams().size());
+      for (size_t i = 0; i < pcdn->getTypeParams().size(); i++) {
+        map.push_back(
+            InstantiatedTypePair(pcdn->getTypeParams()[i],
+                                 (*it)->getParams()[i]));
+      }
+    }
+    stmts->getSymbolTable()->addClassParent(
+        (*it)->getClassSymbolTable(), map);
+  }
+}
+
+struct functor {
+  functor(SemanticContext* ctx, SymbolTable* st)
+    : ctx(ctx), st(st) {}
+  inline
+  InstantiatedType* operator()(const ParameterizedTypeString* t) const {
+    return ctx->instantiateOrThrow(st, t);
+  }
+  SemanticContext* ctx;
+  SymbolTable*     st;
+};
+
+void
+ClassDeclNodeParser::registerSymbol(SemanticContext* ctx) {
+  // check to see if this class is already defined in this scope
+  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
+    throw SemanticViolationException(
+        "Class " + name + " already defined");
+  }
+
+  if (parents.size() > 1) {
+    throw SemanticViolationException(
+        "Multiple inheritance currently not supported");
+  }
+
+  // type params
+  assert(typeParamTypes.empty());
+  typeParamTypes.reserve(typeParams.size());
+  for (size_t pos = 0; pos < typeParams.size(); pos++) {
+    // add all the type params into the body's symtab
+    Type *type = ctx->createTypeParam(typeParams[pos], pos);
+    typeParamTypes.push_back(type->instantiate(ctx));
+    stmts->getSymbolTable()->createClassSymbol(
+        typeParams[pos],
+        ctx->getRootSymbolTable()->newChildScope(NULL),
+        type);
+  }
+
+  // check to see if all parents are defined
+  // use stmts's symtab to capture the parameterized types
+  assert(parentTypes.empty());
+  parentTypes.resize(parents.size());
+  transform(parents.begin(), parents.end(),
+            parentTypes.begin(), functor(ctx, stmts->getSymbolTable()));
+
+  if (parents.empty()) {
+    // if no explicit parents declared, parent is object
+    parentTypes.push_back(InstantiatedType::ObjectType);
+  }
+
+  registerClassSymbol(ctx, parentTypes, typeParamTypes);
+}
+
+void
+ClassDeclNodeParser::print(ostream& o, size_t indent) {
+  o << "(class " << name << std::endl << util::indent(indent + 1);
+  o << "(type-params (" <<
+    util::join(typeParams.begin(), typeParams.end(), ",") <<
+    "))" << std::endl << util::indent(indent + 1);
+  stmts->print(o, indent + 1);
+  o << ")";
+}
+
+ClassDeclNodeParser*
+ClassDeclNodeParser::cloneImpl() {
+  return new ClassDeclNodeParser(
       name,
       util::transform_vec(parents.begin(), parents.end(),
         ParameterizedTypeString::CloneFunctor()),
