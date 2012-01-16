@@ -349,5 +349,25 @@ string InstantiatedType::stringify() const {
   return buf.str();
 }
 
+struct class_name_functor {
+  inline string operator()(const InstantiatedType* t) const {
+    return t->createClassName();
+  }
+};
+
+string InstantiatedType::createClassName() const {
+  stringstream buf;
+  buf << type->stringifyTypename();
+  if (!params.empty()) {
+    buf << "{";
+    vector<string> s(params.size());
+    transform(params.begin(), params.end(), s.begin(),
+              class_name_functor());
+    buf << util::join(s.begin(), s.end(), ",");
+    buf << "}";
+  }
+  return buf.str();
+}
+
 }
 }

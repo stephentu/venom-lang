@@ -26,11 +26,13 @@ public:
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { return typeParamTypes; }
 
-  virtual void registerSymbol(analysis::SemanticContext* ctx);
-
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);
+
+protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);
+  virtual void checkAndInitParents(analysis::SemanticContext* ctx);
 
 private:
   std::vector<analysis::InstantiatedType*> parentTypes;

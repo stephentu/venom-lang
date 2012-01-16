@@ -156,6 +156,18 @@ public:
   instantiateOrThrow(SymbolTable *symbols,
                      const ast::ParameterizedTypeString* type);
 
+  struct InstantiateFunctor {
+    InstantiateFunctor(SemanticContext* ctx, SymbolTable* st)
+      : ctx(ctx), st(st) {}
+    inline InstantiatedType* operator()(
+        const ast::ParameterizedTypeString* t) const {
+      return ctx->instantiateOrThrow(st, t);
+    }
+  private:
+    SemanticContext* ctx;
+    SymbolTable*     st;
+  };
+
 protected:
   /** Takes ownership of rootSymbols */
   inline void setRootSymbolTable(SymbolTable* rootSymbols) {

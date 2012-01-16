@@ -66,7 +66,7 @@ ASTExpressionNode::rewriteLocal(SemanticContext* ctx,
 
     TypeTranslator t;
     FunctionCallNode* rep =
-      new FunctionCallNode(
+      new FunctionCallNodeParser(
           new SymbolNode(
             boxClass,
             boxClass->bind(ctx, t, InstantiatedTypeVec()),

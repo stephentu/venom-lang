@@ -15,31 +15,6 @@ namespace venom {
 namespace ast {
 
 void
-ClassDeclNodeSynthetic::registerSymbol(SemanticContext* ctx) {
-  // check to see if this class is already defined in this scope
-  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
-    throw SemanticViolationException(
-        "Class " + name + " already defined");
-  }
-
-  if (parentTypes.size() > 1) {
-    throw SemanticViolationException(
-        "Multiple inheritance currently not supported");
-  }
-
-  for (size_t pos = 0; pos < typeParamTypes.size(); pos++) {
-    // add all the type params into the body's symtab
-    VENOM_ASSERT_TYPEOF_PTR(TypeParamType, typeParamTypes[pos]->getType());
-    stmts->getSymbolTable()->createClassSymbol(
-        typeParamTypes[pos]->getType()->getName(),
-        ctx->getRootSymbolTable()->newChildScope(NULL),
-        typeParamTypes[pos]->getType());
-  }
-
-  registerClassSymbol(ctx, parentTypes, typeParamTypes);
-}
-
-void
 ClassDeclNodeSynthetic::print(ostream& o, size_t indent) {
   o << "(class " << name << std::endl << util::indent(indent + 1);
   vector<string> typenames(typeParamTypes.size());
@@ -53,22 +28,39 @@ ClassDeclNodeSynthetic::print(ostream& o, size_t indent) {
   o << ")";
 }
 
+void
+ClassDeclNodeSynthetic::checkAndInitTypeParams(SemanticContext* ctx) {
+  for (size_t pos = 0; pos < typeParamTypes.size(); pos++) {
+    // add all the type params into the body's symtab
+    VENOM_ASSERT_TYPEOF_PTR(TypeParamType, typeParamTypes[pos]->getType());
+    stmts->getSymbolTable()->createClassSymbol(
+        typeParamTypes[pos]->getType()->getName(),
+        ctx->getRootSymbolTable()->newChildScope(NULL),
+        typeParamTypes[pos]->getType());
+  }
+}
+
+void
+ClassDeclNodeSynthetic::checkAndInitParents(SemanticContext* ctx) {}
+
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneImpl() {
   return new ClassDeclNodeSynthetic(
       name,
       parentTypes,
       typeParamTypes,
-      stmts);
+      stmts->clone());
 }
 
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
+  // TODO: assert that the TypeTranslator doesn't instantiate this
+  // class type
   return new ClassDeclNodeSynthetic(
       name,
       parentTypes,
       typeParamTypes,
-      stmts);
+      stmts->cloneForTemplate(t));
 }
 
 }

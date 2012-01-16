@@ -29,8 +29,10 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  // must call checkAndInitParents() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getParents() const = 0;
 
+  // must call checkAndInitTypeParams() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
   virtual size_t getNumKids() const { return 1; }
@@ -50,12 +52,18 @@ public:
     return true;
   }
 
+  virtual void registerSymbol(analysis::SemanticContext* ctx);
+
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
   virtual analysis::BaseSymbol* getSymbol();
 
 protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
+
+  virtual void checkAndInitParents(analysis::SemanticContext* ctx) = 0;
+
   void registerClassSymbol(
       analysis::SemanticContext* ctx,
       const std::vector<analysis::InstantiatedType*>& parentTypes,
@@ -81,18 +89,22 @@ public:
   }
 
   virtual std::vector<analysis::InstantiatedType*> getParents() const
-    { assert(parents.size() == parentTypes.size());
+    { assert(parents.empty() ?
+               parentTypes.size() == 1 :
+               parents.size() == parentTypes.size());
       return parentTypes; }
 
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { assert(typeParams.size() == typeParamTypes.size());
       return typeParamTypes; }
 
-  virtual void registerSymbol(analysis::SemanticContext* ctx);
-
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);
+
+protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);
+  virtual void checkAndInitParents(analysis::SemanticContext* ctx);
 
 private:
   TypeStringVec parents;

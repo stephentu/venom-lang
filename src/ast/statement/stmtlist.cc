@@ -74,7 +74,7 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
     // create a function with mainStmts
     StmtListNode* mainStmtsNode = new StmtListNode(mainStmts);
-    FuncDeclNode* mainFcn = new FuncDeclNode(
+    FuncDeclNode* mainFcn = new FuncDeclNodeParser(
         "<main>", util::StrVec(),
         ExprNodeVec(), NULL, mainStmtsNode);
     // <main> is a strange function when it comes to its symbol table

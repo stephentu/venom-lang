@@ -14,5 +14,3 @@
 
 #include <ast/statement/stmtexpr.h>
 #include <ast/statement/stmtlist.h>
-
-#include <ast/statement/synthetic/include.h>

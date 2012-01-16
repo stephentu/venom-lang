@@ -38,11 +38,7 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
         "Name " + var->getName() + " already defined in class");
   }
 
-  InstantiatedType *itype = NULL;
-  if (var->getExplicitParameterizedTypeString()) {
-    itype = ctx->instantiateOrThrow(
-        symbols, var->getExplicitParameterizedTypeString());
-  }
+  InstantiatedType *itype = var->getExplicitType();
 
   VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
   ClassDeclNode *cdn = static_cast<ClassDeclNode*>(symbols->getOwner());

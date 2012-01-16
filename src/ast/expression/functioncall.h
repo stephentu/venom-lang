@@ -11,20 +11,20 @@ namespace ast {
 
 class FunctionCallNode : public ASTExpressionNode {
 public:
-
   /** Takes ownership of the nodes in primary and args */
   FunctionCallNode(ASTExpressionNode*   primary,
-                   const TypeStringVec& typeArgs,
                    const ExprNodeVec&   args)
-    : primary(primary), typeArgs(typeArgs), args(args) {
+    : primary(primary), args(args) {
     primary->addLocationContext(ASTNode::FunctionCall);
-    for (size_t i = 0; i < args.size(); i++) assert(args[i] != NULL);
   }
 
   ~FunctionCallNode() {
     delete primary;
     util::delete_pointers(args.begin(), args.end());
   }
+
+  // must call checkAndInitTypeParams() at least once before calling
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
   virtual size_t getNumKids() const { return 1 + args.size(); }
 
@@ -49,7 +49,9 @@ public:
     return false;
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FunctionCallNode)
+  virtual void registerSymbol(analysis::SemanticContext* ctx) {
+    checkAndInitTypeParams(ctx);
+  }
 
 protected:
   virtual analysis::InstantiatedType*
@@ -68,10 +70,37 @@ public:
     o << ")";
   }
 
-private:
+protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
+
   ASTExpressionNode* primary;
-  TypeStringVec      typeArgs;
   ExprNodeVec        args;
+};
+
+class FunctionCallNodeParser : public FunctionCallNode {
+public:
+  /** Takes ownership of typeArgs */
+  FunctionCallNodeParser(ASTExpressionNode*   primary,
+                         const TypeStringVec& typeArgs,
+                         const ExprNodeVec&   args)
+    : FunctionCallNode(primary, args), typeArgs(typeArgs) {}
+
+  ~FunctionCallNodeParser() {
+    util::delete_pointers(typeArgs.begin(), typeArgs.end());
+  }
+
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
+    { assert(typeArgs.size() == typeArgTypes.size());
+      return typeArgTypes; }
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FunctionCallNode)
+
+protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);
+
+private:
+  TypeStringVec typeArgs;
+  std::vector<analysis::InstantiatedType*> typeArgTypes;
 };
 
 }

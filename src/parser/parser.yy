@@ -195,7 +195,7 @@ returnstmt : "return" exprend      { $$ = new ast::ReturnNode(NULL); }
 
 funcdeclstmt : "def" IDENTIFIER typeparams '(' paramlist ')' rettype '=' stmtlist "end"
                {
-                 $$ = new ast::FuncDeclNode(*$2, *$3, *$5, $7, $9);
+                 $$ = new ast::FuncDeclNodeParser(*$2, *$3, *$5, $7, $9);
                  delete $2; delete $3; delete $5;
                }
 
@@ -290,7 +290,7 @@ primary : atom
           { $$ = new ast::ArrayAccessNode($1, $3); }
         | primary optparamtypenames '(' exprlist ')'
           {
-            $$ = new ast::FunctionCallNode($1, *$2, *$4);
+            $$ = new ast::FunctionCallNodeParser($1, *$2, *$4);
             delete $2; delete $4;
           }
 
@@ -386,10 +386,10 @@ pairlist : /* empty */       { $$ = new ast::DictPairVec;      }
          | pair              { $$ = ast::MakeDictPairVec1($1); }
          | pairlist ',' pair { $1->push_back($3); $$ = $1;     }
 
-variable : IDENTIFIER { $$ = new ast::VariableNode(*$1, NULL); delete $1; }
+variable : IDENTIFIER { $$ = new ast::VariableNodeParser(*$1, NULL); delete $1; }
 
 typedvariable : IDENTIFIER "::" paramtypename
-                { $$ = new ast::VariableNode(*$1, $3); delete $1; }
+                { $$ = new ast::VariableNodeParser(*$1, $3); delete $1; }
 
 paramtypename : typename optparamtypenames
                 {

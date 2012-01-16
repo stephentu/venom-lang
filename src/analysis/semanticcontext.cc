@@ -97,16 +97,6 @@ SemanticContext::createInstantiatedType(
   return t;
 }
 
-struct functor {
-  functor(SemanticContext* ctx, SymbolTable* st) : ctx(ctx), st(st) {}
-  inline InstantiatedType*
-  operator()(const ParameterizedTypeString* t) const {
-    return ctx->instantiateOrThrow(st, t);
-  }
-  SemanticContext *ctx;
-  SymbolTable*     st;
-};
-
 InstantiatedType*
 SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
@@ -156,7 +146,7 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
   ClassSymbol *cs = static_cast<ClassSymbol*>(bs);
   vector<InstantiatedType*> buf(type->params.size());
   transform(type->params.begin(), type->params.end(),
-            buf.begin(), functor(this, symbols));
+            buf.begin(), InstantiateFunctor(this, symbols));
 
   return t.translate(this, cs->getType()->instantiate(this, buf));
 }

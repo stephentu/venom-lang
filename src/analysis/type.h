@@ -269,9 +269,18 @@ public:
 #ifdef NDEBUG
   static inline void AssertNoTypeParamPlaceholders(
       const InstantiatedType* type) {}
+  static inline void AssertNoTypeParamPlaceholders(
+      const std::vector<InstantiatedType*>& types) {}
 #else
   static void AssertNoTypeParamPlaceholders(
       const InstantiatedType* type);
+  static inline void AssertNoTypeParamPlaceholders(
+      const std::vector<InstantiatedType*>& types) {
+    for (std::vector<InstantiatedType*>::const_iterator it = types.begin();
+         it != types.end(); ++it) {
+      AssertNoTypeParamPlaceholders(*it);
+    }
+  }
 #endif /* NDEBUG */
 
   /** Instantiations of built-in types **/
@@ -330,6 +339,8 @@ public:
   InstantiatedType* mostCommonType(InstantiatedType* other);
 
   std::string stringify() const;
+
+  std::string createClassName() const;
 
 private:
   /** The pure type being instantiated */

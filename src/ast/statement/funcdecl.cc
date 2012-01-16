@@ -15,6 +15,8 @@
 #include <ast/statement/stmtexpr.h>
 #include <ast/statement/stmtlist.h>
 
+#include <ast/statement/synthetic/funcdecl.h>
+
 #include <backend/codegenerator.h>
 
 using namespace std;
@@ -33,31 +35,25 @@ struct name_functor_t {
 } name_functor;
 
 struct itype_functor {
-  itype_functor(SemanticContext* ctx, SymbolTable* st)
-    : ctx(ctx), st(st) {}
+  itype_functor(SemanticContext* ctx) : ctx(ctx) {}
   inline InstantiatedType* operator()(ASTExpressionNode* node) const {
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, node);
     VariableNode *vn = static_cast<VariableNode*>(node);
-    assert(vn->getExplicitParameterizedTypeString());
-    return ctx->instantiateOrThrow(
-        st, vn->getExplicitParameterizedTypeString());
+    InstantiatedType* explicitType = vn->getExplicitType();
+    assert(explicitType);
+    return explicitType;
   }
   SemanticContext* ctx;
-  SymbolTable*     st;
 };
 
-FuncDeclNode::FuncDeclNode(const std::string&       name,
-                           const util::StrVec&      typeParams,
-                           const ExprNodeVec&       params,
-                           ParameterizedTypeString* ret_typename,
-                           ASTStatementNode*        stmts)
-  : name(name), typeParams(typeParams), params(params),
-    ret_typename(ret_typename), stmts(stmts) {
-
-  stmts->addLocationContext(TopLevelFuncBody);
-  for (ExprNodeVec::iterator it = this->params.begin();
-       it != this->params.end(); ++it) {
-    (*it)->addLocationContext(FunctionParam);
+void FuncDeclNode::initSymbolTable(SymbolTable* symbols) {
+  ASTStatementNode::initSymbolTable(symbols);
+  // manually init symbol table of params, since the params aren't considered
+  // to be children of this AST node
+  for (ExprNodeVec::iterator it = params.begin();
+       it != params.end(); ++it) {
+    // must use the stmts symbol table
+    (*it)->initSymbolTable(stmts->getSymbolTable());
   }
 }
 
@@ -86,28 +82,17 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
   }
 
   // type params
-  assert(typeParamTypes.empty());
-  InstantiatedTypeVec typeParamITypes;
-  for (size_t pos = 0; pos < typeParams.size(); pos++) {
-    // add all the type params into the body's symtab
-    Type *type = ctx->createTypeParam(typeParams[pos], pos);
-    typeParamTypes.push_back(type);
-    typeParamITypes.push_back(type->instantiate(ctx));
-    stmts->getSymbolTable()->createClassSymbol(
-        typeParams[pos],
-        ctx->getRootSymbolTable()->newChildScope(NULL),
-        type);
-  }
+  checkAndInitTypeParams(ctx);
+  vector<InstantiatedType*> typeParamTypes = getTypeParams();
 
   // check and instantiate parameter types
   vector<InstantiatedType*> itypes(params.size());
   transform(params.begin(), params.end(),
-            itypes.begin(), itype_functor(ctx, stmts->getSymbolTable()));
+            itypes.begin(), itype_functor(ctx));
 
   // check and instantiate return type
-  InstantiatedType* retType = ret_typename ?
-    ctx->instantiateOrThrow(stmts->getSymbolTable(), ret_typename) :
-    InstantiatedType::VoidType;
+  checkAndInitReturnType(ctx);
+  InstantiatedType* retType = getReturnType();
 
   if (hasLocationContext(TopLevelClassBody)) {
     VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, symbols->getOwner());
@@ -116,7 +101,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     ClassSymbol *classSymbol = static_cast<ClassSymbol*>(cdn->getSymbol());
 
     if (isCtor()) {
-      symbols->createMethodSymbol(name, typeParamITypes, itypes,
+      symbols->createMethodSymbol(name, typeParamTypes, itypes,
                                   retType, classSymbol, NULL);
     } else {
       // check that type-signature matches for overrides
@@ -125,7 +110,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
         symbols->findFuncSymbol(name, SymbolTable::ClassParents, t);
       if (fs) {
         assert(fs->isMethod());
-        InstantiatedType *overrideType = fs->bind(ctx, t, typeParamITypes);
+        InstantiatedType *overrideType = fs->bind(ctx, t, typeParamTypes);
 
         vector<InstantiatedType*> fparams(itypes);
         fparams.push_back(retType);
@@ -139,11 +124,11 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
               " with type " + myType->stringify());
         }
       }
-      symbols->createMethodSymbol(name, typeParamITypes, itypes,
+      symbols->createMethodSymbol(name, typeParamTypes, itypes,
                                   retType, classSymbol, fs);
     }
   } else {
-    symbols->createFuncSymbol(name, typeParamITypes, itypes, retType);
+    symbols->createFuncSymbol(name, typeParamTypes, itypes, retType);
   }
 
   // add parameters to block (child) symtab
@@ -158,8 +143,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
 BaseSymbol*
 FuncDeclNode::getSymbol() {
   TypeTranslator t;
-  FuncSymbol *fs = symbols->findFuncSymbol(name, SymbolTable::NoRecurse, t);
-  return fs;
+  return symbols->findFuncSymbol(name, SymbolTable::NoRecurse, t);
 }
 
 void
@@ -312,20 +296,60 @@ FuncDeclNode::codeGen(CodeGenerator& cg) {
   stmts->codeGen(cg);
 }
 
+void
+FuncDeclNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
+  // type params
+  assert(typeParamTypes.empty());
+  for (size_t pos = 0; pos < typeParams.size(); pos++) {
+    // add all the type params into the body's symtab
+    Type *type = ctx->createTypeParam(typeParams[pos], pos);
+    typeParamTypes.push_back(type->instantiate(ctx));
+    stmts->getSymbolTable()->createClassSymbol(
+        typeParams[pos],
+        ctx->getRootSymbolTable()->newChildScope(NULL),
+        type);
+  }
+}
+
+void
+FuncDeclNodeParser::checkAndInitReturnType(SemanticContext* ctx) {
+  assert(!retType);
+  retType = retTypeString ?
+    ctx->instantiateOrThrow(stmts->getSymbolTable(), retTypeString) :
+    InstantiatedType::VoidType;
+}
+
 FuncDeclNode*
-FuncDeclNode::cloneImpl() {
-  return new FuncDeclNode(
+FuncDeclNodeParser::cloneImpl() {
+  return new FuncDeclNodeParser(
     name,
     typeParams,
     util::transform_vec(params.begin(), params.end(),
       ASTExpressionNode::CloneFunctor()),
-    ret_typename ? ret_typename->clone() : NULL,
+    retTypeString ? retTypeString->clone() : NULL,
     stmts->clone());
 }
 
 FuncDeclNode*
-FuncDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  VENOM_UNIMPLEMENTED;
+FuncDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
+  // assert that we have already registered this symbol
+  assert(typeParams.size() == typeParamTypes.size());
+  assert(retType);
+
+  vector<InstantiatedType*> translated(typeParamTypes.size());
+  transform(typeParamTypes.begin(), typeParamTypes.end(), translated.begin(),
+            TypeTranslator::TranslateFunctor(
+              getSymbolTable()->getSemanticContext(), t));
+  InstantiatedType::AssertNoTypeParamPlaceholders(translated);
+
+  return new FuncDeclNodeSynthetic(
+    // TODO: generate the proper name
+    name,
+    translated,
+    util::transform_vec(params.begin(), params.end(),
+      ASTExpressionNode::CloneTemplateFunctor(t)),
+    t.translate(getSymbolTable()->getSemanticContext(), retType),
+    stmts->cloneForTemplate(t));
 }
 
 void
@@ -342,7 +366,7 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   // def self(...) = super.<ctor>(a0, a1, ...); stmts end
   StmtExprNode *stmt =
     new StmtExprNode(
-      new FunctionCallNode(
+      new FunctionCallNodeParser(
           new AttrAccessNode(new VariableSuperNode, "<ctor>"),
           TypeStringVec(),
           superArgs));
@@ -369,7 +393,12 @@ CtorDeclNode::cloneImpl() {
 
 CtorDeclNode*
 CtorDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  VENOM_UNIMPLEMENTED;
+  return new CtorDeclNode(
+    util::transform_vec(params.begin(), params.end(),
+      ASTExpressionNode::CloneTemplateFunctor(t)),
+    stmts->cloneForTemplate(t),
+    util::transform_vec(superArgs.begin(), superArgs.end(),
+      ASTExpressionNode::CloneTemplateFunctor(t)));
 }
 
 }

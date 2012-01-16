@@ -17,5 +17,3 @@
 #include <ast/expression/arrayaccess.h>
 
 #include <ast/expression/functioncall.h>
-
-#include <ast/expression/synthetic/include.h>

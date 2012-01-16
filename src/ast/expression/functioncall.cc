@@ -5,6 +5,8 @@
 #include <ast/expression/functioncall.h>
 #include <ast/expression/variable.h>
 
+#include <ast/expression/synthetic/functioncall.h>
+
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
@@ -28,17 +30,6 @@ struct functor {
   SemanticContext* ctx;
 };
 
-struct type_param_functor {
-  type_param_functor(SemanticContext* ctx, SymbolTable* st)
-    : ctx(ctx), st(st) {}
-  inline
-  InstantiatedType* operator()(const ParameterizedTypeString* t) const {
-    return ctx->instantiateOrThrow(st, t);
-  }
-  SemanticContext* ctx;
-  SymbolTable*     st;
-};
-
 struct param_functor_t {
   inline bool operator()(InstantiatedType* lhs,
                          InstantiatedType* rhs) const {
@@ -54,12 +45,7 @@ FunctionCallNode::typeCheckImpl(SemanticContext*  ctx,
                                 const InstantiatedTypeVec& typeParamArgs) {
   assert(typeParamArgs.empty());
 
-  // instantiate type parameters
-  InstantiatedTypeVec tparams(typeArgs.size());
-  transform(typeArgs.begin(), typeArgs.end(),
-            tparams.begin(), type_param_functor(ctx, symbols));
-
-  InstantiatedType *funcType = primary->typeCheck(ctx, NULL, tparams);
+  InstantiatedType *funcType = primary->typeCheck(ctx, NULL, getTypeParams());
   InstantiatedType *classType;
   bool isCtor = false;
   if (funcType->getType()->isClassType()) {
@@ -231,8 +217,8 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
 }
 
 FunctionCallNode*
-FunctionCallNode::cloneImpl() {
-  return new FunctionCallNode(
+FunctionCallNodeParser::cloneImpl() {
+  return new FunctionCallNodeParser(
       primary->clone(),
       util::transform_vec(
         typeArgs.begin(), typeArgs.end(),
@@ -243,8 +229,27 @@ FunctionCallNode::cloneImpl() {
 }
 
 FunctionCallNode*
-FunctionCallNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  VENOM_UNIMPLEMENTED;
+FunctionCallNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
+  assert(typeArgs.size() == typeArgTypes.size());
+  return new FunctionCallNodeSynthetic(
+      primary->cloneForTemplate(t),
+      util::transform_vec(
+        typeArgTypes.begin(), typeArgTypes.end(),
+        TypeTranslator::TranslateFunctor(
+          getSymbolTable()->getSemanticContext(), t)),
+      util::transform_vec(
+        args.begin(), args.end(),
+        ASTExpressionNode::CloneTemplateFunctor(t)));
+}
+
+void
+FunctionCallNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
+  assert(typeArgTypes.empty());
+  // instantiate type parameters
+  typeArgTypes.resize(typeArgs.size());
+  transform(typeArgs.begin(), typeArgs.end(),
+            typeArgTypes.begin(),
+            SemanticContext::InstantiateFunctor(ctx, symbols));
 }
 
 }

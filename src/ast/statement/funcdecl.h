@@ -12,26 +12,24 @@
 #include <util/macros.h>
 
 namespace venom {
-
-namespace analysis {
-  /** Forward decl */
-  class Type;
-}
-
 namespace ast {
 
 class FuncDeclNode : public ASTStatementNode {
 public:
-  /** Takes ownership of params, ret_typename, and stmts */
-  FuncDeclNode(const std::string&       name,
-               const util::StrVec&      typeParams,
-               const ExprNodeVec&       params,
-               ParameterizedTypeString* ret_typename,
-               ASTStatementNode*        stmts);
+  /** Takes ownership of params, retTypeString, and stmts */
+  FuncDeclNode(const std::string& name,
+               const ExprNodeVec& params,
+               ASTStatementNode*  stmts)
+    : name(name), params(params), stmts(stmts) {
+    stmts->addLocationContext(TopLevelFuncBody);
+    for (ExprNodeVec::iterator it = this->params.begin();
+         it != this->params.end(); ++it) {
+      (*it)->addLocationContext(FunctionParam);
+    }
+  }
 
   ~FuncDeclNode() {
     util::delete_pointers(params.begin(), params.end());
-    if (ret_typename) delete ret_typename;
     delete stmts;
   }
 
@@ -40,6 +38,12 @@ public:
 
   inline ASTStatementNode* getStmts() { return stmts; }
   inline const ASTStatementNode* getStmts() const { return stmts; }
+
+  // must call checkAndInitTypeParams() at least once before calling
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
+
+  // must call checkAndInitReturnType() at least once before calling
+  virtual analysis::InstantiatedType* getReturnType() const = 0;
 
   virtual bool isCtor() const { return false; }
 
@@ -60,6 +64,8 @@ public:
     return true;
   }
 
+  virtual void initSymbolTable(analysis::SymbolTable* symbols);
+
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
   virtual analysis::BaseSymbol* getSymbol();
@@ -76,11 +82,46 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+protected:
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
+
+  virtual void checkAndInitReturnType(analysis::SemanticContext* ctx) = 0;
+
+  std::string       name;
+  ExprNodeVec       params;
+  ASTStatementNode* stmts;
+};
+
+class FuncDeclNodeParser : public FuncDeclNode {
+public:
+  /** Takes ownership of params, retTypeString, and stmts */
+  FuncDeclNodeParser(const std::string&       name,
+                     const util::StrVec&      typeParams,
+                     const ExprNodeVec&       params,
+                     ParameterizedTypeString* retTypeString,
+                     ASTStatementNode*        stmts)
+    : FuncDeclNode(name, params, stmts),
+      typeParams(typeParams),
+      retTypeString(retTypeString),
+      retType(NULL) {}
+
+  ~FuncDeclNodeParser() {
+    if (retTypeString) delete retTypeString;
+  }
+
+  virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
+    { assert(typeParams.size() == typeParamTypes.size());
+      return typeParamTypes; }
+
+  virtual analysis::InstantiatedType* getReturnType() const
+    { assert(!retTypeString || retType);
+      return retType; }
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FuncDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(func " << name << " -> ";
-    if (ret_typename) o << *ret_typename;
+    if (retTypeString) o << *retTypeString;
     else o << "void";
     o << std::endl << util::indent(indent + 1);
     o << "(params ";
@@ -92,21 +133,22 @@ public:
   }
 
 protected:
-  std::string              name;
-  util::StrVec             typeParams;
-  ExprNodeVec              params;
-  ParameterizedTypeString* ret_typename;
-  ASTStatementNode*        stmts;
+  virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);
+  virtual void checkAndInitReturnType(analysis::SemanticContext* ctx);
 
-  std::vector<analysis::Type*> typeParamTypes;
+  util::StrVec             typeParams;
+  ParameterizedTypeString* retTypeString;
+
+  std::vector<analysis::InstantiatedType*> typeParamTypes;
+  analysis::InstantiatedType* retType;
 };
 
-class CtorDeclNode : public FuncDeclNode {
+class CtorDeclNode : public FuncDeclNodeParser {
 public:
   CtorDeclNode(const ExprNodeVec& params,
                ASTStatementNode* stmts,
                const ExprNodeVec& superArgs)
-    : FuncDeclNode("<ctor>", util::StrVec(), params, NULL, stmts),
+    : FuncDeclNodeParser("<ctor>", util::StrVec(), params, NULL, stmts),
       superArgs(superArgs) {}
 
   virtual bool isCtor() const { return true; }

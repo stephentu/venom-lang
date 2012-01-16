@@ -35,6 +35,7 @@ struct _CloneFunctor {
 template <typename T>
 struct _CloneTemplateFunctor {
   _CloneTemplateFunctor(const analysis::TypeTranslator& t) : t(&t) {}
+  _CloneTemplateFunctor(const analysis::TypeTranslator* t) : t(t)  {}
   typedef T* result_type;
   inline T* operator()(T* ptr) const { return ptr->cloneForTemplate(*t); }
   const analysis::TypeTranslator* t;
@@ -112,7 +113,7 @@ public:
   /** Call to set up the symbol tables recursively.
    * Must only call once (subsequent calls will trigger assert failures).
    * NOTE: ASTNodes do NOT take ownership of symbols */
-  void initSymbolTable(analysis::SymbolTable* symbols);
+  virtual void initSymbolTable(analysis::SymbolTable* symbols);
 
   /** Cannot call until after type-checking has completed */
   virtual analysis::BaseSymbol* getSymbol() { VENOM_UNIMPLEMENTED; }

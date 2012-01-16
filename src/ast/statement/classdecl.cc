@@ -19,6 +19,30 @@ namespace venom {
 namespace ast {
 
 void
+ClassDeclNode::registerSymbol(SemanticContext* ctx) {
+  // check to see if this class is already defined in this scope
+  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
+    throw SemanticViolationException(
+        "Class " + name + " already defined");
+  }
+
+  // type params
+  checkAndInitTypeParams(ctx);
+
+  // parents
+  checkAndInitParents(ctx);
+  vector<InstantiatedType*> parents = getParents();
+
+  assert(parents.size() >= 1);
+  if (parents.size() > 1) {
+    throw SemanticViolationException(
+        "Multiple inheritance currently not supported");
+  }
+
+  registerClassSymbol(ctx, parents, getTypeParams());
+}
+
+void
 ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   if (doRegister) {
     registerSymbol(ctx);
@@ -108,18 +132,17 @@ struct functor {
 };
 
 void
-ClassDeclNodeParser::registerSymbol(SemanticContext* ctx) {
-  // check to see if this class is already defined in this scope
-  if (symbols->isDefined(name, SymbolTable::Any, SymbolTable::NoRecurse)) {
-    throw SemanticViolationException(
-        "Class " + name + " already defined");
-  }
+ClassDeclNodeParser::print(ostream& o, size_t indent) {
+  o << "(class " << name << std::endl << util::indent(indent + 1);
+  o << "(type-params (" <<
+    util::join(typeParams.begin(), typeParams.end(), ",") <<
+    "))" << std::endl << util::indent(indent + 1);
+  stmts->print(o, indent + 1);
+  o << ")";
+}
 
-  if (parents.size() > 1) {
-    throw SemanticViolationException(
-        "Multiple inheritance currently not supported");
-  }
-
+void
+ClassDeclNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
   // type params
   assert(typeParamTypes.empty());
   typeParamTypes.reserve(typeParams.size());
@@ -132,32 +155,21 @@ ClassDeclNodeParser::registerSymbol(SemanticContext* ctx) {
         ctx->getRootSymbolTable()->newChildScope(NULL),
         type);
   }
+}
 
+void
+ClassDeclNodeParser::checkAndInitParents(SemanticContext* ctx) {
   // check to see if all parents are defined
   // use stmts's symtab to capture the parameterized types
   assert(parentTypes.empty());
   parentTypes.resize(parents.size());
   transform(parents.begin(), parents.end(),
             parentTypes.begin(), functor(ctx, stmts->getSymbolTable()));
-
   if (parents.empty()) {
     // if no explicit parents declared, parent is object
     parentTypes.push_back(InstantiatedType::ObjectType);
   }
-
-  registerClassSymbol(ctx, parentTypes, typeParamTypes);
 }
-
-void
-ClassDeclNodeParser::print(ostream& o, size_t indent) {
-  o << "(class " << name << std::endl << util::indent(indent + 1);
-  o << "(type-params (" <<
-    util::join(typeParams.begin(), typeParams.end(), ",") <<
-    "))" << std::endl << util::indent(indent + 1);
-  stmts->print(o, indent + 1);
-  o << ")";
-}
-
 ClassDeclNode*
 ClassDeclNodeParser::cloneImpl() {
   return new ClassDeclNodeParser(
@@ -169,10 +181,26 @@ ClassDeclNodeParser::cloneImpl() {
 
 ClassDeclNode*
 ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
+  // assert that we have already registered this symbol
+  assert(parentTypes.size() == parents.size());
+  assert(typeParamTypes.size() == typeParams.size());
+
+  // assert that the type translator completely instantiates
+  // this class's type
+  BaseSymbol* bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+  ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
+  SemanticContext* ctx = getSymbolTable()->getSemanticContext();
+  InstantiatedType* itype =
+    t.translate(ctx, cs->getSelfType(ctx));
+  InstantiatedType::AssertNoTypeParamPlaceholders(itype);
+
   return new ClassDeclNodeSynthetic(
-      name,
-      parentTypes,
-      typeParamTypes,
+      itype->createClassName(),
+      util::transform_vec(
+        parentTypes.begin(), parentTypes.end(),
+        TypeTranslator::TranslateFunctor(ctx, t)),
+      InstantiatedTypeVec(),
       stmts->cloneForTemplate(t));
 }
 

@@ -12,21 +12,14 @@ namespace ast {
 
 class VariableNode : public ASTExpressionNode {
 public:
-  /** Takes ownership of explicit_type */
-  VariableNode(const std::string&       name,
-               ParameterizedTypeString* explicit_type)
-    : name(name), explicit_type(explicit_type) {}
-
-  ~VariableNode() {
-    if (explicit_type) delete explicit_type;
-  }
+  VariableNode(const std::string& name)
+    : name(name) {}
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
   /** Returns NULL if no explicit type */
-  inline const ParameterizedTypeString*
-    getExplicitParameterizedTypeString() const { return explicit_type; }
+  virtual analysis::InstantiatedType* getExplicitType() = 0;
 
   virtual size_t getNumKids() const { return 0; }
 
@@ -51,32 +44,52 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableNode)
-
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
+protected:
+  std::string name;
+};
+
+class VariableNodeParser : public VariableNode {
+public:
+  /** Takes ownership of explicitTypeString */
+  VariableNodeParser(const std::string&       name,
+                     ParameterizedTypeString* explicitTypeString)
+    : VariableNode(name),
+      explicitTypeString(explicitTypeString),
+      explicitType(NULL) {}
+
+  ~VariableNodeParser() {
+    if (explicitTypeString) delete explicitTypeString;
+  }
+
+  inline const ParameterizedTypeString*
+    getExplicitParameterizedTypeString() const { return explicitTypeString; }
+
+  virtual analysis::InstantiatedType* getExplicitType();
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableNode)
+
 public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;
-    if (explicit_type) o << " " << *explicit_type;
+    if (explicitTypeString) o << " " << *explicitTypeString;
     o << ")";
   }
 
 private:
-  ASTExpressionNode* createSymbolNode();
-
-  std::string              name;
-  ParameterizedTypeString* explicit_type;
+  ParameterizedTypeString* explicitTypeString;
+  analysis::InstantiatedType* explicitType;
 };
 
-class VariableSelfNode : public VariableNode {
+class VariableSelfNode : public VariableNodeParser {
 public:
   VariableSelfNode()
-    : VariableNode("self", NULL) {}
+    : VariableNodeParser("self", NULL) {}
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
@@ -101,10 +114,10 @@ public:
   }
 };
 
-class VariableSuperNode : public VariableNode {
+class VariableSuperNode : public VariableNodeParser {
 public:
   VariableSuperNode()
-    : VariableNode("super", NULL) {}
+    : VariableNodeParser("super", NULL) {}
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 

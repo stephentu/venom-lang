@@ -132,6 +132,7 @@ ASTNode::replace(SemanticContext* ctx, ASTNode* replacement) {
   replacement->semanticCheck(ctx);
   if (ASTStatementNode *stmt =
         dynamic_cast<ASTStatementNode*>(replacement)) {
+    VENOM_ASSERT_TYPEOF_PTR(ASTStatementNode, this);
     stmt->typeCheck(ctx);
   } else if (ASTExpressionNode *expr =
                dynamic_cast<ASTExpressionNode*>(replacement)) {

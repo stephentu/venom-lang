@@ -13,16 +13,6 @@ using namespace venom::ast;
 namespace venom {
 namespace analysis {
 
-struct functor {
-  functor(SemanticContext* ctx, const TypeTranslator* t)
-    : ctx(ctx), t(t) {}
-  inline InstantiatedType* operator()(InstantiatedType* type) const {
-    return t->translate(ctx, type);
-  }
-  SemanticContext* ctx;
-  const TypeTranslator* t;
-};
-
 struct find_functor {
   find_functor(InstantiatedType* type) : type(type) {}
   inline bool operator()(const InstantiatedTypePair& p) const {
@@ -38,7 +28,7 @@ TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) const {
   if (it != map.end()) return it->second;
   vector<InstantiatedType*> buf(type->getParams().size());
   transform(type->getParams().begin(), type->getParams().end(),
-            buf.begin(), functor(ctx, this));
+            buf.begin(), TypeTranslator::TranslateFunctor(ctx, this));
   return ctx->createInstantiatedType(type->getType(), buf);
 }
 

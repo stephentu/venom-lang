@@ -40,8 +40,9 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
           "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
     }
   } else {
-    VariableNode *vn = dynamic_cast<VariableNode*>(variable);
-    assert(vn && !vn->getExplicitParameterizedTypeString());
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
+    VariableNode *vn = static_cast<VariableNode*>(variable);
+    assert(!vn->getExpectedType());
     if (classSymbol) {
       symbols->createClassAttributeSymbol(vn->getName(), rhs, classSymbol);
     } else {
@@ -64,7 +65,8 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
           "Symbol " + var->getName() + " already defined");
     }
 
-    if (var->getExplicitParameterizedTypeString()) {
+    InstantiatedType* explicitType = var->getExplicitType();
+    if (explicitType) {
       // if there is an explicit type string, treat it as
       // explicitly declaring a new symbol
       if (symbols->isDefined(
@@ -72,9 +74,7 @@ AssignNode::registerSymbol(SemanticContext* ctx) {
         throw SemanticViolationException(
             "Cannot redeclare symbol " + var->getName());
       }
-      InstantiatedType *itype = ctx->instantiateOrThrow(
-            symbols, var->getExplicitParameterizedTypeString());
-      symbols->createSymbol(var->getName(), itype);
+      symbols->createSymbol(var->getName(), explicitType);
     } else {
       // if there is no type string, then only create a new
       // declaration if the symbol doesn't exist anywhere in the scope

@@ -1,6 +1,9 @@
 #include <ast/expression/attraccess.h>
-#include <ast/expression/synthetic/symbolnode.h>
 #include <ast/expression/variable.h>
+
+#include <ast/expression/synthetic/symbolnode.h>
+#include <ast/expression/synthetic/variable.h>
+
 #include <ast/statement/classdecl.h>
 
 #include <analysis/semanticcontext.h>
@@ -82,7 +85,6 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
       return replace(ctx, rep);
     }
   }
-  //return replace(ctx, createSymbolNode());
   return NULL;
 }
 
@@ -105,23 +107,30 @@ VariableNode::codeGen(CodeGenerator& cg) {
   }
 }
 
-VariableNode*
-VariableNode::cloneImpl() {
-  return new VariableNode(
-      name, explicit_type ? explicit_type->clone() : NULL);
+InstantiatedType*
+VariableNodeParser::getExplicitType() {
+  if (explicitTypeString && !explicitType) {
+    explicitType =
+      symbols->getSemanticContext()->instantiateOrThrow(
+          symbols, explicitTypeString);
+  }
+  assert(bool(explicitTypeString) == bool(explicitType));
+  return explicitType;
 }
 
 VariableNode*
-VariableNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  VENOM_UNIMPLEMENTED;
+VariableNodeParser::cloneImpl() {
+  return new VariableNodeParser(
+      name, explicitTypeString ? explicitTypeString->clone() : NULL);
 }
 
-ASTExpressionNode*
-VariableNode::createSymbolNode() {
-  BaseSymbol *bs = getSymbol();
-  assert(bs);
-  assert(staticType);
-  return new SymbolNode(bs, staticType, expectedType);
+VariableNode*
+VariableNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
+  InstantiatedType* itype = getExplicitType();
+  if (itype) {
+    itype = t.translate(getSymbolTable()->getSemanticContext(), itype);
+  }
+  return new VariableNodeSynthetic(name, itype);
 }
 
 void
