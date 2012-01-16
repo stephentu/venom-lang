@@ -111,6 +111,11 @@ VariableNode::cloneImpl() {
       name, explicit_type ? explicit_type->clone() : NULL);
 }
 
+VariableNode*
+VariableNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  VENOM_UNIMPLEMENTED;
+}
+
 ASTExpressionNode*
 VariableNode::createSymbolNode() {
   BaseSymbol *bs = getSymbol();
@@ -153,6 +158,11 @@ VariableSelfNode::cloneImpl() {
   return new VariableSelfNode;
 }
 
+VariableSelfNode*
+VariableSelfNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new VariableSelfNode;
+}
+
 void
 VariableSuperNode::registerSymbol(SemanticContext* ctx) {
   ClassDeclNode *cdn = getEnclosingClassNode();
@@ -184,6 +194,11 @@ VariableSuperNode::codeGen(CodeGenerator& cg) {
 
 VariableSuperNode*
 VariableSuperNode::cloneImpl() {
+  return new VariableSuperNode;
+}
+
+VariableSuperNode*
+VariableSuperNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new VariableSuperNode;
 }
 

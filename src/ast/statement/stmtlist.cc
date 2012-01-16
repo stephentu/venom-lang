@@ -132,5 +132,12 @@ StmtListNode::cloneImpl() {
         ASTStatementNode::CloneFunctor()));
 }
 
+StmtListNode*
+StmtListNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new StmtListNode(
+      util::transform_vec(stmts.begin(), stmts.end(),
+        ASTStatementNode::CloneTemplateFunctor(t)));
+}
+
 }
 }

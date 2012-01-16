@@ -28,7 +28,7 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNodeSynthetic)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);
 

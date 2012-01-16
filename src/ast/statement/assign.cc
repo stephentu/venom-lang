@@ -204,5 +204,10 @@ AssignNode::cloneImpl() {
   return new AssignNode(variable->clone(), value->clone());
 }
 
+AssignNode*
+AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new AssignNode(variable->cloneForTemplate(t), value->cloneForTemplate(t));
+}
+
 }
 }

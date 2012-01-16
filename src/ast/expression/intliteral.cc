@@ -27,5 +27,10 @@ IntLiteralNode::cloneImpl() {
   return new IntLiteralNode(value);
 }
 
+IntLiteralNode*
+IntLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new IntLiteralNode(value);
+}
+
 }
 }

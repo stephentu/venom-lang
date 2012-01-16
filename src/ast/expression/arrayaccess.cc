@@ -50,5 +50,11 @@ ArrayAccessNode::cloneImpl() {
   return new ArrayAccessNode(primary->clone(), index->clone());
 }
 
+ArrayAccessNode*
+ArrayAccessNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ArrayAccessNode(
+      primary->cloneForTemplate(t), index->cloneForTemplate(t));
+}
+
 }
 }

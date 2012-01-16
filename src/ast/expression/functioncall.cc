@@ -242,5 +242,10 @@ FunctionCallNode::cloneImpl() {
         ASTExpressionNode::CloneFunctor()));
 }
 
+FunctionCallNode*
+FunctionCallNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  VENOM_UNIMPLEMENTED;
+}
+
 }
 }

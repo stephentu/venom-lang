@@ -27,5 +27,10 @@ BoolLiteralNode::cloneImpl() {
   return new BoolLiteralNode(value);
 }
 
+BoolLiteralNode*
+BoolLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new BoolLiteralNode(value);
+}
+
 }
 }

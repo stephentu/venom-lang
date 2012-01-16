@@ -72,5 +72,10 @@ AttrAccessNode::cloneImpl() {
   return new AttrAccessNode(primary->clone(), name);
 }
 
+AttrAccessNode*
+AttrAccessNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new AttrAccessNode(primary->cloneForTemplate(t), name);
+}
+
 }
 }

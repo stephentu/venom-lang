@@ -29,5 +29,10 @@ StringLiteralNode::cloneImpl() {
   return new StringLiteralNode(value);
 }
 
+StringLiteralNode*
+StringLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new StringLiteralNode(value);
+}
+
 }
 }

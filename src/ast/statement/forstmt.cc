@@ -78,5 +78,13 @@ ForStmtNode::cloneImpl() {
   return new ForStmtNode(variable->clone(), expr->clone(), stmts->clone());
 }
 
+ForStmtNode*
+ForStmtNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ForStmtNode(
+      variable->cloneForTemplate(t),
+      expr->cloneForTemplate(t),
+      stmts->cloneForTemplate(t));
+}
+
 }
 }

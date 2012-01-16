@@ -14,12 +14,13 @@ namespace venom {
 namespace analysis {
 
 struct functor {
-  functor(SemanticContext* ctx, TypeTranslator* t) : ctx(ctx), t(t) {}
+  functor(SemanticContext* ctx, const TypeTranslator* t)
+    : ctx(ctx), t(t) {}
   inline InstantiatedType* operator()(InstantiatedType* type) const {
     return t->translate(ctx, type);
   }
   SemanticContext* ctx;
-  TypeTranslator*  t;
+  const TypeTranslator* t;
 };
 
 struct find_functor {
@@ -31,8 +32,8 @@ struct find_functor {
 };
 
 InstantiatedType*
-TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) {
-  TypeMap::iterator it =
+TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) const {
+  TypeMap::const_iterator it =
     find_if(map.begin(), map.end(), find_functor(type));
   if (it != map.end()) return it->second;
   vector<InstantiatedType*> buf(type->getParams().size());
@@ -41,7 +42,8 @@ TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) {
   return ctx->createInstantiatedType(type->getType(), buf);
 }
 
-void TypeTranslator::bind(InstantiatedType* type) {
+void
+TypeTranslator::bind(InstantiatedType* type) {
   vector<InstantiatedType*> &lhs =
     type->getType()->getClassSymbol()->getTypeParams();
   vector<InstantiatedType*> &rhs = type->getParams();

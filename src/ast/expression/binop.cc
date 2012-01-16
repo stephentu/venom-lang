@@ -366,5 +366,11 @@ BinopNode::cloneImpl() {
   return new BinopNode(left->clone(), right->clone(), type);
 }
 
+BinopNode*
+BinopNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new BinopNode(
+      left->cloneForTemplate(t), right->cloneForTemplate(t), type);
+}
+
 }
 }

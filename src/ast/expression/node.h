@@ -36,7 +36,7 @@ struct ParameterizedTypeString {
   std::string stringify() const;
 
   ParameterizedTypeString* clone();
-  VENOM_AST_CLONE_FUNCTOR(ParameterizedTypeString)
+  typedef _CloneFunctor<ParameterizedTypeString> CloneFunctor;
 
   const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;

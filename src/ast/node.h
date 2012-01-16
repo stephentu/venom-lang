@@ -13,6 +13,7 @@ namespace analysis {
   class BaseSymbol;
   class SemanticContext;
   class SymbolTable;
+  class TypeTranslator;
 }
 
 namespace backend {
@@ -28,12 +29,20 @@ class ClassDeclNode;
 template <typename T>
 struct _CloneFunctor {
   typedef T* result_type;
-  inline T* operator()(T* ptr) const
-    { T* ret = ptr->clone(); assert(ret); return ret; }
+  inline T* operator()(T* ptr) const { return ptr->clone(); }
+};
+
+template <typename T>
+struct _CloneTemplateFunctor {
+  _CloneTemplateFunctor(const analysis::TypeTranslator& t) : t(&t) {}
+  typedef T* result_type;
+  inline T* operator()(T* ptr) const { return ptr->cloneForTemplate(*t); }
+  const analysis::TypeTranslator* t;
 };
 
 #define VENOM_AST_CLONE_FUNCTOR(type) \
-  typedef _CloneFunctor<type> CloneFunctor;
+  typedef _CloneFunctor<type> CloneFunctor; \
+  typedef _CloneTemplateFunctor<type> CloneTemplateFunctor;
 
 class ASTNode {
   friend class StmtListNode;
@@ -177,13 +186,27 @@ public:
     return copy;
   };
 
+  template <typename T>
+  inline static T* CloneForTemplate(
+      T* node, const analysis::TypeTranslator& t) {
+    T* copy = node->cloneForTemplate(t);
+    copy->setLocationContext(node->locCtx);
+    return copy;
+  };
+
   /** Should use the above Clone, instead of this one */
   virtual ASTNode* clone();
+
+  /** Should use the above CloneForTemplate, instead of this one */
+  virtual ASTNode* cloneForTemplate(
+      const analysis::TypeTranslator& translator);
 
   VENOM_AST_CLONE_FUNCTOR(ASTNode)
 
 #define VENOM_AST_TYPED_CLONE(type) \
   virtual type* clone() { return static_cast<type*>(ASTNode::clone()); } \
+  virtual type* cloneForTemplate(const analysis::TypeTranslator& t) \
+    { return static_cast<type*>(ASTNode::cloneForTemplate(t)); } \
   VENOM_AST_CLONE_FUNCTOR(type)
 
 /** Must be placed in the *public* section of the class decl */
@@ -191,6 +214,7 @@ public:
   VENOM_AST_TYPED_CLONE(type) \
   protected: \
   virtual type* cloneImpl(); \
+  virtual type* cloneForTemplateImpl(const analysis::TypeTranslator& t);
   public:
 
   /** Debugging helpers **/
@@ -232,6 +256,10 @@ protected:
 
   /** Do the actual cloning */
   virtual ASTNode* cloneImpl() = 0;
+
+  /** Do the actual cloning for template */
+  virtual ASTNode* cloneForTemplateImpl(
+      const analysis::TypeTranslator& t) = 0;
 
   analysis::SymbolTable* symbols;
   uint32_t               locCtx;

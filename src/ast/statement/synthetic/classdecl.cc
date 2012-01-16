@@ -53,8 +53,17 @@ ClassDeclNodeSynthetic::print(ostream& o, size_t indent) {
   o << ")";
 }
 
-ClassDeclNodeSynthetic*
+ClassDeclNode*
 ClassDeclNodeSynthetic::cloneImpl() {
+  return new ClassDeclNodeSynthetic(
+      name,
+      parentTypes,
+      typeParamTypes,
+      stmts);
+}
+
+ClassDeclNode*
+ClassDeclNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ClassDeclNodeSynthetic(
       name,
       parentTypes,

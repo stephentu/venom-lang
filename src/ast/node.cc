@@ -100,6 +100,14 @@ ASTNode::clone() {
   return copy;
 }
 
+ASTNode*
+ASTNode::cloneForTemplate(const TypeTranslator& t) {
+  ASTNode* copy = cloneForTemplateImpl(t);
+  assert(copy);
+  cloneSetState(copy);
+  return copy;
+}
+
 void
 ASTNode::codeGen(CodeGenerator& cg) {
   forchild (kid) {

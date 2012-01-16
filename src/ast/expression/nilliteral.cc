@@ -30,5 +30,10 @@ NilLiteralNode::cloneImpl() {
   return new NilLiteralNode;
 }
 
+NilLiteralNode*
+NilLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new NilLiteralNode;
+}
+
 }
 }

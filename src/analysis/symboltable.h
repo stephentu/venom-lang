@@ -32,7 +32,8 @@ class TypeTranslator {
   friend class FuncSymbol;
 public:
   TypeTranslator() {}
-  InstantiatedType* translate(SemanticContext* ctx, InstantiatedType* type);
+  InstantiatedType* translate(
+      SemanticContext* ctx, InstantiatedType* type) const;
   void bind(InstantiatedType* obj);
 protected:
   TypeMap map;

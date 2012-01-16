@@ -43,5 +43,10 @@ WhileStmtNode::cloneImpl() {
   return new WhileStmtNode(cond->clone(), stmts->clone());
 }
 
+WhileStmtNode*
+WhileStmtNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new WhileStmtNode(cond->cloneForTemplate(t), stmts->cloneForTemplate(t));
+}
+
 }
 }

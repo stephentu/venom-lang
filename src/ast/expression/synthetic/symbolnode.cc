@@ -53,5 +53,10 @@ SymbolNode::cloneImpl() {
   return new SymbolNode(symbol, staticType, expectedType);
 }
 
+SymbolNode*
+SymbolNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new SymbolNode(symbol, staticType, expectedType);
+}
+
 }
 }

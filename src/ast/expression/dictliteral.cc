@@ -38,6 +38,11 @@ DictPair::cloneImpl() {
   return new DictPair(first->clone(), second->clone());
 }
 
+DictPair*
+DictPair::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new DictPair(first->cloneForTemplate(t), second->cloneForTemplate(t));
+}
+
 InstantiatedType*
 DictLiteralNode::typeCheckImpl(SemanticContext* ctx,
                                InstantiatedType* expected,
@@ -62,6 +67,13 @@ DictLiteralNode::cloneImpl() {
   return new DictLiteralNode(
       util::transform_vec(
         pairs.begin(), pairs.end(), DictPair::CloneFunctor()));
+}
+
+DictLiteralNode*
+DictLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new DictLiteralNode(
+      util::transform_vec(
+        pairs.begin(), pairs.end(), DictPair::CloneTemplateFunctor(t)));
 }
 
 }

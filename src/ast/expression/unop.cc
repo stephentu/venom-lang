@@ -61,5 +61,10 @@ UnopNode::cloneImpl() {
   return new UnopNode(kid->clone(), type);
 }
 
+UnopNode*
+UnopNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new UnopNode(kid->cloneForTemplate(t), type);
+}
+
 }
 }

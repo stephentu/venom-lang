@@ -48,5 +48,10 @@ StmtExprNode::cloneImpl() {
   return new StmtExprNode(expr->clone());
 }
 
+StmtExprNode*
+StmtExprNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new StmtExprNode(expr->cloneForTemplate(t));
+}
+
 }
 }

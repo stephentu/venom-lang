@@ -59,7 +59,14 @@ IfStmtNode*
 IfStmtNode::cloneImpl() {
   return new IfStmtNode(
       cond->clone(), true_branch->clone(), false_branch->clone());
+}
 
+IfStmtNode*
+IfStmtNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new IfStmtNode(
+      cond->cloneForTemplate(t),
+      true_branch->cloneForTemplate(t),
+      false_branch->cloneForTemplate(t));
 }
 
 }

@@ -118,5 +118,12 @@ ClassAttrDeclNode::cloneImpl() {
       value ? value->clone() : NULL);
 }
 
+ClassAttrDeclNode*
+ClassAttrDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ClassAttrDeclNode(
+      variable->cloneForTemplate(t),
+      value ? value->cloneForTemplate(t) : NULL);
+}
+
 }
 }

@@ -27,6 +27,11 @@ DoubleLiteralNode::cloneImpl() {
   return new DoubleLiteralNode(value);
 }
 
+DoubleLiteralNode*
+DoubleLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new DoubleLiteralNode(value);
+}
+
 
 }
 }

@@ -10,6 +10,8 @@
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/stmtlist.h>
 
+#include <ast/statement/synthetic/classdecl.h>
+
 using namespace std;
 using namespace venom::analysis;
 
@@ -156,13 +158,22 @@ ClassDeclNodeParser::print(ostream& o, size_t indent) {
   o << ")";
 }
 
-ClassDeclNodeParser*
+ClassDeclNode*
 ClassDeclNodeParser::cloneImpl() {
   return new ClassDeclNodeParser(
       name,
       util::transform_vec(parents.begin(), parents.end(),
         ParameterizedTypeString::CloneFunctor()),
       typeParams, stmts->clone());
+}
+
+ClassDeclNode*
+ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ClassDeclNodeSynthetic(
+      name,
+      parentTypes,
+      typeParamTypes,
+      stmts->cloneForTemplate(t));
 }
 
 }

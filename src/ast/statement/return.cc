@@ -63,5 +63,10 @@ ReturnNode::cloneImpl() {
   return new ReturnNode(expr ? expr->clone() : NULL);
 }
 
+ReturnNode*
+ReturnNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ReturnNode(expr ? expr->cloneForTemplate(t) : NULL);
+}
+
 }
 }

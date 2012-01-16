@@ -323,6 +323,11 @@ FuncDeclNode::cloneImpl() {
     stmts->clone());
 }
 
+FuncDeclNode*
+FuncDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  VENOM_UNIMPLEMENTED;
+}
+
 void
 CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   assert(hasLocationContext(ASTNode::TopLevelClassBody));
@@ -360,6 +365,11 @@ CtorDeclNode::cloneImpl() {
     stmts->clone(),
     util::transform_vec(superArgs.begin(), superArgs.end(),
       ASTExpressionNode::CloneFunctor()));
+}
+
+CtorDeclNode*
+CtorDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  VENOM_UNIMPLEMENTED;
 }
 
 }

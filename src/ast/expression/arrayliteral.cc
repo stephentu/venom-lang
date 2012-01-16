@@ -50,9 +50,18 @@ ArrayLiteralNode::typeCheckImpl(SemanticContext* ctx,
 
 ArrayLiteralNode*
 ArrayLiteralNode::cloneImpl() {
-  ASTExpressionNode::CloneFunctor f;
   return new ArrayLiteralNode(
-      util::transform_vec(values.begin(), values.end(), f));
+      util::transform_vec(
+        values.begin(), values.end(),
+        ASTExpressionNode::CloneFunctor()));
+}
+
+ArrayLiteralNode*
+ArrayLiteralNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new ArrayLiteralNode(
+      util::transform_vec(
+        values.begin(), values.end(),
+        ASTExpressionNode::CloneTemplateFunctor(t)));
 }
 
 }
