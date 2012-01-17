@@ -249,6 +249,11 @@ CodeGenerator::isLocalSymbol(const BaseSymbol* symbol) const {
           symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable());
 }
 
+void
+CodeGenerator::createObjectCodeAndSet(analysis::SemanticContext* ctx) {
+  ctx->setObjectCode(createObjectCode());
+}
+
 ObjectCode*
 CodeGenerator::createObjectCode() {
   assert(ownership);

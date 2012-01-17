@@ -166,6 +166,23 @@ Type::~Type() {
   if (itype) delete itype;
 }
 
+SymbolTable*
+Type::getClassSymbolTable() {
+  return getClassSymbol()->getClassSymbolTable();
+}
+
+const SymbolTable*
+Type::getClassSymbolTable() const {
+  return getClassSymbol()->getClassSymbolTable();
+}
+
+string Type::stringify() const {
+  stringstream buf;
+  buf << getClassSymbolTable()->getSemanticContext()->getFullModuleName();
+  buf << "." << name;
+  return buf.str();
+}
+
 bool Type::isInt() const { return equals(*IntType); }
 bool Type::isFloat() const { return equals(*FloatType); }
 bool Type::isString() const { return equals(*StringType); }
@@ -208,8 +225,6 @@ string TypeParamType::stringify() const {
   buf << getName() << "$$" << util::stringify(pos + 1);
   return buf.str();
 }
-
-string TypeParamType::stringifyTypename() const { return stringify(); }
 
 ASTExpressionNode*
 Type::createDefaultInitializer() const {
@@ -272,16 +287,6 @@ struct equals_functor_t {
   }
 } equals_functor;
 
-SymbolTable*
-InstantiatedType::getClassSymbolTable() {
-  return getType()->getClassSymbol()->getClassSymbolTable();
-}
-
-const SymbolTable*
-InstantiatedType::getClassSymbolTable() const {
-  return getType()->getClassSymbol()->getClassSymbolTable();
-}
-
 bool InstantiatedType::equals(const InstantiatedType& other) const {
   // equal if the types are equal and all params are equal
   if (!type->equals(*other.getType())) return false;
@@ -335,7 +340,7 @@ InstantiatedType::mostCommonType(InstantiatedType* other) {
 
 string InstantiatedType::stringify() const {
   stringstream buf;
-  buf << type->stringifyTypename();
+  buf << type->stringify();
   if (!params.empty()) {
     buf << "{";
     vector<string> s(params.size());
@@ -347,15 +352,9 @@ string InstantiatedType::stringify() const {
   return buf.str();
 }
 
-struct class_name_functor {
-  inline string operator()(const InstantiatedType* t) const {
-    return t->createClassName();
-  }
-};
-
-string InstantiatedType::createClassName() const {
+string InstantiatedType::createClassNameImpl(bool fullName) const {
   stringstream buf;
-  buf << type->stringifyTypename();
+  buf << (fullName ? type->stringify() : type->getName());
   if (!params.empty()) {
     buf << "{";
     vector<string> s(params.size());

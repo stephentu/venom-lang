@@ -23,13 +23,16 @@ namespace ast {
   struct ASTStatementNode;
 }
 
-namespace backend { class ObjectCode; }
+namespace backend {
+  class CodeGenerator;
+  class ObjectCode;
+}
 
 namespace bootstrap {
   analysis::SymbolTable* NewBootstrapSymbolTable(analysis::SemanticContext*);
 }
 
-void unsafe_compile(
+void unsafe_compile_module(
     const std::string&, std::fstream&, analysis::SemanticContext&);
 
 namespace analysis {
@@ -70,8 +73,9 @@ public:
  * Use the symbol table to check scoping rules.
  */
 class SemanticContext {
+  friend class backend::CodeGenerator;
   friend SymbolTable* bootstrap::NewBootstrapSymbolTable(SemanticContext*);
-  friend void venom::unsafe_compile(
+  friend void venom::unsafe_compile_module(
       const std::string&, std::fstream&, SemanticContext&);
 private:
   SemanticContext(const std::string& moduleName,
@@ -125,6 +129,16 @@ public:
   /** TODO: use atomic instructions if we need thread safety */
   inline uint64_t uniqueId() { return idGen++; }
 
+  /** Proceeds in a depth-first manner */
+  template <typename Functor>
+  void forEachModule(Functor functor) {
+    if (moduleRoot) functor(moduleRoot, this);
+    for (std::vector<SemanticContext*>::iterator it = children.begin();
+         it != children.end(); ++it) {
+      (*it)->forEachModule(functor);
+    }
+  }
+
   void collectObjectCode(std::vector<backend::ObjectCode*>& objCodes);
 
   /** Root symbol table of the *module* */
@@ -163,7 +177,7 @@ public:
         const ast::ParameterizedTypeString* t) const {
       return ctx->instantiateOrThrow(st, t);
     }
-  private:
+    private:
     SemanticContext* ctx;
     SymbolTable*     st;
   };

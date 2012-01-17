@@ -178,7 +178,7 @@ public:
 
   /** objs must be non-empty. objs[0] is assumed to be
    * the main module */
-  Executable* link(const ObjCodeVec& objs);
+  Executable* link(const ObjCodeVec& objs, size_t mainIdx);
 
 private:
   FuncDescMap builtin_function_map;

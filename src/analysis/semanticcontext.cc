@@ -34,7 +34,7 @@ void SemanticContext::collectObjectCode(vector<ObjectCode*>& objCodes) {
   if (objectCode) objCodes.push_back(objectCode);
   for (vector<SemanticContext*>::iterator it = children.begin();
        it != children.end(); ++it) {
-    collectObjectCode(objCodes);
+    (*it)->collectObjectCode(objCodes);
   }
 }
 

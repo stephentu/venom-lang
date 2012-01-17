@@ -113,6 +113,9 @@ public:
   inline ClassSymbol* getClassSymbol() { return symbol; }
   inline const ClassSymbol* getClassSymbol() const { return symbol; }
 
+  SymbolTable* getClassSymbolTable();
+  const SymbolTable* getClassSymbolTable() const;
+
   inline InstantiatedType* getParent() { return parent; }
   inline const InstantiatedType* getParent() const { return parent; }
 
@@ -123,10 +126,7 @@ public:
    * (and not child scopes)? */
   virtual bool isCurrentScopeOnly() const { return false; }
 
-  // TODO: stringify parameterized types
-  virtual std::string stringify() const { return name; }
-
-  virtual std::string stringifyTypename() const { return name; }
+  virtual std::string stringify() const;
 
   // TODO: make these inline
   bool isInt() const;
@@ -225,7 +225,6 @@ public:
   // TODO: not really sure if equals() is necessary...
   virtual bool equals(const Type& other) const;
   virtual std::string stringify() const;
-  virtual std::string stringifyTypename() const;
 
 private:
   size_t pos;
@@ -331,8 +330,10 @@ public:
   /** Is this type visible to the program (can we assign a reference to it?) */
   inline bool isVisible() const { return !isModuleType(); }
 
-  SymbolTable* getClassSymbolTable();
-  const SymbolTable* getClassSymbolTable() const;
+  inline SymbolTable* getClassSymbolTable()
+    { return getType()->getClassSymbolTable(); }
+  inline const SymbolTable* getClassSymbolTable() const
+    { return getType()->getClassSymbolTable(); }
 
   /** this =:= other? */
   bool equals(const InstantiatedType& other) const;
@@ -343,11 +344,21 @@ public:
   /** Find the most common type between this type and other */
   InstantiatedType* mostCommonType(InstantiatedType* other);
 
-  std::string stringify() const;
+  virtual std::string stringify() const;
 
-  std::string createClassName() const;
+  inline std::string createClassName() const {
+    return createClassNameImpl(false);
+  }
 
 private:
+  struct class_name_functor {
+    inline std::string operator()(const InstantiatedType* t) const {
+      return t->createClassNameImpl(true);
+    }
+  };
+
+  std::string createClassNameImpl(bool fullName) const;
+
   /** The pure type being instantiated */
   Type*                          type;
 

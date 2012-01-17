@@ -73,8 +73,8 @@ void Driver::error(const string& m)
 }
 
 void
-unsafe_compile(const string& fname, fstream& infile,
-               SemanticContext& ctx) {
+unsafe_compile_module(const string& fname, fstream& infile,
+                      SemanticContext& ctx) {
   ParseContext pctx;
   Driver driver(pctx);
   if (global_compile_opts.trace_lex)   driver.trace_scanning = true;
@@ -99,37 +99,77 @@ unsafe_compile(const string& fname, fstream& infile,
     pctx.stmts->print(cerr);
     cerr << endl;
   }
+}
+
+#define _REWRITE_LOCAL_STAGES(x) \
+  x(CanonicalRefs) \
+  x(ModuleMain) \
+  x(FunctionReturns) \
+  x(BoxPrimitives)
+
+#define _IMPL_REWRITE_FUNCTOR(stage) \
+  struct _rewrite_functor_##stage { \
+    inline void operator()(ASTStatementNode* root, \
+                           SemanticContext* ctx) const { \
+      root->rewriteLocal(ctx, ASTNode::stage); \
+      if (global_compile_opts.print_ast) { \
+        cerr << "After rewrite local stage (" << #stage << "):" << endl; \
+        root->print(cerr); \
+        cerr << endl; \
+      } \
+    } \
+  };
+
+_REWRITE_LOCAL_STAGES(_IMPL_REWRITE_FUNCTOR)
+
+#undef _IMPL_REWRITE_FUNCTOR
+
+struct _codegen_functor {
+  inline void operator()(ASTStatementNode* root,
+                         SemanticContext* ctx) const {
+    CodeGenerator cg(ctx);
+    root->codeGen(cg);
+    if (global_compile_opts.print_bytecode) cg.printDebugStream();
+    cg.createObjectCodeAndSet(ctx);
+  }
+};
+
+void
+unsafe_compile(const string& fname, fstream& infile,
+               SemanticContext& ctx) {
+  assert(!ctx.isRootContext());
+
+  // recursively compile all the modules referenced by
+  // infile
+  unsafe_compile_module(fname, infile, ctx);
 
 #define _IMPL_REWRITE_LOCAL(stage) \
   do { \
-    pctx.stmts->rewriteLocal(&ctx, ASTNode::stage); \
-    if (global_compile_opts.print_ast) { \
-      cerr << "After rewrite local stage (" << #stage << "):" << endl; \
-      pctx.stmts->print(cerr); \
-      cerr << endl; \
-    } \
-  } while (0)
+    ctx.getProgramRoot()->forEachModule(_rewrite_functor_##stage()); \
+  } while (0);
 
-  _IMPL_REWRITE_LOCAL(CanonicalRefs);
-  _IMPL_REWRITE_LOCAL(ModuleMain);
-  _IMPL_REWRITE_LOCAL(FunctionReturns);
-  _IMPL_REWRITE_LOCAL(BoxPrimitives);
+  _REWRITE_LOCAL_STAGES(_IMPL_REWRITE_LOCAL)
 
 #undef _IMPL_REWRITE_LOCAL
 
   if (global_compile_opts.semantic_check_only) return;
 
-  CodeGenerator cg(&ctx);
-  pctx.stmts->codeGen(cg);
-  if (global_compile_opts.print_bytecode) cg.printDebugStream();
-  ctx.setObjectCode(cg.createObjectCode());
+  ctx.getProgramRoot()->forEachModule(_codegen_functor());
 }
 
 static void exec(SemanticContext& ctx) {
+  assert(ctx.getObjectCode());
+
   Linker linker(GetBuiltinFunctionMap(), GetBuiltinClassMap());
   vector<ObjectCode*> objs;
-  ctx.collectObjectCode(objs);
-  Executable *exec = linker.link(objs);
+  ctx.getProgramRoot()->collectObjectCode(objs);
+
+  // find the objcode corresponding to ctx's objcode
+  vector<ObjectCode*>::iterator pos =
+    find(objs.begin(), objs.end(), ctx.getObjectCode());
+  assert(pos != objs.end());
+
+  Executable *exec = linker.link(objs, pos - objs.begin());
   ExecutionContext execCtx(exec);
   ExecutionContext::DefaultCallback callback;
   execCtx.execute(callback);

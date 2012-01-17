@@ -270,17 +270,18 @@ public:
 
   void emitInstBool(Instruction::Opcode opcode, bool n0);
 
+  void createObjectCodeAndSet(analysis::SemanticContext* ctx);
+
+  /** Debug helpers */
+  void printDebugStream();
+
+private:
   /**
    * Create object code representation.
    * Note this can only be called *once*, and doing so gives ownership
    * of memory to ObjectCode
    */
   ObjectCode* createObjectCode();
-
-  /** Debug helpers */
-  void printDebugStream();
-
-private:
 
   /** helper for createObjectCode() */
   size_t getClassRefIndexFromType(analysis::Type* type);

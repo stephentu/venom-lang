@@ -115,11 +115,21 @@ struct compile_result {
 
 /** Used internally */
 void
-unsafe_compile(const std::string& fname, std::fstream& infile,
-               analysis::SemanticContext& ctx);
+unsafe_compile_module(
+    const std::string& fname, std::fstream& infile,
+    analysis::SemanticContext& ctx);
 
-/** Reads from global_compile_opts */
-bool compile_and_exec(const std::string& fname, compile_result& result);
+void
+unsafe_compile(
+    const std::string& fname, std::fstream& infile,
+    analysis::SemanticContext& ctx);
+
+/**
+ * Main entry point into the venom compiler/vm.
+ * Reads from global_compile_opts
+ */
+bool compile_and_exec(
+    const std::string& fname, compile_result& result);
 
 } // namespace venom
 

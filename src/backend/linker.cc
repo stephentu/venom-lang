@@ -51,8 +51,9 @@ struct inst_sum_functor {
   }
 };
 
-Executable* Linker::link(const ObjCodeVec& objs) {
+Executable* Linker::link(const ObjCodeVec& objs, size_t mainIdx) {
   assert(!objs.empty());
+  VENOM_CHECK_RANGE(mainIdx, objs.size());
 
   // go through each local function in each obj (in order),
   // and create FunctionDescriptors, which point to the
@@ -199,8 +200,8 @@ Executable* Linker::link(const ObjCodeVec& objs) {
 
   // grab main address out
   ObjectCode::NameOffsetMap::iterator it =
-    objs[0]->getNameOffsetMap().find("<main>");
-  assert(it != objs[0]->getNameOffsetMap().end());
+    objs[mainIdx]->getNameOffsetMap().find("<main>");
+  assert(it != objs[mainIdx]->getNameOffsetMap().end());
 
   return new Executable(
         exec_const_pool.vec,

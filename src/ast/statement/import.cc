@@ -48,7 +48,7 @@ ImportStmtNode::registerSymbol(SemanticContext* ctx) {
           "No such file " + fname + " to import module " + getModuleName());
     }
     mctx = ctx->getProgramRoot()->createModule(names);
-    unsafe_compile(fname, file, *mctx);
+    unsafe_compile_module(fname, file, *mctx);
   }
 
   assert(mctx);
