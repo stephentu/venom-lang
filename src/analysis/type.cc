@@ -224,17 +224,15 @@ InstantiatedType* Type::instantiate() {
   return itype ? itype : (itype = new InstantiatedType(this));
 }
 
-#ifndef NDEBUG
-void
-InstantiatedType::AssertNoTypeParamPlaceholders(
-      const InstantiatedType* type) {
-  assert(!dynamic_cast<const TypeParamType*>(type->getType()));
-  for (vector<InstantiatedType*>::const_iterator it = type->params.begin();
-       it != type->params.end(); ++it) {
-    AssertNoTypeParamPlaceholders(*it);
+bool
+InstantiatedType::isFullyInstantiated() const {
+  if (!dynamic_cast<const TypeParamType*>(getType())) return false;
+  for (vector<InstantiatedType*>::const_iterator it = params.begin();
+       it != params.end(); ++it) {
+    if (!(*it)->isFullyInstantiated()) return false;
   }
+  return true;
 }
-#endif /* NDEBUG */
 
 InstantiatedType* const InstantiatedType::IntType(Type::IntType->instantiate());
 InstantiatedType* const InstantiatedType::BoolType(Type::BoolType->instantiate());

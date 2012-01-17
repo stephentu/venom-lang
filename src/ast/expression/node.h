@@ -78,6 +78,9 @@ public:
       typeCheckImpl(ctx, expectedType = expected, typeParams = typeParamArgs);
   }
 
+  virtual void collectInstantiatedTypes(
+      std::vector<analysis::InstantiatedType*>& types);
+
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 

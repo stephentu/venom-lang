@@ -156,6 +156,22 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   checkExpectedType(expected);
 }
 
+void
+FuncDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+  // parameters
+  for (ExprNodeVec::iterator it = params.begin();
+       it != params.end(); ++it) {
+    (*it)->collectInstantiatedTypes(types);
+  }
+
+  // ret type
+  InstantiatedType* retType = getReturnType();
+  if (retType->isSpecializedType()) types.push_back(retType);
+
+  // stmts
+  ASTNode::collectInstantiatedTypes(types);
+}
+
 ASTNode*
 FuncDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   // recurse on children first

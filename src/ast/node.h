@@ -11,6 +11,7 @@ namespace venom {
 namespace analysis {
   /** Forward decls **/
   class BaseSymbol;
+  class InstantiatedType;
   class SemanticContext;
   class SymbolTable;
   class TypeTranslator;
@@ -139,6 +140,11 @@ public:
    * TODO: declare as protected, with appropriate friends
    */
   virtual void registerSymbol(analysis::SemanticContext* ctx) {}
+
+  /** Templates **/
+
+  virtual void collectInstantiatedTypes(
+      std::vector<analysis::InstantiatedType*>& types);
 
   /** Tree re-writing **/
 

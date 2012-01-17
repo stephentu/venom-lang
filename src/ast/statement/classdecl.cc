@@ -75,6 +75,16 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   assert(stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t));
 }
 
+void
+ClassDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+  vector<InstantiatedType*> parents = getParents();
+  for (vector<InstantiatedType*>::iterator it = parents.begin();
+       it != parents.end(); ++it) {
+    if ((*it)->isSpecializedType()) types.push_back(*it);
+  }
+  ASTNode::collectInstantiatedTypes(types);
+}
+
 BaseSymbol*
 ClassDeclNode::getSymbol() {
   TypeTranslator t;

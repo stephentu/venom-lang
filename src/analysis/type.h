@@ -266,22 +266,27 @@ protected:
 
 public:
 
-#ifdef NDEBUG
   static inline void AssertNoTypeParamPlaceholders(
-      const InstantiatedType* type) {}
-  static inline void AssertNoTypeParamPlaceholders(
-      const std::vector<InstantiatedType*>& types) {}
-#else
-  static void AssertNoTypeParamPlaceholders(
-      const InstantiatedType* type);
+      const InstantiatedType* type) {
+    assert(type->isFullyInstantiated());
+  }
+
   static inline void AssertNoTypeParamPlaceholders(
       const std::vector<InstantiatedType*>& types) {
+#ifndef NDEBUG
     for (std::vector<InstantiatedType*>::const_iterator it = types.begin();
          it != types.end(); ++it) {
       AssertNoTypeParamPlaceholders(*it);
     }
-  }
 #endif /* NDEBUG */
+  }
+
+  /** Returns true iff contains no type parameters */
+  bool isFullyInstantiated() const;
+
+  inline bool isSpecializedType() const {
+    return !getParams().empty() && isFullyInstantiated();
+  }
 
   /** Instantiations of built-in types **/
   static InstantiatedType* const AnyType;

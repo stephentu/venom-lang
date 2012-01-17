@@ -38,6 +38,14 @@ ParameterizedTypeString* ParameterizedTypeString::clone() {
       util::transform_vec(params.begin(), params.end(), CloneFunctor()));
 }
 
+void
+ASTExpressionNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+  ASTNode::collectInstantiatedTypes(types);
+  if (staticType && staticType->isSpecializedType()) {
+    types.push_back(staticType);
+  }
+}
+
 ASTNode*
 ASTExpressionNode::rewriteLocal(SemanticContext* ctx,
                                 RewriteMode mode) {

@@ -77,6 +77,14 @@ ASTNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   } endfor
 }
 
+void
+ASTNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+  forchild (kid) {
+    if (!kid) continue;
+    kid->collectInstantiatedTypes(types);
+  } endfor
+}
+
 ASTNode*
 ASTNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   for (size_t i = 0; i < getNumKids(); i++) {

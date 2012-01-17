@@ -73,6 +73,9 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
+  virtual void collectInstantiatedTypes(
+      std::vector<analysis::InstantiatedType*>& types);
+
   //virtual void lift(analysis::SemanticContext* ctx,
   //                  std::vector<ASTStatementNode*>& liftedStmts,
   //                  bool liftThisContext);

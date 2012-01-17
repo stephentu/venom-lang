@@ -57,6 +57,9 @@ public:
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
+  virtual void collectInstantiatedTypes(
+      std::vector<analysis::InstantiatedType*>& types);
+
   virtual analysis::BaseSymbol* getSymbol();
 
 protected:
