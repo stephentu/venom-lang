@@ -122,6 +122,15 @@ Symbol::getClassSymbolForSlotCalc() {
   return msym->getModuleClassSymbol();
 }
 
+void
+ClassAttributeSymbol::cloneForTemplate(
+    ClassSymbol* newParent, const TypeTranslator& t) {
+  SymbolTable* table = newParent->getClassSymbolTable();
+  SemanticContext* ctx = table->getSemanticContext();
+  table->createClassAttributeSymbol(
+      name, t.translate(ctx, getInstantiatedType()), newParent);
+}
+
 InstantiatedType*
 FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
                  const InstantiatedTypeVec& params) {
@@ -159,6 +168,23 @@ MethodSymbol::getFullName() const {
   buf << getClassSymbol()->getFullName();
   buf << "." << getName();
   return buf.str();
+}
+
+void
+MethodSymbol::cloneForTemplate(
+    ClassSymbol* newParent, const TypeTranslator& t) {
+  SymbolTable* table = newParent->getClassSymbolTable();
+  SemanticContext* ctx = table->getSemanticContext();
+  TypeTranslator tt;
+  table->createMethodSymbol(
+      name,
+      getTypeParams(),
+      util::transform_vec(getParams().begin(), getParams().end(),
+        TypeTranslator::TranslateFunctor(ctx, t)),
+      t.translate(ctx, getReturnType()),
+      newParent,
+      table->findFuncSymbol(name, SymbolTable::ClassParents, tt),
+      isNative());
 }
 
 InstantiatedType*
@@ -236,6 +262,63 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
       }
     }
   }
+}
+
+ClassSymbol*
+ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
+  assert(getClassSymbolTable()->getOwner() == NULL);
+  assert(!getTypeParams().empty());
+  assert(getType()->hasParams());
+
+  SemanticContext* ctx = getDefinedSymbolTable()->getSemanticContext();
+
+  // concrete type
+  InstantiatedType* concreteType = t.translate(ctx, getSelfType(ctx));
+  InstantiatedType::AssertNoTypeParamPlaceholders(concreteType);
+
+  // do parents first
+  InstantiatedType* parentType =
+    t.translate(ctx, getType()->getParent());
+  InstantiatedType::AssertNoTypeParamPlaceholders(parentType);
+
+  ClassSymbol* csym = NULL;
+  if (!parentType->getParams().empty()) {
+    // first, look up the type to see if we already have it
+    TypeTranslator tt;
+    csym =
+      parentType->getClassSymbol()->getDefinedSymbolTable()->findClassSymbol(
+          parentType->createClassName(), SymbolTable::NoRecurse, tt);
+    if (!csym) {
+      TypeTranslator t;
+      t.bind(parentType);
+      csym = parentType->getClassSymbol()->instantiateSpecializedType(t);
+    }
+  } else csym = parentType->getClassSymbol();
+  assert(csym);
+
+  Type* type = ctx->createType(
+      concreteType->createClassName(), parentType, 0);
+  SymbolTable* newTable = getDefinedSymbolTable()->newChildScope(NULL);
+  ClassSymbol* newSym = getDefinedSymbolTable()->createClassSymbol(
+      concreteType->createClassName(), newTable, type);
+
+  // clone all attributes + methods
+  vector<Symbol*> attrs;
+  getClassSymbolTable()->getSymbols(attrs);
+
+  vector<FuncSymbol*> methods;
+  getClassSymbolTable()->getFuncSymbols(methods);
+
+  vector<BaseSymbol*> syms;
+  syms.reserve(attrs.size() + methods.size());
+  syms.insert(syms.end(), attrs.begin(), attrs.end());
+  syms.insert(syms.end(), methods.begin(), methods.end());
+
+  for (vector<BaseSymbol*>::iterator it = syms.begin();
+       it != syms.end(); ++it) {
+    (*it)->cloneForTemplate(newSym, t);
+  }
+  return newSym;
 }
 
 InstantiatedType*

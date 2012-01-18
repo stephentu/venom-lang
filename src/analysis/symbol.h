@@ -52,6 +52,9 @@ public:
    * descendants) only? */
   virtual bool isCurrentScopeOnly() const { return false; }
 
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t) = 0;
+
 protected:
   BaseSymbol(const std::string& name,
              SymbolTable*       table)
@@ -115,6 +118,11 @@ public:
 
   virtual bool isObjectField() const { return false; }
 
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t) {
+    VENOM_NOT_REACHED;
+  }
+
 private:
   unsigned promoteToRef : 1;
   InstantiatedType* type;
@@ -136,6 +144,9 @@ public:
   inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
 
   virtual bool isObjectField() const { return true; }
+
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t);
 
 private:
   ClassSymbol* classSymbol;
@@ -183,6 +194,11 @@ public:
 
   virtual bool isMethod() const { return false; }
 
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t) {
+    VENOM_NOT_REACHED;
+  }
+
 private:
   InstantiatedTypeVec typeParams;
   InstantiatedTypeVec params;
@@ -219,6 +235,9 @@ public:
   virtual bool isConstructor() const { return name == "<ctor>"; }
   virtual bool isMethod() const { return true; }
 
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t);
+
 private:
   ClassSymbol* classSymbol;
   FuncSymbol* overrides;
@@ -236,7 +255,9 @@ protected:
               SymbolTable*               classTable, /* class's table */
               Type*                      type)
     : BaseSymbol(name, table), typeParams(typeParams),
-      classTable(classTable), type(type) {}
+      classTable(classTable), type(type) {
+    assert(type->getParams() == typeParams.size());
+  }
 
 public:
   inline InstantiatedTypeVec&
@@ -267,6 +288,13 @@ public:
   /** Does *NOT* include constructor in methods */
   void linearizedOrder(std::vector<Symbol*>& attributes,
                        std::vector<FuncSymbol*>& methods);
+
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t) {
+    VENOM_NOT_REACHED;
+  }
+
+  ClassSymbol* instantiateSpecializedType(const TypeTranslator& t);
 
 private:
   InstantiatedTypeVec typeParams;
@@ -309,6 +337,11 @@ public:
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
          const InstantiatedTypeVec& params);
+
+  virtual void cloneForTemplate(
+      ClassSymbol* newParent, const TypeTranslator& t) {
+    VENOM_NOT_REACHED;
+  }
 
 private:
   SymbolTable* moduleTable;

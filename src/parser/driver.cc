@@ -232,7 +232,7 @@ unsafe_compile(const string& fname, fstream& infile,
     if (end_it == typesToProcess.begin()) break;
 
     // otherwise, mark that we are processing these types
-    processedAlready.insert( typesToProcess.begin(), typesToProcess.end() );
+    processedAlready.insert(typesToProcess.begin(), typesToProcess.end());
 
     multimap<SemanticContext*, InstantiatedType*> typesByModule;
     for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();
@@ -245,6 +245,28 @@ unsafe_compile(const string& fname, fstream& infile,
     vector<ClassDeclNode*> classDecls;
     _instantiate_types_functor instantiateFunctor(&typesByModule, &classDecls);
     ctx.getProgramRoot()->forEachModule(instantiateFunctor);
+
+    // special case - for types belonging to <prelude>, we handle it separately
+    // (since it is not associated with some AST node). in the future, when we
+    // support native user extensions, then we will also have to include that
+    // here
+    SemanticContext* rootCtx = ctx.getProgramRoot();
+    SymbolTable* rootTable = rootCtx->getRootSymbolTable();
+    typedef _instantiate_types_functor::MultiMapType MultiMapType;
+    pair<MultiMapType::iterator, MultiMapType::iterator> ret =
+      typesByModule.equal_range(rootCtx);
+    for (MultiMapType::iterator it = ret.first; it != ret.second; ++it) {
+      TypeTranslator t;
+      ClassSymbol* csym =
+        rootTable->findClassSymbol(it->second->createClassName(),
+            SymbolTable::NoRecurse, t);
+      if (!csym) {
+        // need to create the specific instantiation
+        TypeTranslator t;
+        t.bind(it->second);
+        it->second->getClassSymbol()->instantiateSpecializedType(t);
+      }
+    }
 
     workingSet.clear();
     workingSet.reserve(classDecls.size());
