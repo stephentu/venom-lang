@@ -231,6 +231,19 @@ SymbolTable::createClassSymbol(const string& name,
 }
 
 ClassSymbol*
+SymbolTable::createSpecializedClassSymbol(
+    SymbolTable* classTable, InstantiatedType* instantiation, Type* type) {
+  assert(type->getParams() == 0);
+  InstantiatedType::AssertNoTypeParamPlaceholders(instantiation);
+  assert(instantiation->createClassName() == type->getName());
+  ClassSymbol *sym = new SpecializedClassSymbol(
+    instantiation, this, classTable, type);
+  type->setClassSymbol(sym);
+  classContainer.insert(instantiation->createClassName(), sym);
+  return sym;
+}
+
+ClassSymbol*
 SymbolTable::findClassSymbol(const string& name, RecurseMode mode,
                              TypeTranslator& translator) {
   ClassSymbol *ret = NULL;

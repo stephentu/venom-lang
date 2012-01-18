@@ -190,6 +190,9 @@ bool Type::isBool() const { return equals(*BoolType); }
 bool Type::isVoid() const { return equals(*VoidType); }
 bool Type::isAny() const { return equals(*AnyType); }
 
+bool Type::isListType() const { return equals(*ListType); }
+bool Type::isMapType() const { return equals(*MapType); }
+
 bool Type::isFunction() const {
   for (vector<Type*>::const_iterator it = FuncTypes.begin();
        it != FuncTypes.end(); ++it) {

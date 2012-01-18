@@ -12,6 +12,10 @@
 #include <util/macros.h>
 
 namespace venom {
+
+/** Forward decl **/
+namespace analysis { class Type; }
+
 namespace ast {
 
 class ClassDeclNode : public ASTStatementNode {
@@ -70,6 +74,12 @@ protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
 
   virtual void checkAndInitParents(analysis::SemanticContext* ctx) = 0;
+
+  virtual void createClassSymbol(
+      const std::string& name,
+      analysis::SymbolTable* classTable,
+      analysis::Type* type,
+      const std::vector<analysis::InstantiatedType*>& typeParams);
 
   void registerClassSymbol(
       analysis::SemanticContext* ctx,

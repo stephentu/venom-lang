@@ -65,7 +65,13 @@ public:
     RefType,
   };
 
-  static venom_class_object* CreateListClassTable(ListType listType);
+  /**
+   * We use ListType here instead of an analysis::Type instance,
+   * so that runtime doesn't have to depend on analysis.
+   * NOTE: the venom_class_object instance does NOT need to be
+   * freed by the caller
+   */
+  static venom_class_object* GetListClassTable(ListType listType);
 
   static venom_ret_cell
   init(backend::ExecutionContext* ctx, venom_cell self) {
@@ -169,6 +175,14 @@ public:
   size(backend::ExecutionContext* ctx, venom_cell self) {
     return venom_ret_cell(int64_t(asSelf(self)->elems.size()));
   }
+
+private:
+  static venom_class_object* const ListIntClassTable;
+  static venom_class_object* const ListFloatClassTable;
+  static venom_class_object* const ListBoolClassTable;
+  static venom_class_object* const ListRefClassTable;
+
+  static venom_class_object* CreateListClassTable(ListType listType);
 
 protected:
   std::vector<venom_cell> elems;

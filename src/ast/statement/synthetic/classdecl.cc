@@ -43,6 +43,21 @@ ClassDeclNodeSynthetic::checkAndInitTypeParams(SemanticContext* ctx) {
 void
 ClassDeclNodeSynthetic::checkAndInitParents(SemanticContext* ctx) {}
 
+void
+ClassDeclNodeSynthetic::createClassSymbol(
+    const string& name,
+    SymbolTable* classTable,
+    Type* type,
+    const vector<InstantiatedType*>& typeParams) {
+  if (instantiation) {
+    assert(typeParams.empty());
+    symbols->createSpecializedClassSymbol(
+        classTable, instantiation, type);
+  } else {
+    ClassDeclNode::createClassSymbol(name, classTable, type, typeParams);
+  }
+}
+
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneImpl() {
   return new ClassDeclNodeSynthetic(

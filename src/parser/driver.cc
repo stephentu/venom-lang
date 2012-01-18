@@ -296,7 +296,10 @@ unsafe_compile(const string& fname, fstream& infile,
 static void exec(SemanticContext& ctx) {
   assert(ctx.getObjectCode());
 
-  Linker linker(GetBuiltinFunctionMap(), GetBuiltinClassMap());
+  Linker linker(
+      GetBuiltinFunctionMap(ctx.getProgramRoot()),
+      GetBuiltinClassMap(ctx.getProgramRoot()));
+
   vector<ObjectCode*> objs;
   ctx.getProgramRoot()->collectObjectCode(objs);
 

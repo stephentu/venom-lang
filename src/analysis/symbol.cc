@@ -299,8 +299,8 @@ ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
   Type* type = ctx->createType(
       concreteType->createClassName(), parentType, 0);
   SymbolTable* newTable = getDefinedSymbolTable()->newChildScope(NULL);
-  ClassSymbol* newSym = getDefinedSymbolTable()->createClassSymbol(
-      concreteType->createClassName(), newTable, type);
+  ClassSymbol* newSym = getDefinedSymbolTable()->createSpecializedClassSymbol(
+      newTable, concreteType, type);
 
   // clone all attributes + methods
   vector<Symbol*> attrs;

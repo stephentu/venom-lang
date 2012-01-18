@@ -211,6 +211,11 @@ public:
                       std::vector<InstantiatedType*>());
 
   ClassSymbol*
+  createSpecializedClassSymbol(SymbolTable* classTable,
+                               InstantiatedType* instantiation,
+                               Type* type);
+
+  ClassSymbol*
   findClassSymbol(const std::string& name, RecurseMode mode,
                   TypeTranslator& translator);
 

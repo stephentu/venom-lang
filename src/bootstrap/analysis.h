@@ -20,9 +20,11 @@ namespace bootstrap {
 analysis::SymbolTable*
 NewBootstrapSymbolTable(analysis::SemanticContext* ctx);
 
-backend::Linker::FuncDescMap GetBuiltinFunctionMap();
+backend::Linker::FuncDescMap
+GetBuiltinFunctionMap(analysis::SemanticContext* rootCtx);
 
-backend::Linker::ClassObjMap GetBuiltinClassMap();
+backend::Linker::ClassObjMap
+GetBuiltinClassMap(analysis::SemanticContext* rootCtx);
 
 }
 }

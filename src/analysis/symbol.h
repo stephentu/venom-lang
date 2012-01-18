@@ -302,6 +302,32 @@ private:
   Type*               type;
 };
 
+class SpecializedClassSymbol : public ClassSymbol {
+  friend class SymbolTable;
+protected:
+  SpecializedClassSymbol(
+      InstantiatedType* instantiation,
+      SymbolTable*      table,      /* defined */
+      SymbolTable*      classTable, /* class's table */
+      Type*             type)
+  : ClassSymbol(type->getName(),
+                InstantiatedTypeVec(),
+                table, classTable, type), instantiation(instantiation) {
+    assert(!instantiation->getParams().empty());
+    InstantiatedType::AssertNoTypeParamPlaceholders(instantiation);
+    assert(instantiation->createClassName() == type->getName());
+  }
+
+public:
+  inline InstantiatedType* getInstantiation()
+    { return instantiation; }
+  inline const InstantiatedType* getInstantiation() const
+    { return instantiation; }
+
+private:
+  InstantiatedType* instantiation;
+};
+
 /**
  * Represents a module
  */

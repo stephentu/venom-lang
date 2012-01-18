@@ -5,6 +5,7 @@
 #include <runtime/box.h>
 #include <runtime/builtin.h>
 #include <runtime/venomobject.h>
+#include <runtime/venomlist.h>
 #include <runtime/venomstring.h>
 
 #include <util/stl.h>
@@ -188,7 +189,9 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   return root;
 }
 
-Linker::FuncDescMap GetBuiltinFunctionMap() {
+Linker::FuncDescMap
+GetBuiltinFunctionMap(SemanticContext* rootCtx) {
+  assert(rootCtx->isRootContext());
   Linker::FuncDescMap ret;
 
   // TODO: dynamically load this stuff, instead of hardcode
@@ -210,7 +213,9 @@ Linker::FuncDescMap GetBuiltinFunctionMap() {
   return ret;
 }
 
-Linker::ClassObjMap GetBuiltinClassMap() {
+Linker::ClassObjMap
+GetBuiltinClassMap(SemanticContext* rootCtx) {
+  assert(rootCtx->isRootContext());
   Linker::ClassObjMap ret;
   // TODO: dynamically load this stuff, instead of hardcode
 
@@ -221,6 +226,31 @@ Linker::ClassObjMap GetBuiltinClassMap() {
   ret["<prelude>.<Float>"] = &venom_double::DoubleClassTable;
   ret["<prelude>.<Bool>"]  = &venom_boolean::BooleanClassTable;
 
+  vector<ClassSymbol*> builtinClassSyms;
+  rootCtx->getRootSymbolTable()->getClassSymbols(builtinClassSyms);
+
+  for (vector<ClassSymbol*>::iterator it = builtinClassSyms.begin();
+       it != builtinClassSyms.end(); ++it) {
+    if (SpecializedClassSymbol* scs =
+          dynamic_cast<SpecializedClassSymbol*>(*it)) {
+      InstantiatedType* itype = scs->getInstantiation();
+      // list
+      if (itype->getType()->isListType()) {
+        assert(itype->getParams().size() == 1);
+        InstantiatedType* arg0 = itype->getParams()[0];
+        venom_list::ListType listType;
+        if (arg0->isInt()) listType = venom_list::IntType;
+        else if (arg0->isFloat()) listType = venom_list::FloatType;
+        else if (arg0->isBool()) listType = venom_list::BoolType;
+        else {
+          assert(arg0->isRefCounted());
+          listType = venom_list::RefType;
+        }
+        assert(ret.find(scs->getFullName()) == ret.end());
+        ret[scs->getFullName()] = venom_list::GetListClassTable(listType);
+      }
+    }
+  }
   return ret;
 }
 

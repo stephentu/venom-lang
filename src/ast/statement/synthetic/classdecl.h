@@ -4,6 +4,10 @@
 #include <ast/statement/classdecl.h>
 
 namespace venom {
+
+/** forward decl */
+namespace analysis { class Type; }
+
 namespace ast {
 
 class ClassDeclNodeSynthetic : public ClassDeclNode {
@@ -12,12 +16,17 @@ public:
       const std::string& name,
       const std::vector<analysis::InstantiatedType*>& parentTypes,
       const std::vector<analysis::InstantiatedType*>& typeParamTypes,
-      ASTStatementNode* stmts)
-    : ClassDeclNode(name, stmts),
-      parentTypes(parentTypes), typeParamTypes(typeParamTypes) {
+      ASTStatementNode* stmts,
+      analysis::InstantiatedType* instantiation = NULL)
+  : ClassDeclNode(name, stmts),
+    parentTypes(parentTypes), typeParamTypes(typeParamTypes),
+    instantiation(instantiation) {
+
     assert(!parentTypes.empty());
     // TODO: implementation limitation
     assert(parentTypes.size() == 1);
+
+    assert(!instantiation || typeParamTypes.empty());
   }
 
   virtual std::vector<analysis::InstantiatedType*> getParents() const
@@ -34,9 +43,17 @@ protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);
   virtual void checkAndInitParents(analysis::SemanticContext* ctx);
 
+  virtual void createClassSymbol(
+      const std::string& name,
+      analysis::SymbolTable* classTable,
+      analysis::Type* type,
+      const std::vector<analysis::InstantiatedType*>& typeParams);
+
 private:
   std::vector<analysis::InstantiatedType*> parentTypes;
   std::vector<analysis::InstantiatedType*> typeParamTypes;
+
+  analysis::InstantiatedType* instantiation;
 };
 
 }

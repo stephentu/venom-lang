@@ -140,6 +140,9 @@ public:
   inline bool isPrimitive() const { return isNumeric() || isBool(); }
   inline bool isRefCounted() const { return !isPrimitive() && !isVoid(); }
 
+  bool isListType() const;
+  bool isMapType() const;
+
   bool isFunction() const;
   bool isClassType() const;
   bool isModuleType() const;

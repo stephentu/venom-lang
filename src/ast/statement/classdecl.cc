@@ -105,6 +105,15 @@ ClassDeclNode::getSymbol() {
 }
 
 void
+ClassDeclNode::createClassSymbol(
+    const string& name,
+    SymbolTable* classTable,
+    Type* type,
+    const vector<InstantiatedType*>& typeParams) {
+  symbols->createClassSymbol(name, classTable, type, typeParams);
+}
+
+void
 ClassDeclNode::registerClassSymbol(
     SemanticContext* ctx,
     const vector<InstantiatedType*>& parentTypes,
@@ -115,8 +124,8 @@ ClassDeclNode::registerClassSymbol(
   // TODO: support multiple inheritance
   Type *type =
     ctx->createType(name, parentTypes.front(), typeParamTypes.size());
-  symbols->createClassSymbol(name, stmts->getSymbolTable(),
-                             type, typeParamTypes);
+  createClassSymbol(name, stmts->getSymbolTable(),
+                    type, typeParamTypes);
 
   // link the stmts symbol table to the parents symbol tables
   for (vector<InstantiatedType*>::const_iterator it = parentTypes.begin();
@@ -226,7 +235,8 @@ ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
         parentTypes.begin(), parentTypes.end(),
         TypeTranslator::TranslateFunctor(ctx, t)),
       InstantiatedTypeVec(),
-      stmts->cloneForTemplate(t));
+      stmts->cloneForTemplate(t),
+      itype);
 }
 
 }

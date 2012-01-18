@@ -45,6 +45,33 @@ FunctionDescriptor* const venom_list::SizeDescriptor(
     new FunctionDescriptor((void*)size, 1, 0x1, true));
 
 venom_class_object*
+venom_list::GetListClassTable(ListType listType) {
+  assert(ListIntClassTable != NULL);
+  assert(ListFloatClassTable != NULL);
+  assert(ListBoolClassTable != NULL);
+  assert(ListRefClassTable != NULL);
+  switch (listType) {
+  case IntType: return ListIntClassTable;
+  case FloatType: return ListFloatClassTable;
+  case BoolType: return ListBoolClassTable;
+  case RefType: return ListRefClassTable;
+  default: VENOM_NOT_REACHED;
+  }
+}
+
+venom_class_object* const venom_list::ListIntClassTable(
+    CreateListClassTable(IntType));
+
+venom_class_object* const venom_list::ListFloatClassTable(
+    CreateListClassTable(FloatType));
+
+venom_class_object* const venom_list::ListBoolClassTable(
+    CreateListClassTable(BoolType));
+
+venom_class_object* const venom_list::ListRefClassTable(
+    CreateListClassTable(RefType));
+
+venom_class_object*
 venom_list::CreateListClassTable(ListType listType) {
   FunctionDescriptor* stringer;
   switch (listType) {
@@ -52,7 +79,7 @@ venom_list::CreateListClassTable(ListType listType) {
   case FloatType: stringer = StringifyFloatDescriptor; break;
   case BoolType: stringer = StringifyBoolDescriptor; break;
   case RefType: stringer = StringifyRefDescriptor; break;
-  default: assert(false);
+  default: VENOM_NOT_REACHED;
   }
   assert(stringer);
   bool ref = listType == RefType;
