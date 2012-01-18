@@ -149,6 +149,9 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
                           createTypeParams(ctx, 1));
 
+  root->createClassSymbol("<moduletype>", root->newChildScope(NULL),
+                          Type::ModuleType, InstantiatedTypeVec());
+
   SymbolTable *ListSymTab = root->newChildScope(NULL);
   vector<InstantiatedType*> ListTypeParam = createTypeParams(ctx, 1);
   ClassSymbol *ListClassSym =

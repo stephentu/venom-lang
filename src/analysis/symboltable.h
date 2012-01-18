@@ -61,7 +61,6 @@ private:
   SymbolTable(SemanticContext* ctx, SymbolTable* parent,
               const TypeMap& typeMap, ast::ASTNode* owner);
 
-protected:
   inline void addClassParent(SymbolTable* parent, const TypeMap& typeMap) {
     // assert we already have a primary parent
     assert(getPrimaryParent());
@@ -214,7 +213,10 @@ public:
   createSpecializedClassSymbol(SymbolTable* classTable,
                                InstantiatedType* instantiation,
                                Type* type);
+private:
+  ClassSymbol* insertClassSymbol(ClassSymbol* symbol);
 
+public:
   ClassSymbol*
   findClassSymbol(const std::string& name, RecurseMode mode,
                   TypeTranslator& translator);

@@ -126,30 +126,6 @@ ClassDeclNode::registerClassSymbol(
     ctx->createType(name, parentTypes.front(), typeParamTypes.size());
   createClassSymbol(name, stmts->getSymbolTable(),
                     type, typeParamTypes);
-
-  // link the stmts symbol table to the parents symbol tables
-  for (vector<InstantiatedType*>::const_iterator it = parentTypes.begin();
-       it != parentTypes.end(); ++it) {
-    TypeMap map;
-    // we only do this check so we can avoid failing the assert() for now,
-    // for builtin classes
-    if (!(*it)->getParams().empty()) {
-      // build the type map
-      ClassDeclNode *pcdn =
-        dynamic_cast<ClassDeclNode*>((*it)->getClassSymbolTable()->getOwner());
-      // TODO: this assert won't work for built-ins
-      assert(pcdn);
-      // TODO: STL style
-      assert(pcdn->getTypeParams().size() == (*it)->getParams().size());
-      for (size_t i = 0; i < pcdn->getTypeParams().size(); i++) {
-        map.push_back(
-            InstantiatedTypePair(pcdn->getTypeParams()[i],
-                                 (*it)->getParams()[i]));
-      }
-    }
-    stmts->getSymbolTable()->addClassParent(
-        (*it)->getClassSymbolTable(), map);
-  }
 }
 
 struct functor {

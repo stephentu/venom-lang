@@ -224,10 +224,8 @@ SymbolTable::createClassSymbol(const string& name,
                                const vector<InstantiatedType*>& typeParams) {
   assert(type->getParams() == typeParams.size());
   assert(name == type->getName());
-  ClassSymbol *sym = new ClassSymbol(name, typeParams, this, classTable, type);
-  type->setClassSymbol(sym);
-  classContainer.insert(name, sym);
-  return sym;
+  return insertClassSymbol(
+      new ClassSymbol(name, typeParams, this, classTable, type));
 }
 
 ClassSymbol*
@@ -236,10 +234,23 @@ SymbolTable::createSpecializedClassSymbol(
   assert(type->getParams() == 0);
   InstantiatedType::AssertNoTypeParamPlaceholders(instantiation);
   assert(instantiation->createClassName() == type->getName());
-  ClassSymbol *sym = new SpecializedClassSymbol(
-    instantiation, this, classTable, type);
+  return insertClassSymbol(
+      new SpecializedClassSymbol(instantiation, this, classTable, type));
+}
+
+ClassSymbol*
+SymbolTable::insertClassSymbol(ClassSymbol* sym) {
+  Type* type = sym->getType();
   type->setClassSymbol(sym);
-  classContainer.insert(instantiation->createClassName(), sym);
+  classContainer.insert(sym->getName(), sym);
+
+  // link the stmts symbol table to the parents symbol tables
+  if (type->getParent()) {
+    TypeTranslator t;
+    t.bind(type->getParent());
+    sym->getClassSymbolTable()->addClassParent(
+        type->getParent()->getClassSymbolTable(), t.map);
+  }
   return sym;
 }
 
