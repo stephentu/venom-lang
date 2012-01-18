@@ -29,10 +29,13 @@ SymbolNode::codeGen(CodeGenerator& cg) {
   if (ModuleSymbol* msym = dynamic_cast<ModuleSymbol*>(symbol)) {
     // get the class symbol for the module
     ClassSymbol* moduleClassSymbol = msym->getModuleClassSymbol();
+    SemanticContext* ctx =
+      moduleClassSymbol->getDefinedSymbolTable()->getSemanticContext();
 
     // find the class reference index for moduleClassSymbol
     bool create;
-    size_t classRefIdx = cg.enterClass(moduleClassSymbol, create);
+    size_t classRefIdx =
+      cg.enterClass(moduleClassSymbol->getType()->instantiate(ctx), create);
     assert(!create);
 
     // load the module from the constant pool

@@ -52,6 +52,90 @@ StmtListNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   }
 }
 
+struct _type_less_cmp {
+  inline bool operator()(const Type* lhs,
+                         const Type* rhs) const {
+    return lhs->getName() < rhs->getName();
+  }
+};
+
+typedef map<Type*, vector<InstantiatedType*>, _type_less_cmp> TypeMap;
+
+void
+StmtListNode::instantiateSpecializedTypes(
+    const vector<InstantiatedType*>& types,
+    vector<ClassDeclNode*>& classDecls) {
+  assert(!types.empty());
+  classDecls.reserve(types.size());
+
+  // assert we are the module level stmt list
+  assert(getSymbolTable()->isModuleLevelSymbolTable());
+
+  // assert all the types belong to this module
+#ifndef NDEBUG
+  for (vector<InstantiatedType*>::const_iterator it = types.begin();
+       it != types.end(); ++it) {
+    SymbolTable* t = (*it)->getClassSymbol()->getDefinedSymbolTable();
+    assert(t->getSemanticContext() == getSymbolTable()->getSemanticContext());
+  }
+#endif /* NDEBUG */
+
+  // organize the InstantiatedTypes by their Types
+  // WARNING: the double parens are *necessary* here
+  TypeMap typeMap((_type_less_cmp()));
+  for (vector<InstantiatedType*>::const_iterator it = types.begin();
+       it != types.end(); ++it) {
+    InstantiatedType* itype = *it;
+    pair< TypeMap::iterator, bool > res =
+      typeMap.insert(make_pair(itype->getType(), util::vec1(itype)));
+    if (res.second) {
+      // new elem, no-op
+    } else {
+      // old type, add to vec
+      res.first->second.push_back(itype);
+    }
+  }
+
+  // for each type, find the corresponding class decl, and make
+  // the instantiation. insert the instantiations into the stmt list,
+  // and append to classDecs
+  for (TypeMap::iterator it = typeMap.begin();
+       it != typeMap.end(); ++it) {
+    Type *t = it->first;
+    ASTNode *node = t->getClassSymbolTable()->getOwner();
+    VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, node);
+    ClassDeclNode *classNode = static_cast<ClassDeclNode*>(node);
+    StmtNodeVec::iterator pos =
+      find(stmts.begin(), stmts.end(), classNode);
+    assert(pos != stmts.end());
+
+    vector<InstantiatedType*>& instances = it->second;
+
+    vector<ClassDeclNode*> toInsert;
+    toInsert.reserve(instances.size());
+
+    for (vector<InstantiatedType*>::iterator iit = instances.begin();
+         iit != instances.end(); ++iit) {
+      TypeTranslator t;
+      t.bind(*iit);
+
+      // instantiate
+      ClassDeclNode* instantiation = CloneForTemplate(classNode, t);
+
+      // process the new instantiation
+      instantiation->initSymbolTable(getSymbolTable());
+      instantiation->semanticCheck(getSymbolTable()->getSemanticContext());
+      instantiation->typeCheck(getSymbolTable()->getSemanticContext());
+
+      // return to user
+      classDecls.push_back(instantiation);
+    }
+
+    // insert into stmt list
+    stmts.insert(pos + 1, toInsert.begin(), toInsert.end());
+  }
+}
+
 ASTNode*
 StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   if (mode != ModuleMain) return ASTNode::rewriteLocal(ctx, mode);
@@ -119,7 +203,8 @@ StmtListNode::codeGen(CodeGenerator& cg) {
 
     // need to register the module class
     bool create;
-    cg.enterLocalClass(msym->getModuleClassSymbol(), create);
+    cg.enterLocalClass(
+        msym->getModuleClassSymbol()->getType()->instantiate(ctx), create);
     assert(create);
   }
   ASTNode::codeGen(cg);

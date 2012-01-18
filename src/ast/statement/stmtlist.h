@@ -10,6 +10,9 @@
 namespace venom {
 namespace ast {
 
+/** forward decl */
+class ClassDeclNode;
+
 class StmtListNode : public ASTStatementNode {
 public:
   StmtListNode() {}
@@ -66,6 +69,10 @@ public:
   IMPL_LOC_CONTEXT(clear)
 
 #undef IMPL_LOC_CONTEXT
+
+  void instantiateSpecializedTypes(
+      const std::vector<analysis::InstantiatedType*>& types,
+      std::vector<ClassDeclNode*>& classDecls);
 
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);

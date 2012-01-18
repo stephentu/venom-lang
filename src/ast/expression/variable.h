@@ -44,6 +44,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE(VariableNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

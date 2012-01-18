@@ -318,6 +318,7 @@ public:
   inline bool isFloat() const { return getType()->isFloat(); }
   inline bool isString() const { return getType()->isString(); }
   inline bool isBool() const { return getType()->isBool(); }
+  inline bool isVoid() const { return getType()->isVoid(); }
   inline bool isAny() const { return getType()->isAny(); }
 
   inline bool isNumeric() const { return getType()->isNumeric(); }
@@ -349,6 +350,8 @@ public:
   inline std::string createClassName() const {
     return createClassNameImpl(false);
   }
+
+  ClassSymbol* findSpecializedClassSymbol();
 
 private:
   struct class_name_functor {

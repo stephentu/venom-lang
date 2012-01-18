@@ -352,6 +352,18 @@ string InstantiatedType::stringify() const {
   return buf.str();
 }
 
+ClassSymbol*
+InstantiatedType::findSpecializedClassSymbol() {
+  InstantiatedType::AssertNoTypeParamPlaceholders(this);
+  if (getParams().empty()) return getClassSymbol();
+  SymbolTable* table = getClassSymbol()->getDefinedSymbolTable();
+  TypeTranslator t;
+  ClassSymbol* specialized = table->findClassSymbol(
+      createClassName(), SymbolTable::NoRecurse, t);
+  VENOM_ASSERT_NOT_NULL(specialized);
+  return specialized;
+}
+
 string InstantiatedType::createClassNameImpl(bool fullName) const {
   stringstream buf;
   buf << (fullName ? type->stringify() : type->getName());

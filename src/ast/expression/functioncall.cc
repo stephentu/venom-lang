@@ -114,9 +114,9 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
   InstantiatedType *funcType = primary->getStaticType();
   if (funcType->getType()->isClassType()) {
     // new object
-    BaseSymbol *bs = primary->getSymbol();
-    VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
-    ClassSymbol* csym = static_cast<ClassSymbol*>(bs);
+
+    InstantiatedType* klassType = funcType->getParams().at(0);
+    ClassSymbol* csym = klassType->findSpecializedClassSymbol();
     TypeTranslator t;
     FuncSymbol* ctorSym =
       csym->getClassSymbolTable()->findFuncSymbol(
@@ -124,7 +124,7 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
     VENOM_ASSERT_NOT_NULL(ctorSym);
 
     bool create;
-    size_t classIdx = cg.enterClass(csym, create);
+    size_t classIdx = cg.enterClass(klassType, create);
 
     // allocate the object
     cg.emitInstU32(Instruction::ALLOC_OBJ, classIdx);

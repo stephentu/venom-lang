@@ -53,6 +53,8 @@ public:
     checkAndInitTypeParams(ctx);
   }
 
+  VENOM_AST_TYPED_CLONE(FunctionCallNode)
+
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,

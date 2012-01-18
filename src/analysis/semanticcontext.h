@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <analysis/type.h>
 #include <analysis/symboltable.h>
@@ -137,6 +138,21 @@ public:
          it != children.end(); ++it) {
       (*it)->forEachModule(functor);
     }
+  }
+
+  typedef std::vector< std::pair< ast::ASTStatementNode*, SemanticContext* > >
+          ModuleVec;
+  struct ModuleCollectorFunctor {
+    ModuleCollectorFunctor(ModuleVec* modules) : modules(modules) {}
+    inline void operator()(ast::ASTStatementNode* root,
+                           SemanticContext* ctx) const {
+      modules->push_back(std::make_pair(root, ctx));
+    }
+    private:
+    ModuleVec* modules;
+  };
+  void getAllModules(ModuleVec& modules) {
+    forEachModule(ModuleCollectorFunctor(&modules));
   }
 
   void collectObjectCode(std::vector<backend::ObjectCode*>& objCodes);

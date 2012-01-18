@@ -232,16 +232,16 @@ public:
   /** Returns an index used to reference into the constant pool */
   size_t createConstant(const Constant& constant, bool& create);
 
-  /** Enter local ClassSymbol into the class pool, and return an
+  /** Enter local InstantiatedType into the class pool, and return an
    * index used to reference this class symbolically. The reference
    * returned is *NOT* the position in the local class pool, but rather
    * the position in the class reference table (which points into the local
    * class pool) */
-  size_t enterLocalClass(analysis::ClassSymbol* symbol, bool& create);
+  size_t enterLocalClass(analysis::InstantiatedType* klass, bool& create);
 
-  size_t enterExternalClass(analysis::ClassSymbol* symbol, bool& create);
+  size_t enterExternalClass(analysis::InstantiatedType* klass, bool& create);
 
-  size_t enterClass(analysis::ClassSymbol* symbol, bool& create);
+  size_t enterClass(analysis::InstantiatedType* klass, bool& create);
 
   /** Enter local FuncSymbol into the function pool, and return an
    * index used to reference this function symbolically. The reference
@@ -276,6 +276,13 @@ public:
   void printDebugStream();
 
 private:
+  size_t enterLocalClass(analysis::ClassSymbol* symbol, bool& create);
+
+  size_t enterExternalClass(analysis::ClassSymbol* symbol, bool& create);
+
+  /** Helper for enterClass() */
+  analysis::ClassSymbol* resolveToSymbol(analysis::InstantiatedType* klass);
+
   /**
    * Create object code representation.
    * Note this can only be called *once*, and doing so gives ownership
@@ -284,7 +291,7 @@ private:
   ObjectCode* createObjectCode();
 
   /** helper for createObjectCode() */
-  size_t getClassRefIndexFromType(analysis::Type* type);
+  size_t getClassRefIndexFromType(analysis::InstantiatedType* type);
 
   /** helper for createClass() */
   bool isLocalSymbol(const analysis::BaseSymbol* symbol) const;

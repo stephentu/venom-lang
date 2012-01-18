@@ -101,6 +101,57 @@ unsafe_compile_module(const string& fname, fstream& infile,
   }
 }
 
+struct _collect_types_functor {
+  _collect_types_functor(vector<InstantiatedType*>* types)
+    : types(types) {}
+  inline void operator()(ASTStatementNode* root,
+                         SemanticContext* ctx) const {
+    root->collectInstantiatedTypes(*types);
+  }
+  inline void operator()(
+      pair<ASTStatementNode*, SemanticContext*>& p) const {
+    operator()(p.first, p.second);
+  }
+  vector<InstantiatedType*>* types;
+};
+
+struct _instantiate_types_functor {
+  typedef multimap<SemanticContext*, InstantiatedType*> MultiMapType;
+
+  _instantiate_types_functor(
+      MultiMapType* typesByModule, vector<ClassDeclNode*>* classDecls)
+    : typesByModule(typesByModule), classDecls(classDecls) {}
+
+  inline void operator()(ASTStatementNode* root,
+                         SemanticContext* ctx) const {
+    pair<MultiMapType::iterator, MultiMapType::iterator> ret =
+      typesByModule->equal_range(ctx);
+    vector<InstantiatedType*> types;
+    for (MultiMapType::iterator it = ret.first; it != ret.second; ++it) {
+      types.push_back(it->second);
+    }
+    if (!types.empty()) {
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, root);
+      StmtListNode* stmtList = static_cast<StmtListNode*>(root);
+      stmtList->instantiateSpecializedTypes(types, *classDecls);
+    }
+  }
+  inline void operator()(
+      pair<ASTStatementNode*, SemanticContext*>& p) const {
+    operator()(p.first, p.second);
+  }
+
+  MultiMapType* typesByModule;
+  vector<ClassDeclNode*>* classDecls;
+};
+
+struct _itype_less_cmp {
+  inline bool operator()(const InstantiatedType* lhs,
+                         const InstantiatedType* rhs) const {
+    return lhs->stringify() < rhs->stringify();
+  }
+};
+
 #define _REWRITE_LOCAL_STAGES(x) \
   x(CanonicalRefs) \
   x(ModuleMain) \
@@ -143,6 +194,57 @@ unsafe_compile(const string& fname, fstream& infile,
   // infile
   unsafe_compile_module(fname, infile, ctx);
 
+  // resolve all specialized classes
+  // TODO: this step needs to come *after* the lift phase,
+  // whenever we implement lifting- this is because it assumes
+  // only top level classes.
+
+  SemanticContext::ModuleVec workingSet;
+  ctx.getProgramRoot()->getAllModules(workingSet);
+  set<InstantiatedType*, _itype_less_cmp> processedAlready(
+      (_itype_less_cmp()));
+  while (true) {
+
+    vector<InstantiatedType*> types;
+    for_each(workingSet.begin(), workingSet.end(),
+             _collect_types_functor(&types));
+
+    set<InstantiatedType*, _itype_less_cmp> uniqueSpecializedTypes
+      (types.begin(), types.end(), _itype_less_cmp());
+
+    // filter out the ones already processed
+    vector<InstantiatedType*> typesToProcess(uniqueSpecializedTypes.size());
+    vector<InstantiatedType*>::iterator end_it =
+      set_difference(uniqueSpecializedTypes.begin(),
+                     uniqueSpecializedTypes.end(),
+                     processedAlready.begin(),
+                     processedAlready.end(),
+                     typesToProcess.begin());
+
+    // if no types to process, then we are done
+    if (end_it == typesToProcess.begin()) break;
+
+    multimap<SemanticContext*, InstantiatedType*> typesByModule;
+    for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();
+         it != end_it; ++it) {
+      InstantiatedType* type = *it;
+      SemanticContext* ctx =
+        type->getClassSymbol()->getDefinedSymbolTable()->getSemanticContext();
+      typesByModule.insert(make_pair(ctx, type));
+    }
+    vector<ClassDeclNode*> classDecls;
+    _instantiate_types_functor instantiateFunctor(&typesByModule, &classDecls);
+    ctx.getProgramRoot()->forEachModule(instantiateFunctor);
+
+    workingSet.clear();
+    workingSet.reserve(classDecls.size());
+    for (vector<ClassDeclNode*>::iterator it = classDecls.begin();
+         it != classDecls.end(); ++it) {
+      workingSet.push_back(
+          make_pair(*it, (*it)->getSymbolTable()->getSemanticContext()));
+    }
+  }
+
 #define _IMPL_REWRITE_LOCAL(stage) \
   do { \
     ctx.getProgramRoot()->forEachModule(_rewrite_functor_##stage()); \
@@ -156,6 +258,8 @@ unsafe_compile(const string& fname, fstream& infile,
 
   ctx.getProgramRoot()->forEachModule(_codegen_functor());
 }
+
+#undef _REWRITE_LOCAL_STAGES
 
 static void exec(SemanticContext& ctx) {
   assert(ctx.getObjectCode());

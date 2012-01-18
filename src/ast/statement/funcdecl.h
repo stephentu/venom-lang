@@ -85,6 +85,8 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  VENOM_AST_TYPED_CLONE(FuncDeclNode)
+
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
 

@@ -60,7 +60,11 @@ public:
   virtual void collectInstantiatedTypes(
       std::vector<analysis::InstantiatedType*>& types);
 
+  virtual void codeGen(backend::CodeGenerator& cg);
+
   virtual analysis::BaseSymbol* getSymbol();
+
+  VENOM_AST_TYPED_CLONE(ClassDeclNode)
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;

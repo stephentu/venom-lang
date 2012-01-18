@@ -127,6 +127,7 @@ size_t
 CodeGenerator::enterLocalClass(ClassSymbol* symbol, bool& create) {
   // assert local class
   assert(isLocalSymbol(symbol));
+  assert(symbol->getTypeParams().empty());
   return class_reference_table.createLocal(symbol, create);
 }
 
@@ -134,11 +135,23 @@ size_t
 CodeGenerator::enterExternalClass(ClassSymbol* symbol, bool& create) {
   // assert external class
   assert(!isLocalSymbol(symbol));
+  assert(symbol->getTypeParams().empty());
   return class_reference_table.createExternal(symbol, create);
 }
 
 size_t
-CodeGenerator::enterClass(ClassSymbol* symbol, bool& create) {
+CodeGenerator::enterLocalClass(InstantiatedType* klass, bool& create) {
+  return enterLocalClass(resolveToSymbol(klass), create);
+}
+
+size_t
+CodeGenerator::enterExternalClass(InstantiatedType* klass, bool& create) {
+  return enterExternalClass(resolveToSymbol(klass), create);
+}
+
+size_t
+CodeGenerator::enterClass(InstantiatedType* klass, bool& create) {
+  ClassSymbol* symbol = resolveToSymbol(klass);
   return isLocalSymbol(symbol) ?
      enterLocalClass(symbol, create) : enterExternalClass(symbol, create);
 }
@@ -228,17 +241,15 @@ static inline uint32_t PrimitiveTypeToIndex(Type* type) {
 }
 
 size_t
-CodeGenerator::getClassRefIndexFromType(Type* type) {
+CodeGenerator::getClassRefIndexFromType(InstantiatedType* type) {
   VENOM_ASSERT_NOT_NULL(type);
-  ClassSymbol* sym = type->getClassSymbol();
-  VENOM_ASSERT_NOT_NULL(sym);
 
   // check if special primitive
   if (type->isPrimitive() || type->isVoid()) {
-    return PrimitiveTypeToIndex(type);
+    return PrimitiveTypeToIndex(type->getType());
   } else {
     bool create;
-    return enterClass(sym, create);
+    return enterClass(type, create);
   }
 }
 
@@ -247,6 +258,11 @@ CodeGenerator::isLocalSymbol(const BaseSymbol* symbol) const {
   return (symbol->getDefinedSymbolTable()->belongsTo(
             ctx->getModuleRoot()->getSymbolTable()) ||
           symbol->getDefinedSymbolTable() == ctx->getRootSymbolTable());
+}
+
+ClassSymbol*
+CodeGenerator::resolveToSymbol(InstantiatedType* klass) {
+  return klass->findSpecializedClassSymbol();
 }
 
 void
@@ -276,7 +292,7 @@ CodeGenerator::createObjectCode() {
          it != attributes.end(); ++it) {
       attrVec.push_back(
           getClassRefIndexFromType(
-            (*it)->getInstantiatedType()->getType()));
+            (*it)->getInstantiatedType()));
     }
 
     vector<uint32_t> methVec;
@@ -321,14 +337,14 @@ CodeGenerator::createObjectCode() {
     for (vector<InstantiatedType*>::iterator it = fsym->getParams().begin();
          it != fsym->getParams().end(); ++it) {
       paramVec.push_back(
-          getClassRefIndexFromType((*it)->getType()));
+          getClassRefIndexFromType(*it));
     }
 
     funcSigs.push_back(
         FunctionSignature(
           fsym->getName(),
           paramVec,
-          getClassRefIndexFromType(fsym->getReturnType()->getType()),
+          getClassRefIndexFromType(fsym->getReturnType()),
           funcIdxToLabels[idx]->index));
   }
 

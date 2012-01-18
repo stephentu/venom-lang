@@ -12,8 +12,11 @@
 
 #include <ast/statement/synthetic/classdecl.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -83,6 +86,16 @@ ClassDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
     if ((*it)->isSpecializedType()) types.push_back(*it);
   }
   ASTNode::collectInstantiatedTypes(types);
+}
+
+void
+ClassDeclNode::codeGen(CodeGenerator& cg) {
+  // if this is a parameterized class decl, then skip code gen
+  vector<InstantiatedType*> typeParams = getTypeParams();
+  if (!typeParams.empty()) return;
+
+  // otherwise, continue as usual
+  ASTStatementNode::codeGen(cg);
 }
 
 BaseSymbol*
