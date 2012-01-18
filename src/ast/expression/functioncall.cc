@@ -178,8 +178,6 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
     }
     VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
     FuncSymbol *fs = static_cast<FuncSymbol*>(bs);
-    bool create;
-    size_t fidx = cg.enterFunction(fs, create);
     if (fs->isMethod()) {
       // emit the "this" pointer
       primary->codeGen(cg);
@@ -201,6 +199,8 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
 
       if (ms->isConstructor() || isSuperInvoke) {
         // ctors are not invoked virtually
+        bool create;
+        size_t fidx = cg.enterFunction(fs, create);
         cg.emitInstU32(
             !ms->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,
             fidx);
@@ -209,6 +209,8 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
         cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
       }
     } else {
+      bool create;
+      size_t fidx = cg.enterFunction(fs, create);
       cg.emitInstU32(
           !fs->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,
           fidx);

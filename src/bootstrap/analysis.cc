@@ -213,6 +213,37 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
   ret["<prelude>.<Float>.<ctor>"] = venom_double::CtorDescriptor;
   ret["<prelude>.<Bool>.<ctor>"] = venom_boolean::CtorDescriptor;
 
+  vector<ClassSymbol*> builtinClassSyms;
+  rootCtx->getRootSymbolTable()->getClassSymbols(builtinClassSyms);
+
+  for (vector<ClassSymbol*>::iterator it = builtinClassSyms.begin();
+       it != builtinClassSyms.end(); ++it) {
+    if (SpecializedClassSymbol* scs =
+          dynamic_cast<SpecializedClassSymbol*>(*it)) {
+      InstantiatedType* itype = scs->getInstantiation();
+      // list
+      if (itype->getType()->isListType()) {
+        assert(itype->getParams().size() == 1);
+        InstantiatedType* arg0 = itype->getParams()[0];
+        venom_list::ListType listType;
+        if (arg0->isInt()) listType = venom_list::IntType;
+        else if (arg0->isFloat()) listType = venom_list::FloatType;
+        else if (arg0->isBool()) listType = venom_list::BoolType;
+        else {
+          assert(arg0->isRefCounted());
+          listType = venom_list::RefType;
+        }
+        venom_class_object* classTable =
+          venom_list::GetListClassTable(listType);
+
+        // TODO: very hacky...
+        string ctorName = scs->getFullName() + ".<ctor>";
+        assert(ret.find(ctorName) == ret.end());
+        ret[ctorName] = classTable->ctor;
+      }
+    }
+  }
+
   return ret;
 }
 
