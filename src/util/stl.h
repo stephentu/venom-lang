@@ -268,6 +268,24 @@ struct stringify_functor {
   typedef _stringify_functor_ref<T> ref;
 };
 
+/** Debugging helpers **/
+
+/**
+ * Generate a string from a collection of pointers to
+ * stringify-able objects
+ */
+template <typename Iter>
+inline std::string debug_stringify_ptr_coll(
+    Iter begin, Iter end, const std::string& sep) {
+  std::stringstream buf;
+  while (begin != end) {
+    buf << (*begin)->stringify();
+    if (begin + 1 != end) buf << sep;
+    ++begin;
+  }
+  return buf.str();
+}
+
 }
 }
 

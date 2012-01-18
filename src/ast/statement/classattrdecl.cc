@@ -66,6 +66,7 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
   BaseSymbol *bs = variable->getSymbol();
   VENOM_ASSERT_TYPEOF_PTR(ClassAttributeSymbol, bs);
   ClassAttributeSymbol *sym = static_cast<ClassAttributeSymbol*>(bs);
+  ASTExpressionNode* dummyValue = NULL;
   if (!value) {
     // replace
     //   attr x::T
@@ -77,13 +78,17 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
     //   0.0 (T = Double)
     //   False (T = Bool)
     //   Nil (otherwise)
-    value = sym->getInstantiatedType()->getType()->createDefaultInitializer();
-    value->initSymbolTable(symbols);
+    dummyValue = sym->getInstantiatedType()->getType()->createDefaultInitializer();
+    //dummyValue->initSymbolTable(symbols);
     // no need to call semantic check on value
   }
+  assert(value || dummyValue);
 
   AssignNode::TypeCheckAssignment(
-      ctx, symbols, variable, value, sym->getClassSymbol());
+      ctx, symbols, variable, value ? value : dummyValue,
+      sym->getClassSymbol());
+
+  if (dummyValue) delete dummyValue;
 }
 
 ASTNode*

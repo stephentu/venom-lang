@@ -209,6 +209,9 @@ unsafe_compile(const string& fname, fstream& infile,
     for_each(workingSet.begin(), workingSet.end(),
              _collect_types_functor(&types));
 
+    //cerr << "collected: " <<
+    //util::debug_stringify_ptr_coll(types.begin(), types.end(), ",") << endl;
+
     set<InstantiatedType*, _itype_less_cmp> uniqueSpecializedTypes
       (types.begin(), types.end(), _itype_less_cmp());
 
@@ -219,10 +222,17 @@ unsafe_compile(const string& fname, fstream& infile,
                      uniqueSpecializedTypes.end(),
                      processedAlready.begin(),
                      processedAlready.end(),
-                     typesToProcess.begin());
+                     typesToProcess.begin(), _itype_less_cmp());
+
+    //cerr << "typesToProcess: " <<
+    //util::debug_stringify_ptr_coll(typesToProcess.begin(), end_it, ",")
+    //<< endl;
 
     // if no types to process, then we are done
     if (end_it == typesToProcess.begin()) break;
+
+    // otherwise, mark that we are processing these types
+    processedAlready.insert( typesToProcess.begin(), typesToProcess.end() );
 
     multimap<SemanticContext*, InstantiatedType*> typesByModule;
     for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();

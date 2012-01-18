@@ -241,7 +241,8 @@ InstantiatedType* Type::instantiate() {
 
 bool
 InstantiatedType::isFullyInstantiated() const {
-  if (!dynamic_cast<const TypeParamType*>(getType())) return false;
+  VENOM_ASSERT_NOT_NULL(getType());
+  if (dynamic_cast<const TypeParamType*>(getType())) return false;
   for (vector<InstantiatedType*>::const_iterator it = params.begin();
        it != params.end(); ++it) {
     if (!(*it)->isFullyInstantiated()) return false;

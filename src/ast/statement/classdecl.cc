@@ -205,7 +205,9 @@ ClassDeclNodeParser::cloneImpl() {
 ClassDeclNode*
 ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   // assert that we have already registered this symbol
-  assert(parentTypes.size() == parents.size());
+  assert(parents.empty() ?
+           parentTypes.size() == 1 :
+           parents.size() == parentTypes.size());
   assert(typeParamTypes.size() == typeParams.size());
 
   // assert that the type translator completely instantiates
