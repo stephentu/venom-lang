@@ -1,0 +1,10 @@
+class A{T}
+  attr elem::T 
+  def self(elem::T) =
+    self.elem = elem;
+  end
+end
+a = A{int}(32);
+print(a.elem);
+b = A{string}("hello, world");
+print(b.elem);
