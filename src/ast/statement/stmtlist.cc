@@ -127,6 +127,9 @@ StmtListNode::instantiateSpecializedTypes(
       instantiation->semanticCheck(getSymbolTable()->getSemanticContext());
       instantiation->typeCheck(getSymbolTable()->getSemanticContext());
 
+      // mark to be inserted
+      toInsert.push_back(instantiation);
+
       // return to user
       classDecls.push_back(instantiation);
     }
