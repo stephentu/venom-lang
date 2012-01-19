@@ -1,0 +1,14 @@
+a = [1,2,3];
+#print (a[0]);
+print (a);
+b = ['hello', "world"];
+print (b);
+class A
+  attr name::string
+  def self(name::string) = 
+    self.name = name; 
+  end
+  def stringify() -> string = name; end
+end
+c = [A('Bob'), A('Bill'), A('Charlie')];
+print (c);

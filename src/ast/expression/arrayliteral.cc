@@ -4,6 +4,14 @@
 #include <analysis/type.h>
 
 #include <ast/expression/arrayliteral.h>
+#include <ast/expression/assignexpr.h>
+#include <ast/expression/attraccess.h>
+#include <ast/expression/exprlist.h>
+#include <ast/expression/functioncall.h>
+#include <ast/expression/variable.h>
+
+#include <ast/expression/synthetic/functioncall.h>
+#include <ast/expression/synthetic/symbolnode.h>
 
 #include <util/stl.h>
 
@@ -24,7 +32,33 @@ ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   // to:
   // (_tmp = list{type}(), _tmp.append(expr1), ..., _tmp.append(exprN), _tmp)
 
-  return NULL;
+  InstantiatedType* stype = getStaticType();
+  assert(stype->getType()->isListType());
+  string tmpVar = ctx->tempVarName();
+  ExprNodeVec exprs;
+  exprs.reserve(values.size() + 2);
+  exprs.push_back(
+      new AssignExprNode(
+        new VariableNodeParser(tmpVar, NULL),
+        new FunctionCallNodeSynthetic(
+          new SymbolNode(
+            stype->getType()->getClassSymbol(),
+            Type::ClassType->instantiate(ctx, util::vec1(stype)),
+            NULL),
+          stype->getParams(),
+          ExprNodeVec())));
+  for (ExprNodeVec::iterator it = values.begin();
+       it != values.end(); ++it) {
+    exprs.push_back(
+        new FunctionCallNodeParser(
+          new AttrAccessNode(
+            new VariableNodeParser(tmpVar, NULL),
+            "append"),
+          TypeStringVec(),
+          util::vec1(Clone((*it)))));
+  }
+  exprs.push_back(new VariableNodeParser(tmpVar, NULL));
+  return replace(ctx, new ExprListNode(exprs));
 }
 
 struct functor {

@@ -21,6 +21,7 @@ namespace ast {
 class VariableNode;
 
 class AssignNode : public ASTStatementNode {
+  friend class AssignExprNode;
   friend class ClassAttrDeclNode;
 public:
   /** Takes ownership of variable, value */
@@ -75,7 +76,7 @@ public:
   }
 
 protected:
-  static void
+  static analysis::InstantiatedType*
   TypeCheckAssignment(analysis::SemanticContext* ctx,
                       analysis::SymbolTable*     symbols,
                       ASTExpressionNode*         variable,

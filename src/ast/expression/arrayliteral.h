@@ -37,6 +37,11 @@ public:
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
+  virtual void codeGen(backend::CodeGenerator& cg) {
+    // is re-written, so never need to code-generate it
+    VENOM_NOT_REACHED;
+  }
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ArrayLiteralNode)
 
 protected:

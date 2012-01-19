@@ -76,6 +76,7 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
     registerSymbol(ctx);
   }
   // dont recurse on variable...
+  // TODO: not really sure if this is correct...
 }
 
 void
@@ -101,7 +102,7 @@ AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
       variable->cloneForTemplate(t), value->cloneForTemplate(t));
 }
 
-void
+InstantiatedType*
 AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
                                 SymbolTable*       symbols,
                                 ASTExpressionNode* variable,
@@ -121,6 +122,7 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
       throw TypeViolationException(
           "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
     }
+    return lhs;
   } else {
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
     VariableNode *vn = static_cast<VariableNode*>(variable);
@@ -131,7 +133,7 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
       symbols->createSymbol(vn->getName(), rhs);
     }
     // go again, so we can set the static type on variable
-    TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
+    return TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
   }
 }
 

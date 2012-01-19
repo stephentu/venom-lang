@@ -156,10 +156,10 @@ public:
    * macro in parser/driver.cc
    */
   enum RewriteMode {
+    DeSugar,       // rewrite list/dict literals into lower-level ops
+
     CanonicalRefs, // rewrite module level vars into attr access +
                    // un-qualified attrs x into self.x
-
-    DeSugar,       // rewrite list/dict literals into lower-level ops
 
     ModuleMain,    // rewrite module level statements into a <main>
                    // function

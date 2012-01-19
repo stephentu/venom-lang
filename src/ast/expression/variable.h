@@ -52,7 +52,6 @@ protected:
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
-protected:
   std::string name;
 };
 

@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fstream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -129,6 +130,12 @@ public:
 
   /** TODO: use atomic instructions if we need thread safety */
   inline uint64_t uniqueId() { return idGen++; }
+
+  inline std::string tempVarName() {
+    std::stringstream buf;
+    buf << "_tmp$$" << uniqueId();
+    return buf.str();
+  }
 
   /** Proceeds in a depth-first manner */
   template <typename Functor>

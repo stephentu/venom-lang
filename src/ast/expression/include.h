@@ -18,4 +18,5 @@
 
 #include <ast/expression/functioncall.h>
 
+#include <ast/expression/assignexpr.h>
 #include <ast/expression/exprlist.h>
