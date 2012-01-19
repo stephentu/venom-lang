@@ -4,6 +4,7 @@
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
 
+#include <ast/expression/arrayaccess.h>
 #include <ast/expression/attraccess.h>
 #include <ast/expression/functioncall.h>
 #include <ast/expression/variable.h>
@@ -196,6 +197,20 @@ void
 AssignNode::CodeGenAssignment(CodeGenerator& cg,
                               ASTExpressionNode* variable,
                               ASTExpressionNode* value) {
+
+  // case 1:
+  // exprA[exprB] = exprC
+  if (ArrayAccessNode *aan = dynamic_cast<ArrayAccessNode*>(variable)) {
+    aan->codeGenAssignLHS(cg, value);
+    return;
+  }
+
+  // case 2:
+  // exprA.field = exprB
+
+  // case 3:
+  // location = exprA
+
   // TODO: we need to check these conditions actually
   // hold (during static analysis)
   BaseSymbol* bs = variable->getSymbol();

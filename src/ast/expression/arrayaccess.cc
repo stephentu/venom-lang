@@ -3,8 +3,11 @@
 
 #include <ast/expression/arrayaccess.h>
 
+#include <backend/codegenerator.h>
+
 using namespace std;
 using namespace venom::analysis;
+using namespace venom::backend;
 
 namespace venom {
 namespace ast {
@@ -43,6 +46,37 @@ ArrayAccessNode::typeCheckImpl(SemanticContext* ctx,
     }
     return primaryType->getParams().at(1);
   }
+}
+
+void
+ArrayAccessNode::codeGen(CodeGenerator& cg) {
+  assert(!hasLocationContext(AssignmentLHS));
+  if (primary->getStaticType()->getType()->isListType()) {
+    assert(index->getStaticType()->isInt());
+    primary->codeGen(cg);
+    index->codeGen(cg);
+    cg.emitInst(
+        primary->getStaticType()->getParams()[0]->isRefCounted() ?
+          Instruction::GET_ARRAY_ACCESS_REF:
+          Instruction::GET_ARRAY_ACCESS);
+  } else VENOM_UNIMPLEMENTED;
+}
+
+void
+ArrayAccessNode::codeGenAssignLHS(CodeGenerator& cg, ASTExpressionNode* value) {
+  assert(hasLocationContext(AssignmentLHS));
+  if (primary->getStaticType()->getType()->isListType()) {
+    assert(index->getStaticType()->isInt());
+    assert(value->getStaticType()->isSubtypeOf(
+          *(primary->getStaticType()->getParams()[0])));
+    primary->codeGen(cg);
+    index->codeGen(cg);
+    value->codeGen(cg);
+    cg.emitInst(
+        primary->getStaticType()->getParams()[0]->isRefCounted() ?
+          Instruction::SET_ARRAY_ACCESS_REF:
+          Instruction::SET_ARRAY_ACCESS);
+  } else VENOM_UNIMPLEMENTED;
 }
 
 ArrayAccessNode*
