@@ -148,11 +148,18 @@ public:
 
   /** Tree re-writing **/
 
-  /** Order is important- rewrites must be run in this order
-   * for correctness */
+  /**
+   * Order is important- rewrites must be run in this order
+   * for correctness
+   *
+   * WARNING: IF you change this enum, must also change a
+   * macro in parser/driver.cc
+   */
   enum RewriteMode {
     CanonicalRefs, // rewrite module level vars into attr access +
                    // un-qualified attrs x into self.x
+
+    DeSugar,       // rewrite list/dict literals into lower-level ops
 
     ModuleMain,    // rewrite module level statements into a <main>
                    // function

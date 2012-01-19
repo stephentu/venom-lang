@@ -17,3 +17,5 @@
 #include <ast/expression/arrayaccess.h>
 
 #include <ast/expression/functioncall.h>
+
+#include <ast/expression/exprlist.h>

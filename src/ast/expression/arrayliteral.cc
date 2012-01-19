@@ -13,6 +13,20 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+ASTNode*
+ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  // recurse first
+  ASTExpressionNode::rewriteLocal(ctx, mode);
+
+  // now, turn it from:
+  // [expr1, expr2, ..., exprN]
+  //
+  // to:
+  // (_tmp = list{type}(), _tmp.append(expr1), ..., _tmp.append(exprN), _tmp)
+
+  return NULL;
+}
+
 struct functor {
   functor(SemanticContext* ctx) : ctx(ctx) {}
   inline InstantiatedType* operator()(ASTExpressionNode* exp) const {

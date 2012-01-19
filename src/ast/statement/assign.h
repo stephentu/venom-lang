@@ -17,6 +17,9 @@ namespace analysis {
 
 namespace ast {
 
+/** Forward decl */
+class VariableNode;
+
 class AssignNode : public ASTStatementNode {
   friend class ClassAttrDeclNode;
 public:
@@ -78,6 +81,16 @@ protected:
                       ASTExpressionNode*         variable,
                       ASTExpressionNode*         value,
                       analysis::ClassSymbol*     classSymbol = NULL);
+
+  static void
+  RegisterVariableLHS(analysis::SemanticContext* ctx,
+                      analysis::SymbolTable* symbols,
+                      VariableNode* var);
+
+  static void
+  CodeGenAssignment(backend::CodeGenerator& cg,
+                    ASTExpressionNode* variable,
+                    ASTExpressionNode* value);
 
 private:
   ASTExpressionNode* variable;

@@ -20,92 +20,10 @@ namespace venom {
 namespace ast {
 
 void
-AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
-                                SymbolTable*       symbols,
-                                ASTExpressionNode* variable,
-                                ASTExpressionNode* value,
-                                ClassSymbol*       classSymbol) {
-  InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
-  InstantiatedType *rhs = value->typeCheck(ctx, lhs);
-  assert(rhs);
-  if (!rhs->getType()->isVisible()) {
-    throw TypeViolationException(
-        "Cannot create reference to hidden type " + rhs->stringify());
-  }
-
-  if (lhs) {
-    // require rhs <: lhs
-    if (!rhs->isSubtypeOf(*lhs)) {
-      throw TypeViolationException(
-          "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
-    }
-  } else {
-    VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
-    VariableNode *vn = static_cast<VariableNode*>(variable);
-    assert(!vn->getExpectedType());
-    if (classSymbol) {
-      symbols->createClassAttributeSymbol(vn->getName(), rhs, classSymbol);
-    } else {
-      symbols->createSymbol(vn->getName(), rhs);
-    }
-    // go again, so we can set the static type on variable
-    TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
-  }
-}
-
-void
 AssignNode::registerSymbol(SemanticContext* ctx) {
   VariableNode *var = dynamic_cast<VariableNode*>(variable);
   if (var) {
-    // check for duplicate definition (as a function or class)
-    if (symbols->isDefined(
-          var->getName(), SymbolTable::Function | SymbolTable::Class,
-          SymbolTable::NoRecurse)) {
-      throw SemanticViolationException(
-          "Symbol " + var->getName() + " already defined");
-    }
-
-    InstantiatedType* explicitType = var->getExplicitType();
-    if (explicitType) {
-      // if there is an explicit type string, treat it as
-      // explicitly declaring a new symbol
-      if (symbols->isDefined(
-            var->getName(), SymbolTable::Location, SymbolTable::NoRecurse)) {
-        throw SemanticViolationException(
-            "Cannot redeclare symbol " + var->getName());
-      }
-      symbols->createSymbol(var->getName(), explicitType);
-    } else {
-      // if there is no type string, then only create a new
-      // declaration if the symbol doesn't exist anywhere in the scope
-      // (current or parents) as a location type
-      //
-      // for example, consider case 1:
-      // class A
-      //   attr x::int
-      // end
-      // class B <- A
-      //   def self(y::int) =
-      //     x = y; # does *NOT* declare a new symbol
-      //   end
-      // end
-      //
-      // versus:
-      //
-      // class A
-      //   def x() = print('hi'); end
-      // end
-      // class B <- A
-      //   def self(y::int) =
-      //     x = y; # *does* declare a new symbol
-      //   end
-      // end
-      if (!symbols->isDefined(
-            var->getName(), SymbolTable::Location,
-            SymbolTable::AllowCurrentScope)) {
-        symbols->createSymbol(var->getName(), NULL);
-      }
-    }
+    RegisterVariableLHS(ctx, symbols, var);
   }
 }
 
@@ -169,6 +87,113 @@ AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 
 void
 AssignNode::codeGen(CodeGenerator& cg) {
+  CodeGenAssignment(cg, variable, value);
+}
+
+AssignNode*
+AssignNode::cloneImpl() {
+  return new AssignNode(variable->clone(), value->clone());
+}
+
+AssignNode*
+AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  return new AssignNode(
+      variable->cloneForTemplate(t), value->cloneForTemplate(t));
+}
+
+void
+AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
+                                SymbolTable*       symbols,
+                                ASTExpressionNode* variable,
+                                ASTExpressionNode* value,
+                                ClassSymbol*       classSymbol) {
+  InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
+  InstantiatedType *rhs = value->typeCheck(ctx, lhs);
+  assert(rhs);
+  if (!rhs->getType()->isVisible()) {
+    throw TypeViolationException(
+        "Cannot create reference to hidden type " + rhs->stringify());
+  }
+
+  if (lhs) {
+    // require rhs <: lhs
+    if (!rhs->isSubtypeOf(*lhs)) {
+      throw TypeViolationException(
+          "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
+    }
+  } else {
+    VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
+    VariableNode *vn = static_cast<VariableNode*>(variable);
+    assert(!vn->getExpectedType());
+    if (classSymbol) {
+      symbols->createClassAttributeSymbol(vn->getName(), rhs, classSymbol);
+    } else {
+      symbols->createSymbol(vn->getName(), rhs);
+    }
+    // go again, so we can set the static type on variable
+    TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
+  }
+}
+
+void
+AssignNode::RegisterVariableLHS(SemanticContext* ctx,
+                                SymbolTable* symbols,
+                                VariableNode* var) {
+  // check for duplicate definition (as a function or class)
+  if (symbols->isDefined(
+        var->getName(), SymbolTable::Function | SymbolTable::Class,
+        SymbolTable::NoRecurse)) {
+    throw SemanticViolationException(
+        "Symbol " + var->getName() + " already defined");
+  }
+
+  InstantiatedType* explicitType = var->getExplicitType();
+  if (explicitType) {
+    // if there is an explicit type string, treat it as
+    // explicitly declaring a new symbol
+    if (symbols->isDefined(
+          var->getName(), SymbolTable::Location, SymbolTable::NoRecurse)) {
+      throw SemanticViolationException(
+          "Cannot redeclare symbol " + var->getName());
+    }
+    symbols->createSymbol(var->getName(), explicitType);
+  } else {
+    // if there is no type string, then only create a new
+    // declaration if the symbol doesn't exist anywhere in the scope
+    // (current or parents) as a location type
+    //
+    // for example, consider case 1:
+    // class A
+    //   attr x::int
+    // end
+    // class B <- A
+    //   def self(y::int) =
+    //     x = y; # does *NOT* declare a new symbol
+    //   end
+    // end
+    //
+    // versus:
+    //
+    // class A
+    //   def x() = print('hi'); end
+    // end
+    // class B <- A
+    //   def self(y::int) =
+    //     x = y; # *does* declare a new symbol
+    //   end
+    // end
+    if (!symbols->isDefined(
+          var->getName(), SymbolTable::Location,
+          SymbolTable::AllowCurrentScope)) {
+      symbols->createSymbol(var->getName(), NULL);
+    }
+  }
+}
+
+void
+AssignNode::CodeGenAssignment(CodeGenerator& cg,
+                              ASTExpressionNode* variable,
+                              ASTExpressionNode* value) {
   // TODO: we need to check these conditions actually
   // hold (during static analysis)
   BaseSymbol* bs = variable->getSymbol();
@@ -197,16 +222,6 @@ AssignNode::codeGen(CodeGenerator& cg) {
           Instruction::STORE_LOCAL_VAR,
         idx);
   }
-}
-
-AssignNode*
-AssignNode::cloneImpl() {
-  return new AssignNode(variable->clone(), value->clone());
-}
-
-AssignNode*
-AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  return new AssignNode(variable->cloneForTemplate(t), value->cloneForTemplate(t));
 }
 
 }

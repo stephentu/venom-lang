@@ -154,6 +154,7 @@ struct _itype_less_cmp {
 
 #define _REWRITE_LOCAL_STAGES(x) \
   x(CanonicalRefs) \
+  x(DeSugar) \
   x(ModuleMain) \
   x(FunctionReturns) \
   x(BoxPrimitives)
