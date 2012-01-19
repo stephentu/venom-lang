@@ -29,7 +29,6 @@ InstantiatedType* const InstantiatedType::AnyType(Type::AnyType->instantiate());
 Type* const Type::IntType(new Type("int", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::BoolType(new Type("bool", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::FloatType(new Type("float", NULL, InstantiatedType::AnyType, 0));
-Type* const Type::StringType(new Type("string", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::VoidType(new Type("void", NULL, InstantiatedType::AnyType, 0));
 
 Type* const Type::Func0Type(new Type("func0", NULL, InstantiatedType::AnyType, 1));
@@ -56,6 +55,8 @@ Type* const Type::Func19Type(new Type("func19", NULL, InstantiatedType::AnyType,
 
 Type* const Type::ObjectType(new Type("object", NULL, InstantiatedType::AnyType, 0));
 InstantiatedType* const InstantiatedType::ObjectType(Type::ObjectType->instantiate());
+
+Type* const Type::StringType(new Type("string", NULL, InstantiatedType::ObjectType, 0));
 
 Type* const Type::BoxedIntType(new Type("<Int>", NULL, InstantiatedType::ObjectType, 0));
 Type* const Type::BoxedBoolType(new Type("<Bool>", NULL, InstantiatedType::ObjectType, 0));

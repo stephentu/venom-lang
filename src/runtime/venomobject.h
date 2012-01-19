@@ -215,6 +215,8 @@ public:
   static backend::FunctionDescriptor* const ReleaseDescriptor;
   static backend::FunctionDescriptor* const CtorDescriptor;
   static backend::FunctionDescriptor* const StringifyDescriptor;
+  static backend::FunctionDescriptor* const HashDescriptor;
+  static backend::FunctionDescriptor* const EqDescriptor;
 
   static venom_class_object ObjClassTable;
 
@@ -290,6 +292,23 @@ public:
    */
   static venom_ret_cell
   stringify(backend::ExecutionContext* ctx, venom_cell self);
+
+  /**
+   * hash - returns an int which is a hash of this instance
+   */
+  static venom_ret_cell
+  hash(backend::ExecutionContext* ctx, venom_cell self) {
+    return venom_ret_cell(int64_t(self.asRawObject()));
+  }
+
+  /**
+   * eq - returns true if parameter is the same instance
+   */
+  static venom_ret_cell
+  eq(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    // pointer equality
+    return venom_ret_cell(self.asRawObject() == that.asRawObject());
+  }
 
   /**
    * Do virtual dispatch on this object, using the n-th method entry in

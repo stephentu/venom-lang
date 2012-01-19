@@ -98,6 +98,55 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                   InstantiatedTypeVec(),
                                   InstantiatedType::StringType,
                                   objectClassSym, NULL, true);
+  FuncSymbol *objHashFuncSym =
+    objSymTab->createMethodSymbol("hash", InstantiatedTypeVec(),
+                                  InstantiatedTypeVec(),
+                                  InstantiatedType::IntType,
+                                  objectClassSym, NULL, true);
+
+  // TODO: this eq is a hack for now- in the future, we will leave
+  // eq out of object and require classes to extend
+  // Equal{A} to be allowed as a key in a map. But our type-system
+  // is currently not mature enough to support this.
+  FuncSymbol *objEqFuncSym =
+    objSymTab->createMethodSymbol("eq", InstantiatedTypeVec(),
+                                  util::vec1(InstantiatedType::ObjectType),
+                                  InstantiatedType::BoolType,
+                                  objectClassSym, NULL, true);
+
+#define _IMPL_OVERRIDE_STRINGIFY(classSym) \
+  do { \
+    (classSym)->getClassSymbolTable()->createMethodSymbol( \
+        "stringify", InstantiatedTypeVec(), \
+        InstantiatedTypeVec(), \
+        InstantiatedType::StringType, \
+        (classSym), objStringifyFuncSym, true); \
+  } while (0)
+
+#define _IMPL_OVERRIDE_HASH(classSym) \
+  do { \
+    (classSym)->getClassSymbolTable()->createMethodSymbol( \
+        "hash", InstantiatedTypeVec(), \
+        InstantiatedTypeVec(), \
+        InstantiatedType::IntType, \
+        (classSym), objHashFuncSym, true); \
+  } while (0)
+
+#define _IMPL_OVERRIDE_EQ(classSym) \
+  do { \
+    (classSym)->getClassSymbolTable()->createMethodSymbol( \
+        "eq", InstantiatedTypeVec(), \
+        util::vec1(InstantiatedType::ObjectType), \
+        InstantiatedType::BoolType, \
+        (classSym), objEqFuncSym, true); \
+  } while (0)
+
+#define _IMPL_OVERRIDE_ALL(classSym) \
+  do { \
+    _IMPL_OVERRIDE_STRINGIFY(classSym); \
+    _IMPL_OVERRIDE_HASH(classSym); \
+    _IMPL_OVERRIDE_EQ(classSym); \
+  } while (0)
 
   SymbolTable *stringSymTab = root->newChildScope(NULL);
   ClassSymbol *stringClassSym =
@@ -106,10 +155,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                    InstantiatedTypeVec(),
                                    InstantiatedType::VoidType,
                                    stringClassSym, NULL, true);
-  stringSymTab->createMethodSymbol("stringify", InstantiatedTypeVec(),
-                                   InstantiatedTypeVec(),
-                                   InstantiatedType::StringType,
-                                   stringClassSym, objStringifyFuncSym, true);
+  _IMPL_OVERRIDE_ALL(stringClassSym);
 
   // boxed primitives, with hidden names
   SymbolTable *IntSymTab = root->newChildScope(NULL);
@@ -119,6 +165,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                 util::vec1(InstantiatedType::IntType),
                                 InstantiatedType::VoidType,
                                 IntClassSym, NULL, true);
+  _IMPL_OVERRIDE_ALL(IntClassSym);
 
   SymbolTable *FloatSymTab = root->newChildScope(NULL);
   ClassSymbol *FloatClassSym =
@@ -127,6 +174,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                   util::vec1(InstantiatedType::FloatType),
                                   InstantiatedType::VoidType,
                                   FloatClassSym, NULL, true);
+  _IMPL_OVERRIDE_ALL(FloatClassSym);
 
   SymbolTable *BoolSymTab = root->newChildScope(NULL);
   ClassSymbol *BoolClassSym =
@@ -135,6 +183,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                  util::vec1(InstantiatedType::BoolType),
                                  InstantiatedType::VoidType,
                                  BoolClassSym, NULL, true);
+  _IMPL_OVERRIDE_ALL(BoolClassSym);
 
   SymbolTable *RefSymTab = root->newChildScope(NULL);
   vector<InstantiatedType*> RefTypeParam = createTypeParams(ctx, 1);
@@ -160,10 +209,9 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                    InstantiatedTypeVec(),
                                    InstantiatedType::VoidType, ListClassSym,
                                    NULL, true);
-  ListSymTab->createMethodSymbol("stringify", InstantiatedTypeVec(),
-                                   InstantiatedTypeVec(),
-                                   InstantiatedType::StringType, ListClassSym,
-                                   objStringifyFuncSym, true);
+
+  _IMPL_OVERRIDE_ALL(ListClassSym);
+
   ListSymTab->createMethodSymbol("get", InstantiatedTypeVec(),
                                    util::vec1(InstantiatedType::IntType),
                                    ListTypeParam[0], ListClassSym,
@@ -189,7 +237,35 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                          util::vec1(InstantiatedType::AnyType),
                          InstantiatedType::VoidType, true);
 
+#undef _IMPL_OVERRIDE_STRINGIFY
+#undef _IMPL_OVERRIDE_HASH
+#undef _IMPL_OVERRIDE_EQ
+#undef _IMPL_OVERRIDE_ALL
+
   return root;
+}
+
+static void FillFunctionMap(
+    Linker::FuncDescMap& map,
+    ClassSymbol* csym,
+    venom_class_object* classObj) {
+  map[csym->getFullName() + ".<ctor>"] = classObj->ctor;
+
+  vector<Symbol*> attributes;
+  vector<FuncSymbol*> methods;
+  csym->linearizedOrder(attributes, methods);
+  assert(methods.size() == classObj->vtable.size());
+  for (size_t idx = 0; idx < methods.size(); idx++) {
+    pair<Linker::FuncDescMap::iterator, bool> res =
+      map.insert(
+          make_pair(
+            methods[idx]->getFullName(), classObj->vtable[idx]));
+    if (!res.second) {
+      // existing element
+      assert( res.first->second == classObj->vtable[idx] );
+
+    }
+  }
 }
 
 Linker::FuncDescMap
@@ -201,17 +277,25 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
   ret["<prelude>.print"] = BuiltinPrintDescriptor;
 
   // object methods
-  ret["<prelude>.object.<ctor>"]    = venom_object::CtorDescriptor;
-  ret["<prelude>.object.stringify"] = venom_object::StringifyDescriptor;
+  FillFunctionMap(
+      ret, Type::ObjectType->getClassSymbol(),
+      &venom_object::ObjClassTable);
 
   // string methods
-  ret["<prelude>.string.<ctor>"]    = venom_string::CtorDescriptor;
-  ret["<prelude>.string.stringify"] = venom_string::StringifyDescriptor;
+  FillFunctionMap(
+      ret, Type::StringType->getClassSymbol(),
+      &venom_string::StringClassTable);
 
   // box methods
-  ret["<prelude>.<Int>.<ctor>"] = venom_integer::CtorDescriptor;
-  ret["<prelude>.<Float>.<ctor>"] = venom_double::CtorDescriptor;
-  ret["<prelude>.<Bool>.<ctor>"] = venom_boolean::CtorDescriptor;
+  FillFunctionMap(
+      ret, Type::BoxedIntType->getClassSymbol(),
+      &venom_integer::IntegerClassTable);
+  FillFunctionMap(
+      ret, Type::BoxedFloatType->getClassSymbol(),
+      &venom_double::DoubleClassTable);
+  FillFunctionMap(
+      ret, Type::BoxedBoolType->getClassSymbol(),
+      &venom_boolean::BooleanClassTable);
 
   vector<ClassSymbol*> builtinClassSyms;
   rootCtx->getRootSymbolTable()->getClassSymbols(builtinClassSyms);
@@ -236,10 +320,8 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
         venom_class_object* classTable =
           venom_list::GetListClassTable(listType);
 
-        // TODO: very hacky...
-        string ctorName = scs->getFullName() + ".<ctor>";
-        assert(ret.find(ctorName) == ret.end());
-        ret[ctorName] = classTable->ctor;
+        FillFunctionMap(
+            ret, scs->getType()->getClassSymbol(), classTable);
       }
     }
   }

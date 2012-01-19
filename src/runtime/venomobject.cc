@@ -48,11 +48,17 @@ FunctionDescriptor* const venom_object::CtorDescriptor(
 FunctionDescriptor* const venom_object::StringifyDescriptor(
     new FunctionDescriptor((void*)stringify, 1, 0x1, true));
 
+FunctionDescriptor* const venom_object::HashDescriptor(
+    new FunctionDescriptor((void*)hash, 1, 0x1, true));
+
+FunctionDescriptor* const venom_object::EqDescriptor(
+    new FunctionDescriptor((void*)hash, 2, 0x3, true));
+
 venom_class_object venom_object::ObjClassTable(
     "object",
     sizeof(venom_object),
     0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
-    util::vec1(StringifyDescriptor));
+    util::vec3(StringifyDescriptor, HashDescriptor, EqDescriptor));
 
 /**
  * We cannot have venom_object() in the header since we have not seen

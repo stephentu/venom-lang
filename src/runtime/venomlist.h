@@ -52,6 +52,16 @@ public:
   static backend::FunctionDescriptor* const StringifyBoolDescriptor;
   static backend::FunctionDescriptor* const StringifyRefDescriptor;
 
+  static backend::FunctionDescriptor* const HashIntDescriptor;
+  static backend::FunctionDescriptor* const HashFloatDescriptor;
+  static backend::FunctionDescriptor* const HashBoolDescriptor;
+  static backend::FunctionDescriptor* const HashRefDescriptor;
+
+  static backend::FunctionDescriptor* const EqIntDescriptor;
+  static backend::FunctionDescriptor* const EqFloatDescriptor;
+  static backend::FunctionDescriptor* const EqBoolDescriptor;
+  static backend::FunctionDescriptor* const EqRefDescriptor;
+
   static backend::FunctionDescriptor* const GetDescriptor;
   static backend::FunctionDescriptor* const GetRefDescriptor;
   static backend::FunctionDescriptor* const SetDescriptor;
@@ -129,6 +139,18 @@ private:
     return venom_ret_cell(new venom_string(buf.str()));
   }
 
+  template <typename T>
+  static inline venom_ret_cell
+  hash_impl(backend::ExecutionContext* ctx, venom_cell self) {
+    VENOM_UNIMPLEMENTED;
+  }
+
+  template <typename T>
+  static inline venom_ret_cell
+  eq_impl(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    VENOM_UNIMPLEMENTED;
+  }
+
 public:
   static venom_ret_cell
   stringifyInt(backend::ExecutionContext* ctx, venom_cell self) {
@@ -148,6 +170,46 @@ public:
   static venom_ret_cell
   stringifyRef(backend::ExecutionContext* ctx, venom_cell self) {
     return stringify_impl<venom_object*>(ctx, self);
+  }
+
+  static venom_ret_cell
+  hashInt(backend::ExecutionContext* ctx, venom_cell self) {
+    return hash_impl<int64_t>(ctx, self);
+  }
+
+  static venom_ret_cell
+  hashFloat(backend::ExecutionContext* ctx, venom_cell self) {
+    return hash_impl<double>(ctx, self);
+  }
+
+  static venom_ret_cell
+  hashBool(backend::ExecutionContext* ctx, venom_cell self) {
+    return hash_impl<bool>(ctx, self);
+  }
+
+  static venom_ret_cell
+  hashRef(backend::ExecutionContext* ctx, venom_cell self) {
+    return hash_impl<venom_object*>(ctx, self);
+  }
+
+  static venom_ret_cell
+  eqInt(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    return eq_impl<int64_t>(ctx, self, that);
+  }
+
+  static venom_ret_cell
+  eqFloat(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    return eq_impl<double>(ctx, self, that);
+  }
+
+  static venom_ret_cell
+  eqBool(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    return eq_impl<bool>(ctx, self, that);
+  }
+
+  static venom_ret_cell
+  eqRef(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    return eq_impl<venom_object*>(ctx, self, that);
   }
 
   static venom_ret_cell

@@ -1,0 +1,15 @@
+a = "foo";
+a0 = "foo";
+b = "abcdefg";
+b0 = "abcdefg";
+
+print (a.hash() == a0.hash());
+print (b.hash() == b0.hash());
+
+print (a.eq(b));
+print (b.eq(a));
+
+print (a.eq(a0));
+print (b.eq(b0));
+print (a0.eq(a));
+print (b0.eq(b));

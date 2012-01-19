@@ -218,6 +218,13 @@ ClassSymbol::isModuleClassSymbol() const {
 void
 ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
                              vector<FuncSymbol*>& methods) {
+  if (isModuleClassSymbol()) {
+    // special case module symbols
+    // only return members as attributes
+    classTable->getSymbols(attributes);
+    return;
+  }
+
   vector<SymbolTable*> tables;
   classTable->linearizedClassOrder(tables);
 

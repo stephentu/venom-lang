@@ -48,6 +48,24 @@ public:
         venom_box_base< Primitive >::asSelf(self)->primitive);
   }
 
+  static venom_ret_cell
+  hash(backend::ExecutionContext* ctx, venom_cell self) {
+    venom_stringify_functor<Primitive> f;
+    return venom_ret_cell(
+        f.hash(venom_box_base< Primitive >::asSelf(self)->primitive));
+  }
+
+  static venom_ret_cell
+  eq(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    if (self.asRawObject()->getClassObj() !=
+        that.asRawObject()->getClassObj()) return venom_ret_cell(false);
+    venom_box_base<Primitive>* this_p =
+      venom_box_base<Primitive>::asSelf(self);
+    venom_box_base<Primitive>* that_p =
+      venom_box_base<Primitive>::asSelf(that);
+    return this_p->primitive == that_p->primitive;
+  }
+
 protected:
   Primitive primitive;
 };
@@ -58,6 +76,8 @@ public:
   static backend::FunctionDescriptor* const ReleaseDescriptor;
   static backend::FunctionDescriptor* const CtorDescriptor;
   static backend::FunctionDescriptor* const StringifyDescriptor;
+  static backend::FunctionDescriptor* const HashDescriptor;
+  static backend::FunctionDescriptor* const EqDescriptor;
 
   static venom_class_object IntegerClassTable;
   venom_integer(int64_t value) :
@@ -76,6 +96,8 @@ public:
   static backend::FunctionDescriptor* const ReleaseDescriptor;
   static backend::FunctionDescriptor* const CtorDescriptor;
   static backend::FunctionDescriptor* const StringifyDescriptor;
+  static backend::FunctionDescriptor* const HashDescriptor;
+  static backend::FunctionDescriptor* const EqDescriptor;
 
   static venom_class_object DoubleClassTable;
   venom_double(double value) :
@@ -94,6 +116,8 @@ public:
   static backend::FunctionDescriptor* const ReleaseDescriptor;
   static backend::FunctionDescriptor* const CtorDescriptor;
   static backend::FunctionDescriptor* const StringifyDescriptor;
+  static backend::FunctionDescriptor* const HashDescriptor;
+  static backend::FunctionDescriptor* const EqDescriptor;
 
   static venom_class_object BooleanClassTable;
   venom_boolean(bool value) :

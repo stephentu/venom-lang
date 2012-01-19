@@ -13,6 +13,7 @@
 #include <utility>
 
 #include <util/macros.h>
+#include <util/vechelpers.h>
 
 namespace venom {
 namespace util {
@@ -75,59 +76,6 @@ inline std::string MakeString3(const std::string& a0,
   s.append(a1);
   s.append(a2);
   return s;
-}
-
-template <typename T>
-inline std::vector<T> vec1(const T& a0) {
-  typename std::vector<T> v;
-  v.reserve(1);
-  v.push_back(a0);
-  return v;
-}
-
-template <typename T>
-inline std::vector<T> vec2(const T& a0, const T& a1) {
-  typename std::vector<T> v;
-  v.reserve(2);
-  v.push_back(a0);
-  v.push_back(a1);
-  return v;
-}
-
-template <typename T>
-inline std::vector<T> vec3(const T& a0, const T& a1, const T& a2) {
-  typename std::vector<T> v;
-  v.reserve(3);
-  v.push_back(a0);
-  v.push_back(a1);
-  v.push_back(a2);
-  return v;
-}
-
-template <typename T>
-inline std::vector<T> vec4(const T& a0, const T& a1,
-                           const T& a2, const T& a3) {
-  typename std::vector<T> v;
-  v.reserve(4);
-  v.push_back(a0);
-  v.push_back(a1);
-  v.push_back(a2);
-  v.push_back(a3);
-  return v;
-}
-
-template <typename T>
-inline std::vector<T> vec5(const T& a0, const T& a1,
-                           const T& a2, const T& a3,
-                           const T& a4) {
-  typename std::vector<T> v;
-  v.reserve(5);
-  v.push_back(a0);
-  v.push_back(a1);
-  v.push_back(a2);
-  v.push_back(a3);
-  v.push_back(a4);
-  return v;
 }
 
 template <typename Iter>
