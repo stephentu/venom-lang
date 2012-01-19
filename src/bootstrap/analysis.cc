@@ -55,38 +55,8 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // void exists so we can give everything a return type
   root->createClassSymbol("void", root->newChildScope(NULL), Type::VoidType);
 
-#define _CREATE_FUNC(n) \
-  do { \
-    root->createClassSymbol( \
-        "func" #n, root->newChildScope(NULL), \
-        Type::Func ## n ## Type, createTypeParams(ctx, 1 + n)); \
-  } while (0)
-
-  _CREATE_FUNC(0);
-  _CREATE_FUNC(1);
-  _CREATE_FUNC(2);
-  _CREATE_FUNC(3);
-  _CREATE_FUNC(4);
-  _CREATE_FUNC(5);
-  _CREATE_FUNC(6);
-  _CREATE_FUNC(7);
-  _CREATE_FUNC(8);
-  _CREATE_FUNC(9);
-
-  _CREATE_FUNC(10);
-  _CREATE_FUNC(11);
-  _CREATE_FUNC(12);
-  _CREATE_FUNC(13);
-  _CREATE_FUNC(14);
-  _CREATE_FUNC(15);
-  _CREATE_FUNC(16);
-  _CREATE_FUNC(17);
-  _CREATE_FUNC(18);
-  _CREATE_FUNC(19);
-
-#undef _CREATE_FUNC
-
-  SymbolTable *objSymTab = root->newChildScope(NULL);
+  // object must come before all its children
+  SymbolTable* objSymTab = root->newChildScope(NULL);
   ClassSymbol *objectClassSym =
     root->createClassSymbol("object", objSymTab, Type::ObjectType);
   objSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
@@ -147,6 +117,37 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
     _IMPL_OVERRIDE_HASH(classSym); \
     _IMPL_OVERRIDE_EQ(classSym); \
   } while (0)
+
+#define _CREATE_FUNC(n) \
+  do { \
+    root->createClassSymbol( \
+        "func" #n, root->newChildScope(NULL), \
+        Type::Func ## n ## Type, createTypeParams(ctx, 1 + n)); \
+  } while (0)
+
+  _CREATE_FUNC(0);
+  _CREATE_FUNC(1);
+  _CREATE_FUNC(2);
+  _CREATE_FUNC(3);
+  _CREATE_FUNC(4);
+  _CREATE_FUNC(5);
+  _CREATE_FUNC(6);
+  _CREATE_FUNC(7);
+  _CREATE_FUNC(8);
+  _CREATE_FUNC(9);
+
+  _CREATE_FUNC(10);
+  _CREATE_FUNC(11);
+  _CREATE_FUNC(12);
+  _CREATE_FUNC(13);
+  _CREATE_FUNC(14);
+  _CREATE_FUNC(15);
+  _CREATE_FUNC(16);
+  _CREATE_FUNC(17);
+  _CREATE_FUNC(18);
+  _CREATE_FUNC(19);
+
+#undef _CREATE_FUNC
 
   SymbolTable *stringSymTab = root->newChildScope(NULL);
   ClassSymbol *stringClassSym =

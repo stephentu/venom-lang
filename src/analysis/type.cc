@@ -26,35 +26,37 @@ namespace analysis {
 Type* const Type::AnyType(new Type("any", NULL, NULL, 0));
 InstantiatedType* const InstantiatedType::AnyType(Type::AnyType->instantiate());
 
+/** Primitives **/
 Type* const Type::IntType(new Type("int", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::BoolType(new Type("bool", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::FloatType(new Type("float", NULL, InstantiatedType::AnyType, 0));
 Type* const Type::VoidType(new Type("void", NULL, InstantiatedType::AnyType, 0));
 
-Type* const Type::Func0Type(new Type("func0", NULL, InstantiatedType::AnyType, 1));
-Type* const Type::Func1Type(new Type("func1", NULL, InstantiatedType::AnyType, 2));
-Type* const Type::Func2Type(new Type("func2", NULL, InstantiatedType::AnyType, 3));
-Type* const Type::Func3Type(new Type("func3", NULL, InstantiatedType::AnyType, 4));
-Type* const Type::Func4Type(new Type("func4", NULL, InstantiatedType::AnyType, 5));
-Type* const Type::Func5Type(new Type("func5", NULL, InstantiatedType::AnyType, 6));
-Type* const Type::Func6Type(new Type("func6", NULL, InstantiatedType::AnyType, 7));
-Type* const Type::Func7Type(new Type("func7", NULL, InstantiatedType::AnyType, 8));
-Type* const Type::Func8Type(new Type("func8", NULL, InstantiatedType::AnyType, 9));
-Type* const Type::Func9Type(new Type("func9", NULL, InstantiatedType::AnyType, 10));
-
-Type* const Type::Func10Type(new Type("func10", NULL, InstantiatedType::AnyType, 11));
-Type* const Type::Func11Type(new Type("func11", NULL, InstantiatedType::AnyType, 12));
-Type* const Type::Func12Type(new Type("func12", NULL, InstantiatedType::AnyType, 13));
-Type* const Type::Func13Type(new Type("func13", NULL, InstantiatedType::AnyType, 14));
-Type* const Type::Func14Type(new Type("func14", NULL, InstantiatedType::AnyType, 15));
-Type* const Type::Func15Type(new Type("func15", NULL, InstantiatedType::AnyType, 16));
-Type* const Type::Func16Type(new Type("func16", NULL, InstantiatedType::AnyType, 17));
-Type* const Type::Func17Type(new Type("func17", NULL, InstantiatedType::AnyType, 18));
-Type* const Type::Func18Type(new Type("func18", NULL, InstantiatedType::AnyType, 19));
-Type* const Type::Func19Type(new Type("func19", NULL, InstantiatedType::AnyType, 20));
-
+/** Objects **/
 Type* const Type::ObjectType(new Type("object", NULL, InstantiatedType::AnyType, 0));
 InstantiatedType* const InstantiatedType::ObjectType(Type::ObjectType->instantiate());
+
+Type* const Type::Func0Type(new Type("func0", NULL, InstantiatedType::ObjectType, 1));
+Type* const Type::Func1Type(new Type("func1", NULL, InstantiatedType::ObjectType, 2));
+Type* const Type::Func2Type(new Type("func2", NULL, InstantiatedType::ObjectType, 3));
+Type* const Type::Func3Type(new Type("func3", NULL, InstantiatedType::ObjectType, 4));
+Type* const Type::Func4Type(new Type("func4", NULL, InstantiatedType::ObjectType, 5));
+Type* const Type::Func5Type(new Type("func5", NULL, InstantiatedType::ObjectType, 6));
+Type* const Type::Func6Type(new Type("func6", NULL, InstantiatedType::ObjectType, 7));
+Type* const Type::Func7Type(new Type("func7", NULL, InstantiatedType::ObjectType, 8));
+Type* const Type::Func8Type(new Type("func8", NULL, InstantiatedType::ObjectType, 9));
+Type* const Type::Func9Type(new Type("func9", NULL, InstantiatedType::ObjectType, 10));
+
+Type* const Type::Func10Type(new Type("func10", NULL, InstantiatedType::ObjectType, 11));
+Type* const Type::Func11Type(new Type("func11", NULL, InstantiatedType::ObjectType, 12));
+Type* const Type::Func12Type(new Type("func12", NULL, InstantiatedType::ObjectType, 13));
+Type* const Type::Func13Type(new Type("func13", NULL, InstantiatedType::ObjectType, 14));
+Type* const Type::Func14Type(new Type("func14", NULL, InstantiatedType::ObjectType, 15));
+Type* const Type::Func15Type(new Type("func15", NULL, InstantiatedType::ObjectType, 16));
+Type* const Type::Func16Type(new Type("func16", NULL, InstantiatedType::ObjectType, 17));
+Type* const Type::Func17Type(new Type("func17", NULL, InstantiatedType::ObjectType, 18));
+Type* const Type::Func18Type(new Type("func18", NULL, InstantiatedType::ObjectType, 19));
+Type* const Type::Func19Type(new Type("func19", NULL, InstantiatedType::ObjectType, 20));
 
 Type* const Type::StringType(new Type("string", NULL, InstantiatedType::ObjectType, 0));
 
