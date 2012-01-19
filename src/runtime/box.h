@@ -7,6 +7,7 @@
 #include <backend/vm.h>
 #include <runtime/venomobject.h>
 #include <runtime/venomstring.h>
+#include <runtime/stringifyfunctor.h>
 
 namespace venom {
 namespace runtime {
@@ -32,6 +33,21 @@ public:
   release(backend::ExecutionContext* ctx, venom_cell self) {
     return venom_ret_cell(Nil);
   }
+
+protected:
+  template <typename T>
+  static venom_ret_cell stringify_impl(T elem) {
+    venom_stringify_functor<T> f;
+    return venom_ret_cell(new venom_string(f(elem)));
+  }
+
+public:
+  static venom_ret_cell
+  stringify(backend::ExecutionContext* ctx, venom_cell self) {
+    return stringify_impl(
+        venom_box_base< Primitive >::asSelf(self)->primitive);
+  }
+
 protected:
   Primitive primitive;
 };
@@ -52,13 +68,6 @@ public:
     asSelf(self)->primitive = value.asInt();
     return venom_ret_cell(Nil);
   }
-
-  static venom_ret_cell
-  stringify(backend::ExecutionContext* ctx, venom_cell self) {
-    std::stringstream buf;
-    buf << asSelf(self)->primitive;
-    return venom_ret_cell(new venom_string(buf.str()));
-  }
 };
 
 class venom_double : public venom_box_base<double> {
@@ -77,16 +86,6 @@ public:
     asSelf(self)->primitive = value.asDouble();
     return venom_ret_cell(Nil);
   }
-
-  static venom_ret_cell
-  stringify(backend::ExecutionContext* ctx, venom_cell self) {
-    std::stringstream buf;
-    double value = asSelf(self)->primitive;
-    // TODO: HACK, so that 0 as a float gets displayed as 0.0
-    if (value) buf << value;
-    else buf << "0.0";
-    return venom_ret_cell(new venom_string(buf.str()));
-  }
 };
 
 class venom_boolean : public venom_box_base<bool> {
@@ -104,13 +103,6 @@ public:
   ctor(backend::ExecutionContext* ctx, venom_cell self, venom_cell value) {
     asSelf(self)->primitive = value.asBool();
     return venom_ret_cell(Nil);
-  }
-
-  static venom_ret_cell
-  stringify(backend::ExecutionContext* ctx, venom_cell self) {
-    std::stringstream buf;
-    buf << (asSelf(self)->primitive ? "True" : "False");
-    return venom_ret_cell(new venom_string(buf.str()));
   }
 };
 

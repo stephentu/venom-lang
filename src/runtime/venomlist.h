@@ -2,10 +2,13 @@
 #define VENOM_RUNTIME_LIST_H
 
 #include <cassert>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include <runtime/venomobject.h>
+#include <runtime/stringifyfunctor.h>
+
 #include <util/macros.h>
 
 namespace venom {
@@ -108,28 +111,43 @@ public:
     return venom_ret_cell(venom_object::Nil);
   }
 
+private:
+  template <typename T>
+  static inline venom_ret_cell
+  stringify_impl(backend::ExecutionContext* ctx, venom_cell self) {
+    venom_cell::ExtractFunctor<T> extractFunctor;
+    venom_stringify_functor<T> stringFunctor;
+    std::stringstream buf;
+    buf << "[";
+    venom_list* list = asSelf(self);
+    for (std::vector<venom_cell>::iterator it = list->elems.begin();
+         it != list->elems.end(); ++it) {
+      buf << stringFunctor(extractFunctor(*it));
+      if (it + 1 != list->elems.end()) buf << ", ";
+    }
+    buf << "]";
+    return venom_ret_cell(new venom_string(buf.str()));
+  }
+
+public:
   static venom_ret_cell
   stringifyInt(backend::ExecutionContext* ctx, venom_cell self) {
-    // TODO: implement me
-    VENOM_UNIMPLEMENTED;
+    return stringify_impl<int64_t>(ctx, self);
   }
 
   static venom_ret_cell
   stringifyFloat(backend::ExecutionContext* ctx, venom_cell self) {
-    // TODO: implement me
-    VENOM_UNIMPLEMENTED;
+    return stringify_impl<double>(ctx, self);
   }
 
   static venom_ret_cell
   stringifyBool(backend::ExecutionContext* ctx, venom_cell self) {
-    // TODO: implement me
-    VENOM_UNIMPLEMENTED;
+    return stringify_impl<bool>(ctx, self);
   }
 
   static venom_ret_cell
   stringifyRef(backend::ExecutionContext* ctx, venom_cell self) {
-    // TODO: implement me
-    VENOM_UNIMPLEMENTED;
+    return stringify_impl<venom_object*>(ctx, self);
   }
 
   static venom_ret_cell

@@ -116,6 +116,20 @@ inline std::vector<T> vec4(const T& a0, const T& a1,
   return v;
 }
 
+template <typename T>
+inline std::vector<T> vec5(const T& a0, const T& a1,
+                           const T& a2, const T& a3,
+                           const T& a4) {
+  typename std::vector<T> v;
+  v.reserve(5);
+  v.push_back(a0);
+  v.push_back(a1);
+  v.push_back(a2);
+  v.push_back(a3);
+  v.push_back(a4);
+  return v;
+}
+
 template <typename Iter>
 inline std::string join(Iter begin, Iter end, const std::string& sep) {
   std::stringstream buf;

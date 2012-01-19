@@ -68,6 +68,10 @@ public:
   static void AssertNonZeroRefCount(const venom_cell& cell);
 #endif
 
+  // use specializations defined below
+  template <typename T>
+  struct ExtractFunctor {};
+
 protected:
   union types {
     /** Primitives */
@@ -87,6 +91,22 @@ protected:
     types(venom_object* obj) : obj(obj) {}
   } data;
 };
+
+#define _IMPL_EXTRACT_FUNCTOR(ctype, type) \
+  template <> \
+  struct venom_cell::ExtractFunctor<ctype> { \
+    inline ctype operator()(venom_cell cell) const { \
+      return cell.as##type(); \
+    } \
+  };
+
+_IMPL_EXTRACT_FUNCTOR(int64_t, Int)
+_IMPL_EXTRACT_FUNCTOR(double, Double)
+_IMPL_EXTRACT_FUNCTOR(bool, Bool)
+_IMPL_EXTRACT_FUNCTOR(venom_object*, RawObject)
+_IMPL_EXTRACT_FUNCTOR(ref_ptr<venom_object>, Object)
+
+#undef _IMPL_EXTRACT_FUNCTOR
 
 /**
  * The same as a cell, except when you construct a venom_ret_cell

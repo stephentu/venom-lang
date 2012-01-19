@@ -90,10 +90,11 @@ venom_list::CreateListClassTable(ListType listType) {
       InitDescriptor,
       ref ? ReleaseRefDescriptor : ReleaseDescriptor,
       CtorDescriptor,
-      util::vec4(
+      util::vec5(
         stringer,
         ref ? GetRefDescriptor : GetDescriptor,
         ref ? SetRefDescriptor : SetDescriptor,
+        ref ? AppendRefDescriptor : AppendDescriptor,
         SizeDescriptor));
 }
 
