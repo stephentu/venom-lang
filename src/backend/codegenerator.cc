@@ -56,6 +56,7 @@ ClassSignature::createClassObject(
   for (vector<uint32_t>::const_iterator it = methods.begin();
        it != methods.end(); ++it) {
     VENOM_CHECK_RANGE(*it, referenceTable.size());
+    assert(referenceTable[*it]->getNumArgs() >= 1); // since its a method
     vtable.push_back(referenceTable[*it]);
   }
 
@@ -340,12 +341,22 @@ CodeGenerator::createObjectCode() {
           getClassRefIndexFromType(*it));
     }
 
-    funcSigs.push_back(
-        FunctionSignature(
-          fsym->getName(),
-          paramVec,
-          getClassRefIndexFromType(fsym->getReturnType()),
-          funcIdxToLabels[idx]->index));
+    if (MethodSymbol* ms = dynamic_cast<MethodSymbol*>(fsym)) {
+      funcSigs.push_back(
+          FunctionSignature(
+            ms->getClassSymbol()->getName(),
+            fsym->getName(),
+            paramVec,
+            getClassRefIndexFromType(fsym->getReturnType()),
+            funcIdxToLabels[idx]->index));
+    } else {
+      funcSigs.push_back(
+          FunctionSignature(
+            fsym->getName(),
+            paramVec,
+            getClassRefIndexFromType(fsym->getReturnType()),
+            funcIdxToLabels[idx]->index));
+    }
   }
 
   // build name -> inst offset map

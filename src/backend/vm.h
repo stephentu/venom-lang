@@ -254,7 +254,8 @@ public:
 
   /** Accessors */
   inline void* getFunctionPtr() const { return function_ptr; }
-  inline bool getNumArgs() const { return num_args; }
+  inline size_t getNumArgs() const { return num_args; }
+  inline uint64_t argRefCellBitmap() const { return arg_ref_cell_bitmap; }
   inline bool isNative() const { return native; }
 
 protected:

@@ -25,8 +25,8 @@ createTypeParams(SemanticContext* ctx, size_t n) {
   vector<InstantiatedType*> ret;
   ret.reserve(n);
   for (size_t i = 0; i < n; i++) {
-    string name = "T" + util::stringify(n);
-    ret.push_back(ctx->createTypeParam(name, n)->instantiate(ctx));
+    string name = "T" + util::stringify(i);
+    ret.push_back(ctx->createTypeParam(name, i)->instantiate(ctx));
   }
   return ret;
 }

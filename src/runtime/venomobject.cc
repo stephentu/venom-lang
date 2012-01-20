@@ -140,8 +140,30 @@ venom_object::stringify(ExecutionContext* ctx, venom_cell self) {
 }
 
 venom_ret_cell
-venom_object::virtualDispatch(ExecutionContext* ctx, size_t index) {
-  ctx->resumeExecution(this, index);
+venom_object::virtualDispatch(
+    ExecutionContext* ctx,
+    size_t index,
+    const vector<venom_cell>& args) {
+
+  FunctionDescriptor *desc = getClassObj()->vtable.at(index);
+
+#ifndef NDEBUG
+  assert(desc->getNumArgs() >= 1); // since its a method
+  // getNumArgs includes "this" pointer
+  assert(desc->getNumArgs() - 1 == args.size());
+#endif /* NDEBUG */
+
+  // push arguments in reverse order
+  for (ssize_t idx = args.size() - 1; idx >= 0; idx--) {
+    // see if we need to incRef
+    venom_cell arg = args[idx];
+    if (desc->argRefCellBitmap() & (0x1UL << (idx + 1))) {
+      arg.incRef();
+    }
+    ctx->program_stack.push(arg);
+  }
+
+  ctx->resumeExecution(this, desc);
   venom_cell ret = ctx->program_stack.top();
   ctx->program_stack.pop();
   return venom_ret_cell(ret);

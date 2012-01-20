@@ -1,0 +1,13 @@
+x = map{string, string}();
+x.set("foo", "bar");
+x.set("a",   "b"  );
+print(x.get("foo"));
+print(x.get("a"));
+print(x.size());
+
+y = map{string, int}();
+y.set("a", 1);
+y.set("b", 2);
+print(y.get("a"));
+print(y.get("b"));
+print(y.size());

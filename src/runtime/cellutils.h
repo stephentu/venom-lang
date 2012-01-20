@@ -1,6 +1,7 @@
 #ifndef VENOM_RUNTIME_CELLUTILS_H
 #define VENOM_RUNTIME_CELLUTILS_H
 
+#include <cassert>
 #include <sstream>
 #include <string>
 
@@ -124,8 +125,11 @@ namespace {
   struct _equal_impl<venom_object*> {
     inline bool operator()(venom_object* lhs, venom_object* rhs) const {
       // 2 is eq vtable entry
+      backend::ExecutionContext* ctx =
+        backend::ExecutionContext::current_context();
+      assert(ctx);
       venom_ret_cell ret =
-        lhs->virtualDispatch(backend::ExecutionContext::current_context(), 2);
+        lhs->virtualDispatch(ctx, 2, util::vec1(venom_cell(rhs)));
       return ret.asBool();
     }
   };

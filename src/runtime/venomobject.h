@@ -310,11 +310,13 @@ public:
 
   /**
    * Do virtual dispatch on this object, using the n-th method entry in
-   * the vtable. Assumes the arguments are already on the stack (except
-   * the "this" pointer)
+   * the vtable. Args do NOT include the *this* pointer
    */
   venom_ret_cell
-  virtualDispatch(backend::ExecutionContext* ctx, size_t index);
+  virtualDispatch(
+      backend::ExecutionContext* ctx,
+      size_t index,
+      const std::vector<venom_cell>& args = std::vector<venom_cell>());
 
   venom_ret_cell dispatchInit(backend::ExecutionContext* ctx);
 
