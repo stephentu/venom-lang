@@ -1,0 +1,7 @@
+x = { 'a' : 10, 'b' : 20 };
+print(x.get('a'));
+print(x.get('b'));
+
+y = { 10 : 100, 100 : 1000 };
+print(y.get(10));
+print(y.get(100));

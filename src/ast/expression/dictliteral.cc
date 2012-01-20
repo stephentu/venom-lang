@@ -1,9 +1,21 @@
 #include <cassert>
 #include <utility>
 
-#include <ast/expression/dictliteral.h>
+#include <analysis/semanticcontext.h>
 #include <analysis/type.h>
+
+#include <ast/expression/assignexpr.h>
+#include <ast/expression/attraccess.h>
+#include <ast/expression/dictliteral.h>
+#include <ast/expression/exprlist.h>
+#include <ast/expression/functioncall.h>
+#include <ast/expression/variable.h>
+
+#include <ast/expression/synthetic/functioncall.h>
+#include <ast/expression/synthetic/symbolnode.h>
+
 #include <backend/codegenerator.h>
+
 #include <util/stl.h>
 
 using namespace std;
@@ -60,6 +72,47 @@ DictLiteralNode::typeCheckImpl(SemanticContext* ctx,
     return Type::MapType->instantiate(
         ctx, util::vec2(res.first, res.second));
   }
+}
+
+ASTNode*
+DictLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  // recurse first
+  ASTExpressionNode::rewriteLocal(ctx, mode);
+  if (mode != DeSugar) return NULL;
+
+  // turn it from:
+  // { k1 : v1, k2 : v2, ..., kN : vN]
+  //
+  // to:
+  // (_tmp = map{k, v}(), _tmp.set(k1, v1), ..., _tmp.set(kN, vN), _tmp)
+
+  InstantiatedType* stype = getStaticType();
+  assert(stype->getType()->isMapType());
+  string tmpVar = ctx->tempVarName();
+  ExprNodeVec exprs;
+  exprs.reserve(pairs.size() + 2);
+  exprs.push_back(
+      new AssignExprNode(
+        new VariableNodeParser(tmpVar, NULL),
+        new FunctionCallNodeSynthetic(
+          new SymbolNode(
+            stype->getType()->getClassSymbol(),
+            Type::ClassType->instantiate(ctx, util::vec1(stype)),
+            NULL),
+          stype->getParams(),
+          ExprNodeVec())));
+  for (DictPairVec::iterator it = pairs.begin();
+       it != pairs.end(); ++it) {
+    exprs.push_back(
+        new FunctionCallNodeParser(
+          new AttrAccessNode(
+            new VariableNodeParser(tmpVar, NULL),
+            "set"),
+          TypeStringVec(),
+          util::vec2(Clone((*it)->key()), Clone((*it)->value()))));
+  }
+  exprs.push_back(new VariableNodeParser(tmpVar, NULL));
+  return replace(ctx, new ExprListNode(exprs));
 }
 
 DictLiteralNode*
