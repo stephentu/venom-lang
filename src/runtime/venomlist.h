@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <runtime/cellutils.h>
 #include <runtime/venomobject.h>
-#include <runtime/stringifyfunctor.h>
 
 #include <util/macros.h>
 
@@ -71,20 +71,14 @@ public:
 
   static backend::FunctionDescriptor* const SizeDescriptor;
 
-  enum ListType {
-    IntType,
-    FloatType,
-    BoolType,
-    RefType,
-  };
-
   /**
-   * We use ListType here instead of an analysis::Type instance,
+   * We use CellType here instead of an analysis::Type instance,
    * so that runtime doesn't have to depend on analysis.
    * NOTE: the venom_class_object instance does NOT need to be
    * freed by the caller
    */
-  static venom_class_object* GetListClassTable(ListType listType);
+  static venom_class_object*
+  GetListClassTable(venom_cell::CellType listType);
 
   static venom_ret_cell
   init(backend::ExecutionContext* ctx, venom_cell self) {
@@ -125,14 +119,13 @@ private:
   template <typename T>
   static inline venom_ret_cell
   stringify_impl(backend::ExecutionContext* ctx, venom_cell self) {
-    venom_cell::ExtractFunctor<T> extractFunctor;
-    venom_stringify_functor<T> stringFunctor;
+    typename venom_cell_utils<T>::stringer stringer;
     std::stringstream buf;
     buf << "[";
     venom_list* list = asSelf(self);
     for (std::vector<venom_cell>::iterator it = list->elems.begin();
          it != list->elems.end(); ++it) {
-      buf << stringFunctor(extractFunctor(*it));
+      buf << stringer(*it);
       if (it + 1 != list->elems.end()) buf << ", ";
     }
     buf << "]";
@@ -262,7 +255,8 @@ private:
   static venom_class_object* const ListBoolClassTable;
   static venom_class_object* const ListRefClassTable;
 
-  static venom_class_object* CreateListClassTable(ListType listType);
+  static venom_class_object*
+  CreateListClassTable(venom_cell::CellType listType);
 
 protected:
   std::vector<venom_cell> elems;

@@ -63,54 +63,54 @@ FunctionDescriptor* const venom_list::SizeDescriptor(
     new FunctionDescriptor((void*)size, 1, 0x1, true));
 
 venom_class_object*
-venom_list::GetListClassTable(ListType listType) {
+venom_list::GetListClassTable(venom_cell::CellType listType) {
   assert(ListIntClassTable != NULL);
   assert(ListFloatClassTable != NULL);
   assert(ListBoolClassTable != NULL);
   assert(ListRefClassTable != NULL);
   switch (listType) {
-  case IntType: return ListIntClassTable;
-  case FloatType: return ListFloatClassTable;
-  case BoolType: return ListBoolClassTable;
-  case RefType: return ListRefClassTable;
+  case venom_cell::IntType:   return ListIntClassTable;
+  case venom_cell::FloatType: return ListFloatClassTable;
+  case venom_cell::BoolType:  return ListBoolClassTable;
+  case venom_cell::RefType:   return ListRefClassTable;
   default: VENOM_NOT_REACHED;
   }
 }
 
 venom_class_object* const venom_list::ListIntClassTable(
-    CreateListClassTable(IntType));
+    CreateListClassTable(venom_cell::IntType));
 
 venom_class_object* const venom_list::ListFloatClassTable(
-    CreateListClassTable(FloatType));
+    CreateListClassTable(venom_cell::FloatType));
 
 venom_class_object* const venom_list::ListBoolClassTable(
-    CreateListClassTable(BoolType));
+    CreateListClassTable(venom_cell::BoolType));
 
 venom_class_object* const venom_list::ListRefClassTable(
-    CreateListClassTable(RefType));
+    CreateListClassTable(venom_cell::RefType));
 
 venom_class_object*
-venom_list::CreateListClassTable(ListType listType) {
+venom_list::CreateListClassTable(venom_cell::CellType listType) {
   FunctionDescriptor* stringer;
   FunctionDescriptor* hasher;
   FunctionDescriptor* eqer;
   switch (listType) {
-  case IntType:
+  case venom_cell::IntType:
     stringer = StringifyIntDescriptor;
     hasher   = HashIntDescriptor;
     eqer     = EqIntDescriptor;
     break;
-  case FloatType:
+  case venom_cell::FloatType:
     stringer = StringifyFloatDescriptor;
     hasher   = HashFloatDescriptor;
     eqer     = EqFloatDescriptor;
     break;
-  case BoolType:
+  case venom_cell::BoolType:
     stringer = StringifyBoolDescriptor;
     hasher   = HashBoolDescriptor;
     eqer     = EqBoolDescriptor;
     break;
-  case RefType:
+  case venom_cell::RefType:
     stringer = StringifyRefDescriptor;
     hasher   = HashRefDescriptor;
     eqer     = EqRefDescriptor;
@@ -120,9 +120,9 @@ venom_list::CreateListClassTable(ListType listType) {
   assert(stringer);
   assert(hasher);
   assert(eqer);
-  bool ref = listType == RefType;
+  bool ref = listType == venom_cell::RefType;
   return new venom_class_object(
-      "name",
+      "list",
       sizeof(venom_list),
       0, 0x0,
       InitDescriptor,

@@ -5,9 +5,10 @@
 #include <sstream>
 
 #include <backend/vm.h>
+
+#include <runtime/cellutils.h>
 #include <runtime/venomobject.h>
 #include <runtime/venomstring.h>
-#include <runtime/stringifyfunctor.h>
 
 namespace venom {
 namespace runtime {
@@ -37,7 +38,7 @@ public:
 protected:
   template <typename T>
   static venom_ret_cell stringify_impl(T elem) {
-    venom_stringify_functor<T> f;
+    typename venom_cell_utils<T>::stringer f;
     return venom_ret_cell(new venom_string(f(elem)));
   }
 
@@ -50,9 +51,9 @@ public:
 
   static venom_ret_cell
   hash(backend::ExecutionContext* ctx, venom_cell self) {
-    venom_stringify_functor<Primitive> f;
+    typename venom_cell_utils<Primitive>::hash f;
     return venom_ret_cell(
-        f.hash(venom_box_base< Primitive >::asSelf(self)->primitive));
+        f(venom_box_base< Primitive >::asSelf(self)->primitive));
   }
 
   static venom_ret_cell

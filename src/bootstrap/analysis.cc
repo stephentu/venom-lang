@@ -4,7 +4,9 @@
 
 #include <runtime/box.h>
 #include <runtime/builtin.h>
+
 #include <runtime/venomobject.h>
+#include <runtime/venomdict.h>
 #include <runtime/venomlist.h>
 #include <runtime/venomstring.h>
 
@@ -230,8 +232,29 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                    InstantiatedType::IntType, ListClassSym,
                                    NULL, true);
 
-  root->createClassSymbol("map", root->newChildScope(NULL), Type::MapType,
-                          createTypeParams(ctx, 2));
+  SymbolTable *MapSymTab = root->newChildScope(NULL);
+  vector<InstantiatedType*> MapTypeParams = createTypeParams(ctx, 2);
+  ClassSymbol *MapClassSym =
+    root->createClassSymbol("map", MapSymTab, Type::MapType, MapTypeParams);
+  MapSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
+                                InstantiatedTypeVec(),
+                                InstantiatedType::VoidType, MapClassSym,
+                                NULL, true);
+
+  _IMPL_OVERRIDE_ALL(MapClassSym);
+
+  MapSymTab->createMethodSymbol("get", InstantiatedTypeVec(),
+                                util::vec1(MapTypeParams[0]),
+                                MapTypeParams[1], MapClassSym,
+                                NULL, true);
+  MapSymTab->createMethodSymbol("set", InstantiatedTypeVec(),
+                                MapTypeParams,
+                                InstantiatedType::VoidType, MapClassSym,
+                                NULL, true);
+  MapSymTab->createMethodSymbol("size", InstantiatedTypeVec(),
+                                InstantiatedTypeVec(),
+                                InstantiatedType::IntType, MapClassSym,
+                                NULL, true);
 
   // func symbols
   root->createFuncSymbol("print", InstantiatedTypeVec(),
@@ -267,6 +290,19 @@ static void FillFunctionMap(
 
     }
   }
+}
+
+static inline venom_cell::CellType
+TypeToCellType(InstantiatedType* type) {
+  venom_cell::CellType retType;
+  if (type->isInt())        retType = venom_cell::IntType;
+  else if (type->isFloat()) retType = venom_cell::FloatType;
+  else if (type->isBool())  retType = venom_cell::BoolType;
+  else {
+    assert(type->isRefCounted());
+    retType = venom_cell::RefType;
+  }
+  return retType;
 }
 
 Linker::FuncDescMap
@@ -310,17 +346,17 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
       if (itype->getType()->isListType()) {
         assert(itype->getParams().size() == 1);
         InstantiatedType* arg0 = itype->getParams()[0];
-        venom_list::ListType listType;
-        if (arg0->isInt()) listType = venom_list::IntType;
-        else if (arg0->isFloat()) listType = venom_list::FloatType;
-        else if (arg0->isBool()) listType = venom_list::BoolType;
-        else {
-          assert(arg0->isRefCounted());
-          listType = venom_list::RefType;
-        }
         venom_class_object* classTable =
-          venom_list::GetListClassTable(listType);
-
+          venom_list::GetListClassTable(TypeToCellType(arg0));
+        FillFunctionMap(
+            ret, scs->getType()->getClassSymbol(), classTable);
+      } else if (itype->getType()->isMapType()) {
+        assert(itype->getParams().size() == 2);
+        InstantiatedType* keyType = itype->getParams()[0];
+        InstantiatedType* valueType = itype->getParams()[1];
+        venom_class_object* classTable =
+          venom_dict::GetDictClassTable(
+              TypeToCellType(keyType), TypeToCellType(valueType));
         FillFunctionMap(
             ret, scs->getType()->getClassSymbol(), classTable);
       }
@@ -355,16 +391,17 @@ GetBuiltinClassMap(SemanticContext* rootCtx) {
       if (itype->getType()->isListType()) {
         assert(itype->getParams().size() == 1);
         InstantiatedType* arg0 = itype->getParams()[0];
-        venom_list::ListType listType;
-        if (arg0->isInt()) listType = venom_list::IntType;
-        else if (arg0->isFloat()) listType = venom_list::FloatType;
-        else if (arg0->isBool()) listType = venom_list::BoolType;
-        else {
-          assert(arg0->isRefCounted());
-          listType = venom_list::RefType;
-        }
         assert(ret.find(scs->getFullName()) == ret.end());
-        ret[scs->getFullName()] = venom_list::GetListClassTable(listType);
+        ret[scs->getFullName()] =
+          venom_list::GetListClassTable(TypeToCellType(arg0));
+      } else if (itype->getType()->isMapType()) {
+        assert(itype->getParams().size() == 2);
+        InstantiatedType* keyType = itype->getParams()[0];
+        InstantiatedType* valueType = itype->getParams()[1];
+        assert(ret.find(scs->getFullName()) == ret.end());
+        ret[scs->getFullName()] =
+          venom_dict::GetDictClassTable(
+              TypeToCellType(keyType), TypeToCellType(valueType));
       }
     }
   }

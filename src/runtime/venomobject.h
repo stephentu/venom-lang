@@ -34,13 +34,11 @@ class venom_object;
 class venom_cell {
   friend class venom_ret_cell;
 public:
-  /** Order matters */
   enum CellType {
-    NoneType = 0,
     IntType,
-    DoubleType,
+    FloatType,
     BoolType,
-    ObjType,
+    RefType,
   };
 
   /** Un-initialized ctor */

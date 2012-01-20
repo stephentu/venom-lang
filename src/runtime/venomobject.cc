@@ -52,7 +52,7 @@ FunctionDescriptor* const venom_object::HashDescriptor(
     new FunctionDescriptor((void*)hash, 1, 0x1, true));
 
 FunctionDescriptor* const venom_object::EqDescriptor(
-    new FunctionDescriptor((void*)hash, 2, 0x3, true));
+    new FunctionDescriptor((void*)eq, 2, 0x3, true));
 
 venom_class_object venom_object::ObjClassTable(
     "object",
