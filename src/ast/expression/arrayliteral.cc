@@ -25,6 +25,7 @@ ASTNode*
 ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   // recurse first
   ASTExpressionNode::rewriteLocal(ctx, mode);
+  if (mode != DeSugar) return NULL;
 
   // now, turn it from:
   // [expr1, expr2, ..., exprN]
