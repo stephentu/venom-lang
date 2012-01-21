@@ -26,7 +26,7 @@ public:
     throw std::out_of_range(VENOM_SOURCE_INFO);
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(IntLiteralNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(IntLiteralNode)
 
 protected:
   virtual analysis::InstantiatedType*

@@ -62,6 +62,14 @@ ExprListNode::cloneImpl() {
         ASTExpressionNode::CloneFunctor()));
 }
 
+ASTExpressionNode*
+ExprListNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ExprListNode(
+      util::transform_vec(
+        exprs.begin(), exprs.end(),
+        ASTExpressionNode::CloneLiftFunctor(ctx)));
+}
+
 ExprListNode*
 ExprListNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ExprListNode(

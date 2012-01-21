@@ -88,14 +88,16 @@ ASTExpressionNode::rewriteLocal(SemanticContext* ctx,
 
 void
 ASTExpressionNode::cloneSetState(ASTNode* node) {
-  VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, node);
-  ASTExpressionNode* enode = static_cast<ASTExpressionNode*>(node);
-
   ASTNode::cloneSetState(node);
 
-  enode->staticType   = staticType;
-  enode->expectedType = expectedType;
-  enode->typeParams   = typeParams;
+  //VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, node);
+  //ASTExpressionNode* enode = static_cast<ASTExpressionNode*>(node);
+
+  //ASTNode::cloneSetState(node);
+
+  //enode->staticType   = staticType;
+  //enode->expectedType = expectedType;
+  //enode->typeParams   = typeParams;
 }
 
 ASTExpressionNode*

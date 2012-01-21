@@ -41,7 +41,7 @@ public:
 
   void codeGenAssignLHS(backend::CodeGenerator& cg, ASTExpressionNode* value);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ArrayAccessNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(ArrayAccessNode)
 
 protected:
   virtual analysis::InstantiatedType*

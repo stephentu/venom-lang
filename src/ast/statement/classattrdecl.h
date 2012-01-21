@@ -51,7 +51,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassAttrDeclNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(ClassAttrDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(attr ";

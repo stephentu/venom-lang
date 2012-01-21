@@ -47,9 +47,7 @@ Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
              const InstantiatedTypeVec& params) {
   if (!type) return NULL;
   InstantiatedType* translated = t.translate(ctx, type);
-  return isPromoteToRef() ?
-    Type::RefType->instantiate(ctx, util::vec1(translated)) :
-    translated;
+  return isPromoteToRef() ? translated->refify(ctx) : translated;
 }
 
 void

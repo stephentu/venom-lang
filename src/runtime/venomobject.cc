@@ -34,31 +34,51 @@ void venom_cell::AssertNonZeroRefCount(const venom_cell& cell) {
 #endif
 
 venom_object* venom_object::Nil(NULL);
-ref_ptr<venom_object> venom_object::NilPtr(NULL);
 
-FunctionDescriptor* const venom_object::InitDescriptor(
-    new FunctionDescriptor((void*)init, 1, 0x1, true));
+// This uses the "construct-on-first-use" idiom, which
+// is supposed to be thread safe at least in GCC (see
+// https://arkaitzj.wordpress.com/2009/11/07/static-locals-and-threadsafety-in-g/).
+//
+// TODO: we should w/ mutex for non-gcc compilers
 
-FunctionDescriptor* const venom_object::ReleaseDescriptor(
-    new FunctionDescriptor((void*)release, 1, 0x1, true));
+FunctionDescriptor& venom_object::InitDescriptor() {
+  static FunctionDescriptor f((void*)init, 1, 0x1, true);
+  return f;
+}
 
-FunctionDescriptor* const venom_object::CtorDescriptor(
-    new FunctionDescriptor((void*)ctor, 1, 0x1, true));
+FunctionDescriptor& venom_object::ReleaseDescriptor() {
+  static FunctionDescriptor f((void*)release, 1, 0x1, true);
+  return f;
+}
 
-FunctionDescriptor* const venom_object::StringifyDescriptor(
-    new FunctionDescriptor((void*)stringify, 1, 0x1, true));
+FunctionDescriptor& venom_object::CtorDescriptor() {
+  static FunctionDescriptor f((void*)ctor, 1, 0x1, true);
+  return f;
+}
 
-FunctionDescriptor* const venom_object::HashDescriptor(
-    new FunctionDescriptor((void*)hash, 1, 0x1, true));
+FunctionDescriptor& venom_object::StringifyDescriptor() {
+  static FunctionDescriptor f((void*)stringify, 1, 0x1, true);
+  return f;
+}
 
-FunctionDescriptor* const venom_object::EqDescriptor(
-    new FunctionDescriptor((void*)eq, 2, 0x3, true));
+FunctionDescriptor& venom_object::HashDescriptor() {
+  static FunctionDescriptor f((void*)hash, 1, 0x1, true);
+  return f;
+}
 
-venom_class_object venom_object::ObjClassTable(
+FunctionDescriptor& venom_object::EqDescriptor() {
+  static FunctionDescriptor f((void*)eq, 2, 0x3, true);
+  return f;
+}
+
+venom_class_object& venom_object::ObjClassTable() {
+  static venom_class_object c(
     "object",
     sizeof(venom_object),
-    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
-    util::vec3(StringifyDescriptor, HashDescriptor, EqDescriptor));
+    0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
+    util::vec3(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor()));
+  return c;
+}
 
 /**
  * We cannot have venom_object() in the header since we have not seen
@@ -121,7 +141,7 @@ string venom_object::stringifyNativeOnly() const {
     venom_ret_cell str =
       f(NULL, venom_cell(const_cast<venom_object*>(this)));
     scoped_ret_value<venom_object> ptr(str.asRawObject());
-    assert(ptr->getClassObj() == &venom_string::StringClassTable);
+    assert(ptr->getClassObj() == &venom_string::StringClassTable());
     return static_cast<venom_string*>(ptr.get())->getData();
   } else {
     stringstream buf;

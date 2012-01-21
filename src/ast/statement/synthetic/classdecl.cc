@@ -67,6 +67,15 @@ ClassDeclNodeSynthetic::cloneImpl() {
       stmts->clone());
 }
 
+ASTStatementNode*
+ClassDeclNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
+  return new ClassDeclNodeSynthetic(
+      name,
+      parentTypes,
+      typeParamTypes,
+      stmts->cloneForLift(ctx));
+}
+
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
   // TODO: assert that the TypeTranslator doesn't instantiate this

@@ -11,6 +11,7 @@
 #include <backend/codegenerator.h>
 
 #include <util/macros.h>
+#include <util/stl.h>
 
 using namespace std;
 using namespace venom::analysis;
@@ -18,6 +19,18 @@ using namespace venom::backend;
 
 namespace venom {
 namespace ast {
+
+string
+LiftContext::refParamName(Symbol* nonLocSym) {
+  bool create;
+  size_t idx = refs.create(nonLocSym, create);
+  return RefParamName(nonLocSym, idx);
+}
+
+string
+LiftContext::RefParamName(Symbol* nonLocSym, size_t pos) {
+  return nonLocSym->getName() + "$refparam_" + util::stringify(pos);
+}
 
 ASTNode::~ASTNode() {}
 
@@ -85,6 +98,30 @@ ASTNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
   } endfor
 }
 
+void
+ASTNode::collectNonLocalRefs(LiftContext& ctx) {
+  forchild (kid) {
+    if (!kid) continue;
+    kid->collectNonLocalRefs(ctx);
+  } endfor
+}
+
+ASTNode*
+ASTNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
+                          const set<BaseSymbol*>& refs) {
+  for (size_t i = 0; i < getNumKids(); i++) {
+    ASTNode* kid = getNthKid(i);
+    if (!kid) continue;
+    ASTNode* rep = kid->rewriteAfterLift(liftMap, refs);
+    if (rep) {
+      assert(rep != kid);
+      setNthKid(i, rep);
+      delete kid;
+    }
+  }
+  return NULL;
+}
+
 ASTNode*
 ASTNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   for (size_t i = 0; i < getNumKids(); i++) {
@@ -113,6 +150,14 @@ ASTNode::cloneForTemplate(const TypeTranslator& t) {
   ASTNode* copy = cloneForTemplateImpl(t);
   assert(copy);
   cloneSetState(copy);
+  return copy;
+}
+
+ASTNode*
+ASTNode::cloneForLift(LiftContext& ctx) {
+  ASTNode* copy = cloneForLiftImpl(ctx);
+  assert(copy);
+  // NO cloneSetState()
   return copy;
 }
 

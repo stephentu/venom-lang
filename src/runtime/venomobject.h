@@ -41,6 +41,14 @@ public:
     RefType,
   };
 
+  /** This should allow us to avoid hardcoding c++ types
+   * in various places. See specializations below */
+  template <enum CellType>
+  struct cpp_utils {
+    static const bool is_valid = false;
+    typedef void* cpp_type;
+  };
+
   /** Un-initialized ctor */
   venom_cell() : data(0) {}
 
@@ -89,6 +97,34 @@ protected:
     types(venom_object* obj) : obj(obj) {}
   } data;
 };
+
+/** Template specializations for venom_cell::cpp_utils */
+
+template <>
+struct venom_cell::cpp_utils<venom_cell::IntType> {
+  static const bool is_valid = true;
+  typedef int64_t cpp_type;
+};
+
+template <>
+struct venom_cell::cpp_utils<venom_cell::FloatType> {
+  static const bool is_valid = true;
+  typedef double cpp_type;
+};
+
+template <>
+struct venom_cell::cpp_utils<venom_cell::BoolType> {
+  static const bool is_valid = true;
+  typedef bool cpp_type;
+};
+
+template <>
+struct venom_cell::cpp_utils<venom_cell::RefType> {
+  static const bool is_valid = true;
+  typedef venom_object* cpp_type;
+};
+
+/** Template specializations for venom_cell::ExtractFunctor */
 
 #define _IMPL_EXTRACT_FUNCTOR(ctype, type) \
   template <> \
@@ -207,16 +243,15 @@ public:
   }
 
   static venom_object* Nil;
-  static ref_ptr<venom_object> NilPtr;
 
-  static backend::FunctionDescriptor* const InitDescriptor;
-  static backend::FunctionDescriptor* const ReleaseDescriptor;
-  static backend::FunctionDescriptor* const CtorDescriptor;
-  static backend::FunctionDescriptor* const StringifyDescriptor;
-  static backend::FunctionDescriptor* const HashDescriptor;
-  static backend::FunctionDescriptor* const EqDescriptor;
+  static backend::FunctionDescriptor& InitDescriptor();
+  static backend::FunctionDescriptor& ReleaseDescriptor();
+  static backend::FunctionDescriptor& CtorDescriptor();
+  static backend::FunctionDescriptor& StringifyDescriptor();
+  static backend::FunctionDescriptor& HashDescriptor();
+  static backend::FunctionDescriptor& EqDescriptor();
 
-  static venom_class_object ObjClassTable;
+  static venom_class_object& ObjClassTable();
 
   /**
    * Does *NOT* call the venom level ctor, only calls the

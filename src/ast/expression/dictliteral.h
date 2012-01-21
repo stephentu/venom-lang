@@ -53,7 +53,7 @@ public:
     VENOM_NOT_REACHED;
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(DictPair)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(DictPair)
 
 protected:
   virtual analysis::InstantiatedType*
@@ -118,7 +118,7 @@ public:
     VENOM_NOT_REACHED;
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(DictLiteralNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(DictLiteralNode)
 
 protected:
   virtual analysis::InstantiatedType*

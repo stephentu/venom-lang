@@ -84,7 +84,7 @@ public:
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
-  VENOM_AST_TYPED_CLONE(ASTExpressionNode)
+  VENOM_AST_TYPED_CLONE_EXPR(ASTExpressionNode)
 
 protected:
   virtual analysis::InstantiatedType*

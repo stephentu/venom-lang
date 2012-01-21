@@ -66,9 +66,9 @@ ClassSignature::createClassObject(
       sizeof(venom_object), // all user objects have base of venom_object size
       attributes.size(),
       ref_cell_bitmap,
-      venom_object::ObjClassTable.cppInit,
-      venom_object::ObjClassTable.cppRelease,
-      ctor == -1 ? venom_object::CtorDescriptor : referenceTable[ctor],
+      venom_object::ObjClassTable().cppInit,
+      venom_object::ObjClassTable().cppRelease,
+      ctor == -1 ? &venom_object::CtorDescriptor() : referenceTable[ctor],
       vtable);
 }
 
@@ -94,7 +94,7 @@ CodeGenerator::createLocalVariable(Symbol* symbol, bool& create) {
 Symbol*
 CodeGenerator::createTemporaryVariable() {
   if (available_temporary_symbols.empty()) {
-    Symbol* ret = new Symbol("", NULL, NULL);
+    Symbol* ret = new Symbol("", NULL, NULL, NULL);
     temporary_symbols.insert(ret);
     return ret;
   } else {

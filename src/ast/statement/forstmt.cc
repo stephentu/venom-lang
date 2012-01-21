@@ -27,7 +27,7 @@ ForStmtNode::registerSymbol(SemanticContext* ctx) {
   // (of unknown type)
   VariableNode *vn = dynamic_cast<VariableNode*>(variable);
   assert(vn);
-  stmts->getSymbolTable()->createSymbol(vn->getName(), NULL);
+  stmts->getSymbolTable()->createSymbol(vn->getName(), NULL, this);
 }
 
 void
@@ -48,11 +48,11 @@ ForStmtNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   // now the type information is available, set it
   if (iterableType->getType()->equals(*Type::ListType)) {
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), iterableType->getParams().front());
+        vn->getName(), iterableType->getParams().front(), this);
   } else {
     // string type
     stmts->getSymbolTable()->createSymbol(
-        vn->getName(), InstantiatedType::StringType);
+        vn->getName(), InstantiatedType::StringType, this);
   }
   stmts->typeCheck(ctx);
   checkExpectedType(expected);
@@ -76,6 +76,11 @@ ForStmtNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 ForStmtNode*
 ForStmtNode::cloneImpl() {
   return new ForStmtNode(variable->clone(), expr->clone(), stmts->clone());
+}
+
+ASTStatementNode*
+ForStmtNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ForStmtNode(variable->cloneForLift(ctx), expr->cloneForLift(ctx), stmts->cloneForLift(ctx));
 }
 
 ForStmtNode*

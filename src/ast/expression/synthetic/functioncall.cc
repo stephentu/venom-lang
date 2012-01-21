@@ -20,6 +20,17 @@ FunctionCallNodeSynthetic::cloneImpl() {
         ASTExpressionNode::CloneFunctor()));
 }
 
+ASTExpressionNode*
+FunctionCallNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
+  // TODO: implement rewrite...
+  return new FunctionCallNodeSynthetic(
+      primary->cloneForLift(ctx),
+      typeArgTypes,
+      util::transform_vec(
+        args.begin(), args.end(),
+        ASTExpressionNode::CloneLiftFunctor(ctx)));
+}
+
 FunctionCallNode*
 FunctionCallNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
   return new FunctionCallNodeSynthetic(

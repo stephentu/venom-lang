@@ -38,14 +38,18 @@ StmtExprNode::codeGen(CodeGenerator& cg) {
 
 ASTNode*
 StmtExprNode::rewriteReturn(SemanticContext* ctx) {
-  ReturnNode *ret = new ReturnNode(ASTNode::Clone(expr));
-  ret->initSymbolTable(symbols);
-  return ret;
+  ReturnNode *ret = new ReturnNode(expr->clone());
+  return replace(ctx, ret);
 }
 
 StmtExprNode*
 StmtExprNode::cloneImpl() {
   return new StmtExprNode(expr->clone());
+}
+
+ASTStatementNode*
+StmtExprNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new StmtExprNode(expr->cloneForLift(ctx));
 }
 
 StmtExprNode*

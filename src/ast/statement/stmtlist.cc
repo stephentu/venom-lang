@@ -177,6 +177,115 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   return NULL;
 }
 
+void
+StmtListNode::liftRecurseAndInsert(SemanticContext* ctx) {
+  for (size_t i = 0; i < stmts.size(); i++) {
+    vector<ASTStatementNode*> liftedStmts;
+    assert(ctx == symbols->getSemanticContext());
+    stmts[i]->liftPhaseImpl(ctx, symbols, liftedStmts);
+    // insert liftedStmts before pos i
+    stmts.insert(stmts.begin() + i,
+                 liftedStmts.begin(), liftedStmts.end());
+    i += liftedStmts.size();
+  }
+}
+
+void
+StmtListNode::liftPhase(SemanticContext* ctx) {
+  assert(getSymbolTable()->isModuleLevelSymbolTable());
+  liftRecurseAndInsert(ctx);
+}
+
+void
+StmtListNode::liftPhaseImpl(SemanticContext* ctx,
+                            SymbolTable* liftInto,
+                            vector<ASTStatementNode*>& liftedStmts) {
+  liftRecurseAndInsert(ctx);
+  LiftContext::LiftMap liftMap;
+  set<BaseSymbol*> refs;
+  for (vector<ASTStatementNode*>::iterator it = stmts.begin();
+       it != stmts.end(); ) {
+    ASTStatementNode* stmt = *it;
+    if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
+      // should never lift a ctor
+      assert(!func->isCtor());
+
+      // create a name for the lifted function
+      string liftedName =
+        func->getName() + "$lifted_" + util::stringify(ctx->uniqueId());
+
+      LiftContext liftCtx(func->getSymbol(), liftedName, symbols, liftMap);
+
+      // gather all non-local refs first
+      stmt->collectNonLocalRefs(liftCtx);
+
+      // insert to refs
+      refs.insert(liftCtx.refs.vec.begin(), liftCtx.refs.vec.end());
+
+      // clone/rewrite the function
+      ASTStatementNode* clone =
+        CloneForLift<FuncDeclNode, ASTStatementNode>(func, liftCtx);
+      VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, clone);
+
+      // add to liftMap
+      assert(liftMap.find(func->getSymbol()) == liftMap.end());
+      liftMap[func->getSymbol()] = make_pair(liftCtx.refs.vec, clone);
+
+      // remove the orig func stmt from the stmt list
+      it = stmts.erase(it);
+
+      // register the lifted symbol into the scope it is being
+      // lifted into. We need to this this *here*, so that when
+      // we call rewriteAfterLift(), the symbols will be valid
+      clone->initSymbolTable(liftInto);
+      clone->semanticCheck(ctx);
+      clone->typeCheck(ctx);
+
+      liftedStmts.push_back(clone);
+
+    } else if (ClassDeclNode* klass = dynamic_cast<ClassDeclNode*>(stmt)) {
+      // TODO: implement me
+      VENOM_ASSERT_NOT_NULL(klass);
+      ++it;
+    } else {
+      ++it;
+    }
+  }
+
+  // now, rewrite the references in *this* scope to reflect the
+  // *lifted* symbols
+  ASTNode* retVal = rewriteAfterLift(liftMap, refs);
+  VENOM_ASSERT_NULL(retVal);
+
+  // since this phase runs *after* template instantiation,
+  // need to instantiate ref types manually. while this may seem
+  // sub-optimal (why don't we just run lifting before template
+  // instantiation), this is probably the easier approach, since
+  // having to worry about type parameters while lifting is a bit
+  // more tricky (not impossible, but would be more code than this...)
+  SymbolTable* rootTable =
+    ctx->getProgramRoot()->getRootSymbolTable();
+  for (set<BaseSymbol*>::iterator it = refs.begin();
+       it != refs.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+    Symbol* sym = static_cast<Symbol*>(*it);
+
+    // TODO: this is somewhat copy/pasted from
+    // parser/driver.cc. Should refactor this out
+    InstantiatedType* itype = sym->getInstantiatedType()->refify(ctx);
+    TypeTranslator t;
+    ClassSymbol* csym =
+      rootTable->findClassSymbol(
+          itype->createClassName(),
+          SymbolTable::NoRecurse, t);
+    if (!csym) {
+      TypeTranslator t;
+      t.bind(itype);
+      itype->getClassSymbol()->instantiateSpecializedType(t);
+    }
+  }
+}
+
 ASTNode*
 StmtListNode::rewriteReturn(SemanticContext* ctx) {
   if (stmts.empty()) {
@@ -218,6 +327,13 @@ StmtListNode::cloneImpl() {
   return new StmtListNode(
       util::transform_vec(stmts.begin(), stmts.end(),
         ASTStatementNode::CloneFunctor()));
+}
+
+ASTStatementNode*
+StmtListNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new StmtListNode(
+      util::transform_vec(stmts.begin(), stmts.end(),
+        ASTStatementNode::CloneLiftFunctor(ctx)));
 }
 
 StmtListNode*

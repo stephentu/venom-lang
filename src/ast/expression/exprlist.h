@@ -18,6 +18,18 @@ public:
     util::delete_pointers(exprs.begin(), exprs.end());
   }
 
+  /** Takes ownership of expr. Returns self for chaining */
+  inline ExprListNode* prependExpression(ASTExpressionNode* expr) {
+    exprs.insert(exprs.begin(), expr);
+    return this;
+  }
+
+  /** Takes ownership of expr. Returns self for chaining */
+  inline ExprListNode* appendExpression(ASTExpressionNode* expr) {
+    exprs.push_back(expr);
+    return this;
+  }
+
   virtual size_t getNumKids() const { return exprs.size(); }
 
   virtual ASTNode* getNthKid(size_t kid) { return exprs.at(kid); }
@@ -38,7 +50,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ExprListNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(ExprListNode)
 
 protected:
   virtual analysis::InstantiatedType*

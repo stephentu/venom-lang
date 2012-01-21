@@ -5,10 +5,17 @@
 #include <analysis/symboltable.h>
 
 #include <ast/expression/arrayaccess.h>
+#include <ast/expression/assignexpr.h>
 #include <ast/expression/attraccess.h>
+#include <ast/expression/exprlist.h>
 #include <ast/expression/functioncall.h>
 #include <ast/expression/variable.h>
+
+#include <ast/expression/synthetic/functioncall.h>
+#include <ast/expression/synthetic/symbolnode.h>
+
 #include <ast/statement/assign.h>
+#include <ast/statement/stmtexpr.h>
 
 #include <backend/bytecode.h>
 #include <backend/codegenerator.h>
@@ -24,50 +31,79 @@ void
 AssignNode::registerSymbol(SemanticContext* ctx) {
   VariableNode *var = dynamic_cast<VariableNode*>(variable);
   if (var) {
-    RegisterVariableLHS(ctx, symbols, var);
+    RegisterVariableLHS(ctx, symbols, var, this);
   }
 }
 
-//ASTNode*
-//AssignNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
-//  switch (mode) {
-//  case NonLocalRefs: {
-//    if (VariableNode* varLHS = dynamic_cast<VariableNode*>(variable)) {
-//      BaseSymbol *bs = varLHS->getSymbol();
-//      assert(bs);
-//      if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
-//        // TODO: these checks must be the same as the ones in
-//        // ast/expression/variable.cc - this is fragile; fix it
-//        if (!sym->isLocalTo(symbols) &&
-//            !sym->isObjectField() &&
-//            !sym->isModuleLevelSymbol()) {
-//          // we need to rewrite x to x.set(rhs)
-//          // however, we need to process a rewrite on the RHS first
-//
-//          ASTNode* rep = value->rewriteLocal(ctx, mode);
-//          if (rep) {
-//            ASTNode *old = value;
-//            setNthKid(1, rep);
-//            delete old;
-//          }
-//
-//          assert(hasLocationContext(AssignmentLHS));
-//          sym->markPromoteToRef();
-//
-//          FunctionCallNode *rep =
-//            new FunctionCallNode(
-//              new AttrAccessNode(varLHS->clone(), "set"),
-//              TypeStringVec(),
-//              util::vec1(value->clone()));
-//          return replace(ctx, rep);
-//        }
-//      }
-//    }
-//    // fall-through to default case
-//  }
-//  default: return ASTNode::rewriteLocal(ctx, mode);
-//  }
-//}
+ASTNode*
+AssignNode::rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const set<BaseSymbol*>& refs) {
+  BaseSymbol* psym = variable->getSymbol();
+  if (psym) {
+    set<BaseSymbol*>::const_iterator it = refs.find(psym);
+    if (it != refs.end()) {
+      VENOM_ASSERT_TYPEOF_PTR(Symbol, psym);
+      Symbol* sym = static_cast<Symbol*>(psym);
+      if (sym->getDecl() == this) {
+
+        // WARNING: this has to be done carefully so we don't
+        // generate any type errors. The order of operations
+        // done here is very important for correctness
+
+        VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
+
+        ExprListNode* exprs = new ExprListNode;
+        StmtExprNode* stmtexpr = new StmtExprNode(exprs);
+
+        SemanticContext* ctx = symbols->getSemanticContext();
+
+        InstantiatedType* refType =
+          variable->getStaticType()->refify(ctx);
+
+        // this will replace this assignment. but first, clone it
+        // and semantic/type check it (rewrite below)
+        AssignExprNode* assignExpr =
+            new AssignExprNode(variable->clone(), value->clone());
+        assignExpr->initSymbolTable(symbols);
+        assignExpr->semanticCheck(ctx);
+        assignExpr->typeCheck(ctx);
+
+        assert(sym->getDefinedSymbolTable() == symbols);
+        // need to mark this symbol ref-ed, so type checking
+        // doesn't fail...
+        sym->markPromoteToRef();
+
+        // need to add an instantiation of the ref
+        exprs->appendExpression(
+          new AssignExprNode(
+            new VariableNodeParser(sym->getName(), NULL),
+            new FunctionCallNodeSynthetic(
+              new SymbolNode(
+                Type::RefType->getClassSymbol(),
+                Type::ClassType->instantiate(
+                  ctx, util::vec1(refType)),
+                NULL),
+              util::vec1(refType),
+              ExprNodeVec())));
+
+        // semantic/typecheck so that we can rewrite the var/value
+        // w/o type errors
+        replace(ctx, stmtexpr);
+
+        // now it is safe to do a rewrite on assignExpr
+        ASTNode* retVal = assignExpr->rewriteAfterLift(liftMap, refs);
+        VENOM_ASSERT_NULL(retVal);
+
+        // append does not do another typecheck
+        exprs->appendExpression(assignExpr);
+
+        return stmtexpr;
+      }
+    }
+  }
+  return ASTStatementNode::rewriteAfterLift(liftMap, refs);
+}
 
 void
 AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
@@ -83,7 +119,8 @@ AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 void
 AssignNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   assert(value);
-  TypeCheckAssignment(ctx, symbols, variable, value);
+  decl_either decl(this);
+  TypeCheckAssignment(ctx, symbols, variable, value, decl);
   checkExpectedType(expected);
 }
 
@@ -97,6 +134,11 @@ AssignNode::cloneImpl() {
   return new AssignNode(variable->clone(), value->clone());
 }
 
+ASTStatementNode*
+AssignNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new AssignNode(variable->cloneForLift(ctx), value->cloneForLift(ctx));
+}
+
 AssignNode*
 AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new AssignNode(
@@ -104,11 +146,12 @@ AssignNode::cloneForTemplateImpl(const TypeTranslator& t) {
 }
 
 InstantiatedType*
-AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
-                                SymbolTable*       symbols,
-                                ASTExpressionNode* variable,
-                                ASTExpressionNode* value,
-                                ClassSymbol*       classSymbol) {
+AssignNode::TypeCheckAssignment(
+    SemanticContext* ctx,
+    SymbolTable* symbols,
+    ASTExpressionNode* variable,
+    ASTExpressionNode* value,
+    decl_either& decl) {
   InstantiatedType *lhs = variable->typeCheck(ctx, NULL);
   InstantiatedType *rhs = value->typeCheck(ctx, lhs);
   assert(rhs);
@@ -128,20 +171,21 @@ AssignNode::TypeCheckAssignment(SemanticContext*   ctx,
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
     VariableNode *vn = static_cast<VariableNode*>(variable);
     assert(!vn->getExpectedType());
-    if (classSymbol) {
-      symbols->createClassAttributeSymbol(vn->getName(), rhs, classSymbol);
+    if (decl.isRight()) {
+      symbols->createClassAttributeSymbol(vn->getName(), rhs, decl.right());
     } else {
-      symbols->createSymbol(vn->getName(), rhs);
+      symbols->createSymbol(vn->getName(), rhs, decl.left());
     }
     // go again, so we can set the static type on variable
-    return TypeCheckAssignment(ctx, symbols, variable, value, classSymbol);
+    return TypeCheckAssignment(ctx, symbols, variable, value, decl);
   }
 }
 
 void
 AssignNode::RegisterVariableLHS(SemanticContext* ctx,
                                 SymbolTable* symbols,
-                                VariableNode* var) {
+                                VariableNode* var,
+                                ASTNode* decl) {
   // check for duplicate definition (as a function or class)
   if (symbols->isDefined(
         var->getName(), SymbolTable::Function | SymbolTable::Class,
@@ -159,7 +203,7 @@ AssignNode::RegisterVariableLHS(SemanticContext* ctx,
       throw SemanticViolationException(
           "Cannot redeclare symbol " + var->getName());
     }
-    symbols->createSymbol(var->getName(), explicitType);
+    symbols->createSymbol(var->getName(), explicitType, decl);
   } else {
     // if there is no type string, then only create a new
     // declaration if the symbol doesn't exist anywhere in the scope
@@ -188,7 +232,7 @@ AssignNode::RegisterVariableLHS(SemanticContext* ctx,
     if (!symbols->isDefined(
           var->getName(), SymbolTable::Location,
           SymbolTable::AllowCurrentScope)) {
-      symbols->createSymbol(var->getName(), NULL);
+      symbols->createSymbol(var->getName(), NULL, decl);
     }
   }
 }

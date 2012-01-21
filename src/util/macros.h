@@ -11,6 +11,12 @@
   #define venom_pointer_cast dynamic_cast
 #endif
 
+#if defined(__GNUC__)
+  #define ATTRIBUTE_UNUSED __attribute__ ((unused))
+#else
+  #define ATTRIBUTE_UNUSED
+#endif
+
 #define VENOM_NELEMS(array) (sizeof((array))/sizeof((array)[0]))
 
 #define VENOM_STRINGIFY(x) #x
@@ -133,7 +139,12 @@
 
 /** Requires RTTI + type to be polymorphic */
 #define VENOM_ASSERT_TYPEOF(type, expr) \
-  assert(dynamic_cast<type>((expr)))
+  do { \
+    if (false) { \
+      type _t ATTRIBUTE_UNUSED = static_cast<type>((expr)); \
+    } \
+    assert(dynamic_cast<type>((expr))); \
+  } while (0)
 
 #define VENOM_ASSERT_TYPEOF_PTR(type, expr) \
   VENOM_ASSERT_TYPEOF(type*, expr)

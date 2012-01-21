@@ -8,6 +8,7 @@
 #include <runtime/venomobject.h>
 #include <runtime/venomdict.h>
 #include <runtime/venomlist.h>
+#include <runtime/venomref.h>
 #include <runtime/venomstring.h>
 
 #include <util/stl.h>
@@ -193,7 +194,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   ClassSymbol *RefClassSym =
     root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
   RefSymTab->createMethodSymbol("<ctor>", InstantiatedTypeVec(),
-                                util::vec1(RefTypeParam[0]),
+                                InstantiatedTypeVec(),
                                 InstantiatedType::VoidType, RefClassSym,
                                 NULL, true);
   RefSymTab->createClassAttributeSymbol("value", RefTypeParam[0], RefClassSym);
@@ -311,28 +312,28 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
   Linker::FuncDescMap ret;
 
   // TODO: dynamically load this stuff, instead of hardcode
-  ret["<prelude>.print"] = BuiltinPrintDescriptor;
+  ret["<prelude>.print"] = &BuiltinPrintDescriptor();
 
   // object methods
   FillFunctionMap(
       ret, Type::ObjectType->getClassSymbol(),
-      &venom_object::ObjClassTable);
+      &venom_object::ObjClassTable());
 
   // string methods
   FillFunctionMap(
       ret, Type::StringType->getClassSymbol(),
-      &venom_string::StringClassTable);
+      &venom_string::StringClassTable());
 
   // box methods
   FillFunctionMap(
       ret, Type::BoxedIntType->getClassSymbol(),
-      &venom_integer::IntegerClassTable);
+      &venom_integer::IntegerClassTable());
   FillFunctionMap(
       ret, Type::BoxedFloatType->getClassSymbol(),
-      &venom_double::DoubleClassTable);
+      &venom_double::DoubleClassTable());
   FillFunctionMap(
       ret, Type::BoxedBoolType->getClassSymbol(),
-      &venom_boolean::BooleanClassTable);
+      &venom_boolean::BooleanClassTable());
 
   vector<ClassSymbol*> builtinClassSyms;
   rootCtx->getRootSymbolTable()->getClassSymbols(builtinClassSyms);
@@ -359,6 +360,12 @@ GetBuiltinFunctionMap(SemanticContext* rootCtx) {
               TypeToCellType(keyType), TypeToCellType(valueType));
         FillFunctionMap(
             ret, scs->getType()->getClassSymbol(), classTable);
+      } else if (itype->getType()->isRefType()) {
+        assert(itype->getParams().size() == 1);
+        FillFunctionMap(
+            ret, scs->getType()->getClassSymbol(),
+            venom_ref::GetRefClassTable(
+              itype->getParams()[0]->isRefCounted()));
       }
     }
   }
@@ -372,12 +379,12 @@ GetBuiltinClassMap(SemanticContext* rootCtx) {
   Linker::ClassObjMap ret;
   // TODO: dynamically load this stuff, instead of hardcode
 
-  ret["<prelude>.object"] = &venom_object::ObjClassTable;
-  ret["<prelude>.string"] = &venom_string::StringClassTable;
+  ret["<prelude>.object"] = &venom_object::ObjClassTable();
+  ret["<prelude>.string"] = &venom_string::StringClassTable();
 
-  ret["<prelude>.<Int>"]   = &venom_integer::IntegerClassTable;
-  ret["<prelude>.<Float>"] = &venom_double::DoubleClassTable;
-  ret["<prelude>.<Bool>"]  = &venom_boolean::BooleanClassTable;
+  ret["<prelude>.<Int>"]   = &venom_integer::IntegerClassTable();
+  ret["<prelude>.<Float>"] = &venom_double::DoubleClassTable();
+  ret["<prelude>.<Bool>"]  = &venom_boolean::BooleanClassTable();
 
   vector<ClassSymbol*> builtinClassSyms;
   rootCtx->getRootSymbolTable()->getClassSymbols(builtinClassSyms);
@@ -402,6 +409,12 @@ GetBuiltinClassMap(SemanticContext* rootCtx) {
         ret[scs->getFullName()] =
           venom_dict::GetDictClassTable(
               TypeToCellType(keyType), TypeToCellType(valueType));
+      } else if (itype->getType()->isRefType()) {
+        assert(itype->getParams().size() == 1);
+        assert(ret.find(scs->getFullName()) == ret.end());
+        ret[scs->getFullName()] =
+          venom_ref::GetRefClassTable(
+              itype->getParams()[0]->isRefCounted());
       }
     }
   }

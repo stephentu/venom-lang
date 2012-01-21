@@ -1,0 +1,14 @@
+def f() =
+  a = 10;
+  b = 10;
+  def g() = 
+    a = 20; # this refers to the *outer* a
+    b::int = 20; # this is a new decl
+    print (a);
+    print (b);
+  end
+  g();
+  print (a);
+  print (b);
+end
+f();

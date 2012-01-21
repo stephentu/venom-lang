@@ -26,83 +26,65 @@ namespace runtime {
  * type. For now, a list is backed by a std::vector, since
  * this is the most straightforward implementation.
  */
-class venom_list :
+template <typename Elem>
+class venom_list_impl :
   public venom_object,
-  public venom_self_cast<venom_list> {
+  public venom_self_cast< venom_list_impl<Elem> > {
 
   friend class backend::Instruction;
+  friend class venom_list;
+
+private:
+  typedef venom_list_impl<Elem> self_type;
+  typedef venom_cell_utils<Elem> elem_utils;
 
 protected:
   /** Construct an empty list */
-  venom_list(venom_class_object* class_obj) : venom_object(class_obj) {
+  venom_list_impl(venom_class_object* class_obj) : venom_object(class_obj) {
     elems.reserve(16);
   }
 
   /** protected destructor, to prevent accidental deletes */
-  ~venom_list() {}
+  ~venom_list_impl() {}
+
+  static backend::FunctionDescriptor& InitDescriptor();
+  static backend::FunctionDescriptor& ReleaseDescriptor();
+  static backend::FunctionDescriptor& CtorDescriptor();
+
+  static backend::FunctionDescriptor& StringifyDescriptor();
+  static backend::FunctionDescriptor& HashDescriptor();
+  static backend::FunctionDescriptor& EqDescriptor();
+
+  static backend::FunctionDescriptor& GetDescriptor();
+  static backend::FunctionDescriptor& SetDescriptor();
+  static backend::FunctionDescriptor& AppendDescriptor();
+
+  static backend::FunctionDescriptor& SizeDescriptor();
+
+  static venom_class_object& ListClassTable();
 
 public:
-  static backend::FunctionDescriptor* const InitDescriptor;
-  static backend::FunctionDescriptor* const ReleaseDescriptor;
-  static backend::FunctionDescriptor* const ReleaseRefDescriptor;
-  static backend::FunctionDescriptor* const CtorDescriptor;
-
-  static backend::FunctionDescriptor* const StringifyIntDescriptor;
-  static backend::FunctionDescriptor* const StringifyFloatDescriptor;
-  static backend::FunctionDescriptor* const StringifyBoolDescriptor;
-  static backend::FunctionDescriptor* const StringifyRefDescriptor;
-
-  static backend::FunctionDescriptor* const HashIntDescriptor;
-  static backend::FunctionDescriptor* const HashFloatDescriptor;
-  static backend::FunctionDescriptor* const HashBoolDescriptor;
-  static backend::FunctionDescriptor* const HashRefDescriptor;
-
-  static backend::FunctionDescriptor* const EqIntDescriptor;
-  static backend::FunctionDescriptor* const EqFloatDescriptor;
-  static backend::FunctionDescriptor* const EqBoolDescriptor;
-  static backend::FunctionDescriptor* const EqRefDescriptor;
-
-  static backend::FunctionDescriptor* const GetDescriptor;
-  static backend::FunctionDescriptor* const GetRefDescriptor;
-  static backend::FunctionDescriptor* const SetDescriptor;
-  static backend::FunctionDescriptor* const SetRefDescriptor;
-  static backend::FunctionDescriptor* const AppendDescriptor;
-  static backend::FunctionDescriptor* const AppendRefDescriptor;
-
-  static backend::FunctionDescriptor* const SizeDescriptor;
-
-  /**
-   * We use CellType here instead of an analysis::Type instance,
-   * so that runtime doesn't have to depend on analysis.
-   * NOTE: the venom_class_object instance does NOT need to be
-   * freed by the caller
-   */
-  static venom_class_object*
-  GetListClassTable(venom_cell::CellType listType);
 
   static venom_ret_cell
   init(backend::ExecutionContext* ctx, venom_cell self) {
     // must use placement new on elems
     using namespace std;
-    new (&(asSelf(self)->elems)) vector<venom_cell>();
+    new (&(venom_self_cast<self_type>::asSelf(self)->elems))
+      vector<venom_cell>();
     return venom_ret_cell(venom_object::Nil);
   }
 
   static venom_ret_cell
   release(backend::ExecutionContext* ctx, venom_cell self) {
-    // must manually call dtor on elems
-    using namespace std;
-    asSelf(self)->elems.~vector<venom_cell>();
-    return venom_ret_cell(venom_object::Nil);
-  }
-
-  static venom_ret_cell
-  releaseRef(backend::ExecutionContext* ctx, venom_cell self) {
-    std::vector<venom_cell>& elems = asSelf(self)->elems;
-    for (std::vector<venom_cell>::iterator it = elems.begin();
-         it != elems.end(); ++it) {
-      it->decRef();
+    std::vector<venom_cell>& elems =
+      venom_self_cast<self_type>::asSelf(self)->elems;
+    if (elem_utils::isRefCounted) {
+      for (std::vector<venom_cell>::iterator it = elems.begin();
+           it != elems.end(); ++it) {
+        it->decRef();
+      }
     }
+
     // must manually call dtor on elems
     using namespace std;
     elems.~vector<venom_cell>();
@@ -111,18 +93,16 @@ public:
 
   static venom_ret_cell
   ctor(backend::ExecutionContext* ctx, venom_cell self) {
-    asSelf(self)->elems.reserve(16);
+    venom_self_cast<self_type>::asSelf(self)->elems.reserve(16);
     return venom_ret_cell(venom_object::Nil);
   }
 
-private:
-  template <typename T>
-  static inline venom_ret_cell
-  stringify_impl(backend::ExecutionContext* ctx, venom_cell self) {
-    typename venom_cell_utils<T>::stringer stringer;
+  static venom_ret_cell
+  stringify(backend::ExecutionContext* ctx, venom_cell self) {
+    typename elem_utils::stringer stringer;
     std::stringstream buf;
     buf << "[";
-    venom_list* list = asSelf(self);
+    self_type* list = venom_self_cast<self_type>::asSelf(self);
     for (std::vector<venom_cell>::iterator it = list->elems.begin();
          it != list->elems.end(); ++it) {
       buf << stringer(*it);
@@ -132,134 +112,161 @@ private:
     return venom_ret_cell(new venom_string(buf.str()));
   }
 
-  template <typename T>
-  static inline venom_ret_cell
-  hash_impl(backend::ExecutionContext* ctx, venom_cell self) {
+  static venom_ret_cell
+  hash(backend::ExecutionContext* ctx, venom_cell self) {
     VENOM_UNIMPLEMENTED;
   }
 
-  template <typename T>
-  static inline venom_ret_cell
-  eq_impl(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+  static venom_ret_cell
+  eq(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
     VENOM_UNIMPLEMENTED;
-  }
-
-public:
-  static venom_ret_cell
-  stringifyInt(backend::ExecutionContext* ctx, venom_cell self) {
-    return stringify_impl<int64_t>(ctx, self);
-  }
-
-  static venom_ret_cell
-  stringifyFloat(backend::ExecutionContext* ctx, venom_cell self) {
-    return stringify_impl<double>(ctx, self);
-  }
-
-  static venom_ret_cell
-  stringifyBool(backend::ExecutionContext* ctx, venom_cell self) {
-    return stringify_impl<bool>(ctx, self);
-  }
-
-  static venom_ret_cell
-  stringifyRef(backend::ExecutionContext* ctx, venom_cell self) {
-    return stringify_impl<venom_object*>(ctx, self);
-  }
-
-  static venom_ret_cell
-  hashInt(backend::ExecutionContext* ctx, venom_cell self) {
-    return hash_impl<int64_t>(ctx, self);
-  }
-
-  static venom_ret_cell
-  hashFloat(backend::ExecutionContext* ctx, venom_cell self) {
-    return hash_impl<double>(ctx, self);
-  }
-
-  static venom_ret_cell
-  hashBool(backend::ExecutionContext* ctx, venom_cell self) {
-    return hash_impl<bool>(ctx, self);
-  }
-
-  static venom_ret_cell
-  hashRef(backend::ExecutionContext* ctx, venom_cell self) {
-    return hash_impl<venom_object*>(ctx, self);
-  }
-
-  static venom_ret_cell
-  eqInt(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
-    return eq_impl<int64_t>(ctx, self, that);
-  }
-
-  static venom_ret_cell
-  eqFloat(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
-    return eq_impl<double>(ctx, self, that);
-  }
-
-  static venom_ret_cell
-  eqBool(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
-    return eq_impl<bool>(ctx, self, that);
-  }
-
-  static venom_ret_cell
-  eqRef(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
-    return eq_impl<venom_object*>(ctx, self, that);
   }
 
   static venom_ret_cell
   get(backend::ExecutionContext* ctx, venom_cell self, venom_cell idx) {
-    return venom_ret_cell(asSelf(self)->elems.at(idx.asInt()));
-  }
-
-  static venom_ret_cell
-  getRef(backend::ExecutionContext* ctx, venom_cell self, venom_cell idx) {
-    venom_cell elem = asSelf(self)->elems.at(idx.asInt());
-    return venom_ret_cell(elem.asRawObject()); // trigger the incRef
+    venom_cell elem =
+      venom_self_cast<self_type>::asSelf(self)->elems.at(idx.asInt());
+    return venom_ret_cell(
+        typename elem_utils::extractor()(elem)); // trigger the incRef
   }
 
   static venom_ret_cell
   set(backend::ExecutionContext* ctx, venom_cell self,
       venom_cell idx, venom_cell elem) {
-    asSelf(self)->elems.at(idx.asInt()) = elem;
-    return venom_ret_cell(venom_object::Nil);
-  }
+    // TODO: static?
+    typename elem_utils::inc_ref incr;
+    typename elem_utils::dec_ref decr;
 
-  static venom_ret_cell
-  setRef(backend::ExecutionContext* ctx, venom_cell self,
-         venom_cell idx, venom_cell elem) {
-    asSelf(self)->elems.at(idx.asInt()) = elem;
-    elem.incRef();
+    self_type* list = venom_self_cast<self_type>::asSelf(self);
+
+    // inc ref new
+    incr(elem);
+
+    // dec ref old
+    venom_cell old = list->elems.at(idx.asInt());
+    decr(old);
+
+    // set
+    list->elems.at(idx.asInt()) = elem;
+
     return venom_ret_cell(venom_object::Nil);
   }
 
   static venom_ret_cell
   append(backend::ExecutionContext* ctx, venom_cell self, venom_cell elem) {
-    asSelf(self)->elems.push_back(elem);
-    return venom_ret_cell(venom_object::Nil);
-  }
-
-  static venom_ret_cell
-  appendRef(backend::ExecutionContext* ctx, venom_cell self, venom_cell elem) {
-    asSelf(self)->elems.push_back(elem);
-    elem.incRef();
+    venom_self_cast<self_type>::asSelf(self)->elems.push_back(elem);
+    typename elem_utils::inc_ref incr;
+    incr(elem);
     return venom_ret_cell(venom_object::Nil);
   }
 
   static venom_ret_cell
   size(backend::ExecutionContext* ctx, venom_cell self) {
-    return venom_ret_cell(int64_t(asSelf(self)->elems.size()));
+    return venom_ret_cell(
+        int64_t(venom_self_cast<self_type>::asSelf(self)->elems.size()));
   }
-
-private:
-  static venom_class_object* const ListIntClassTable;
-  static venom_class_object* const ListFloatClassTable;
-  static venom_class_object* const ListBoolClassTable;
-  static venom_class_object* const ListRefClassTable;
-
-  static venom_class_object*
-  CreateListClassTable(venom_cell::CellType listType);
 
 protected:
   std::vector<venom_cell> elems;
+};
+
+// static implementations
+
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::InitDescriptor() {
+  static backend::FunctionDescriptor f((void*)init, 1, 0x1, true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::ReleaseDescriptor() {
+  static backend::FunctionDescriptor f((void*)release, 1, 0x1, true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::CtorDescriptor() {
+  static backend::FunctionDescriptor f((void*)ctor, 1, 0x1, true);
+  return f;
+}
+
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::StringifyDescriptor() {
+  static backend::FunctionDescriptor f((void*)stringify, 1, 0x1, true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::HashDescriptor() {
+  static backend::FunctionDescriptor f((void*)hash, 1, 0x1, true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::EqDescriptor() {
+  static backend::FunctionDescriptor f((void*)eq, 2, 0x3, true);
+  return f;
+}
+
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::GetDescriptor() {
+  static backend::FunctionDescriptor f((void*)get, 2, 0x1, true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::SetDescriptor() {
+  static backend::FunctionDescriptor f(
+      (void*)set, 3, 0x1 | (elem_utils::isRefCounted ? 0x4 : 0x0), true);
+  return f;
+}
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::AppendDescriptor() {
+  static backend::FunctionDescriptor f(
+      (void*)append, 2, 0x1 | (elem_utils::isRefCounted ? 0x2 : 0x0), true);
+  return f;
+}
+
+template <typename Elem>
+backend::FunctionDescriptor& venom_list_impl<Elem>::SizeDescriptor() {
+  static backend::FunctionDescriptor f((void*)size, 1, 0x1, true);
+  return f;
+}
+
+template <typename Elem>
+venom_class_object& venom_list_impl<Elem>::ListClassTable() {
+  static venom_class_object c(
+      "list", sizeof(self_type), 0, 0x0,
+      &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
+      util::vec7(
+        &StringifyDescriptor(), &HashDescriptor(), &EqDescriptor(),
+        &GetDescriptor(), &SetDescriptor(), &AppendDescriptor(),
+        &SizeDescriptor()));
+  return c;
+}
+
+class venom_list {
+public:
+
+  typedef venom_list_impl<
+            venom_cell::cpp_utils<venom_cell::IntType>::cpp_type
+          > int_list_type;
+
+  typedef venom_list_impl<
+            venom_cell::cpp_utils<venom_cell::FloatType>::cpp_type
+          > float_list_type;
+
+  typedef venom_list_impl<
+            venom_cell::cpp_utils<venom_cell::BoolType>::cpp_type
+          > bool_list_type;
+
+  typedef venom_list_impl<
+            venom_cell::cpp_utils<venom_cell::RefType>::cpp_type
+          > ref_list_type;
+
+  /**
+   * We use CellType here instead of an analysis::Type instance,
+   * so that runtime doesn't have to depend on analysis.
+   * NOTE: the venom_class_object instance does NOT need to be
+   * freed by the caller
+   */
+  static venom_class_object*
+  GetListClassTable(venom_cell::CellType listType);
 };
 
 }

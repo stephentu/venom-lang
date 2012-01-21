@@ -8,34 +8,42 @@ venom_dict::GetDictClassTable(venom_cell::CellType keyType,
                               venom_cell::CellType valueType) {
   // there are 4 * 4 = 16 possibilities here
 
+#define _INNER_CASE(keyctype, celltype) \
+  case venom_cell::celltype: { \
+    typedef venom_cell::cpp_utils<venom_cell::celltype>::cpp_type \
+            value_cpp_type; \
+    return &venom_dict_impl<keyctype, value_cpp_type>::DictClassTable(); \
+  }
+
 #define _IMPL_VALUE_TYPE_SWITCH(keyctype) \
   do { \
     switch (valueType) { \
-    case venom_cell::IntType: \
-      return &venom_dict_impl<keyctype, int64_t>::DictClassTable; \
-    case venom_cell::FloatType: \
-      return &venom_dict_impl<keyctype, double>::DictClassTable; \
-    case venom_cell::BoolType:  \
-      return &venom_dict_impl<keyctype, bool>::DictClassTable; \
-    case venom_cell::RefType: \
-      return &venom_dict_impl<keyctype, venom_object*>::DictClassTable; \
+    _INNER_CASE(keyctype, IntType) \
+    _INNER_CASE(keyctype, FloatType) \
+    _INNER_CASE(keyctype, BoolType) \
+    _INNER_CASE(keyctype, RefType) \
     default: VENOM_NOT_REACHED; \
     } \
   } while (0)
 
+#define _CASE(celltype) \
+  case venom_cell::celltype: { \
+    typedef venom_cell::cpp_utils<venom_cell::celltype>::cpp_type \
+            key_cpp_type; \
+    _IMPL_VALUE_TYPE_SWITCH(key_cpp_type); \
+  }
+
   switch (keyType) {
-  case venom_cell::IntType:
-    _IMPL_VALUE_TYPE_SWITCH(int64_t);
-  case venom_cell::FloatType:
-    _IMPL_VALUE_TYPE_SWITCH(double);
-  case venom_cell::BoolType:
-    _IMPL_VALUE_TYPE_SWITCH(bool);
-  case venom_cell::RefType:
-    _IMPL_VALUE_TYPE_SWITCH(venom_object*);
+  _CASE(IntType)
+  _CASE(FloatType)
+  _CASE(BoolType)
+  _CASE(RefType)
   default: VENOM_NOT_REACHED;
   }
 
+#undef _CASE
 #undef _IMPL_VALUE_TYPE_SWITCH
+#undef _INNER_CASE
 
   VENOM_NOT_REACHED;
 }

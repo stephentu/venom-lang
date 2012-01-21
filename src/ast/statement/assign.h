@@ -6,6 +6,7 @@
 #include <ast/expression/node.h>
 #include <ast/statement/node.h>
 
+#include <util/either.h>
 #include <util/macros.h>
 
 namespace venom {
@@ -54,8 +55,9 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  //virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
-  //                              RewriteMode mode);
+  virtual ASTNode* rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const std::set<analysis::BaseSymbol*>& refs);
 
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
@@ -65,7 +67,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(AssignNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(AssignNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign ";
@@ -76,17 +78,23 @@ public:
   }
 
 protected:
+
+  typedef util::either<ASTNode*, analysis::ClassSymbol*>::non_comparable
+          decl_either;
+
   static analysis::InstantiatedType*
-  TypeCheckAssignment(analysis::SemanticContext* ctx,
-                      analysis::SymbolTable*     symbols,
-                      ASTExpressionNode*         variable,
-                      ASTExpressionNode*         value,
-                      analysis::ClassSymbol*     classSymbol = NULL);
+  TypeCheckAssignment(
+      analysis::SemanticContext* ctx,
+      analysis::SymbolTable* symbols,
+      ASTExpressionNode* variable,
+      ASTExpressionNode* value,
+      decl_either& decl);
 
   static void
   RegisterVariableLHS(analysis::SemanticContext* ctx,
                       analysis::SymbolTable* symbols,
-                      VariableNode* var);
+                      VariableNode* var,
+                      ASTNode* decl);
 
   static void
   CodeGenAssignment(backend::CodeGenerator& cg,

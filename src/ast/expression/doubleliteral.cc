@@ -4,6 +4,7 @@
 
 #include <backend/codegenerator.h>
 
+using namespace std;
 using namespace venom::analysis;
 using namespace venom::backend;
 
@@ -24,6 +25,11 @@ DoubleLiteralNode::codeGen(CodeGenerator& cg) {
 
 DoubleLiteralNode*
 DoubleLiteralNode::cloneImpl() {
+  return new DoubleLiteralNode(value);
+}
+
+ASTExpressionNode*
+DoubleLiteralNode::cloneForLiftImpl(LiftContext& ctx) {
   return new DoubleLiteralNode(value);
 }
 

@@ -68,7 +68,7 @@ public:
 
   virtual analysis::BaseSymbol* getSymbol();
 
-  VENOM_AST_TYPED_CLONE(ClassDeclNode)
+  VENOM_AST_TYPED_CLONE_STMT(ClassDeclNode)
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
@@ -85,6 +85,10 @@ protected:
       analysis::SemanticContext* ctx,
       const std::vector<analysis::InstantiatedType*>& parentTypes,
       const std::vector<analysis::InstantiatedType*>& typeParamTypes);
+
+  virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
+                             analysis::SymbolTable* liftInto,
+                             std::vector<ASTStatementNode*>& liftedStmts);
 
   std::string       name;
   ASTStatementNode* stmts;
@@ -115,7 +119,7 @@ public:
     { assert(typeParams.size() == typeParamTypes.size());
       return typeParamTypes; }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ClassDeclNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);
 

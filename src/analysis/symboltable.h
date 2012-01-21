@@ -167,7 +167,8 @@ public:
                  TypeTranslator& translator);
 
   Symbol*
-  createSymbol(const std::string& name, InstantiatedType* type);
+  createSymbol(const std::string& name, InstantiatedType* type,
+               ast::ASTNode* decl);
 
   Symbol*
   createClassAttributeSymbol(const std::string& name,

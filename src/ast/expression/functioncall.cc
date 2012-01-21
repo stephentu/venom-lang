@@ -7,6 +7,10 @@
 
 #include <ast/expression/synthetic/functioncall.h>
 
+#include <ast/statement/funcdecl.h>
+
+#include <ast/statement/synthetic/funcdecl.h>
+
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
@@ -107,6 +111,51 @@ FunctionCallNode::typeCheckImpl(SemanticContext*  ctx,
   }
 
   return isCtor ? classType : funcType->getParams().back();
+}
+
+ASTNode*
+FunctionCallNode::rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const set<BaseSymbol*>& refs) {
+  // recurse first
+  ASTNode* retVal = ASTExpressionNode::rewriteAfterLift(liftMap, refs);
+  VENOM_ASSERT_NULL(retVal);
+
+  BaseSymbol* bs = primary->getSymbol();
+  LiftContext::LiftMap::const_iterator it = liftMap.find(bs);
+  if (it == liftMap.end()) return NULL;
+
+  const vector<BaseSymbol*>& liftedParams = it->second.first;
+  ASTStatementNode* stmt = it->second.second;
+  VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, stmt);
+  FuncDeclNode* fdn = static_cast<FuncDeclNode*>(stmt);
+
+  // map each lifted param to a vector of names (possibly
+  // adding the param to *this* scopes
+  ExprNodeVec liftedParamExprs;
+  liftedParamExprs.reserve(liftedParams.size() + args.size());
+  for (vector<BaseSymbol*>::const_iterator it = liftedParams.begin();
+       it != liftedParams.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+    Symbol* sym = static_cast<Symbol*>(*it);
+    assert(sym->getDefinedSymbolTable() == symbols);
+    assert(sym->isPromoteToRef());
+    set<BaseSymbol*>::const_iterator it = refs.find(sym);
+    assert(it != refs.end());
+    liftedParamExprs.push_back(new VariableNodeParser(sym->getName(), NULL));
+  }
+
+  // the regular params
+  transform(args.begin(), args.end(),
+            liftedParamExprs.end(), ASTExpressionNode::CloneFunctor());
+
+  // replace calling the rewritten function
+  return replace(
+      getSymbolTable()->getSemanticContext(),
+      new FunctionCallNodeSynthetic(
+        new VariableNodeParser(fdn->getName(), NULL),
+        getTypeParams(),
+        liftedParamExprs));
 }
 
 void
@@ -228,6 +277,50 @@ FunctionCallNodeParser::cloneImpl() {
       util::transform_vec(
         args.begin(), args.end(),
         ASTExpressionNode::CloneFunctor()));
+}
+
+ASTExpressionNode*
+FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  BaseSymbol* psym = primary->getSymbol();
+  if (psym) {
+    LiftContext::LiftMap::const_iterator it = ctx.liftMap.find(psym);
+    if (it != ctx.liftMap.end()) {
+      const vector<BaseSymbol*>& liftedParams = it->second.first;
+
+      // map each lifted param to a vector of names (possibly
+      // adding the param to *this* scopes
+      ExprNodeVec liftedParamExprs;
+      liftedParamExprs.reserve(liftedParams.size() + args.size());
+      for (vector<BaseSymbol*>::const_iterator it = liftedParams.begin();
+           it != liftedParams.end(); ++it) {
+        VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+        Symbol* sym = static_cast<Symbol*>(*it);
+        assert(sym->getDefinedSymbolTable() == ctx.definedIn);
+        string paramName = ctx.refParamName(sym);
+        liftedParamExprs.push_back(new VariableNodeParser(paramName, NULL));
+      }
+
+      // the regular params
+      transform(args.begin(), args.end(),
+                liftedParamExprs.end(), ASTExpressionNode::CloneLiftFunctor(ctx));
+
+      // replace calling the rewritten function
+      return new FunctionCallNodeParser(
+          primary->cloneForLift(ctx),
+          util::transform_vec(
+            typeArgs.begin(), typeArgs.end(),
+            ParameterizedTypeString::CloneFunctor()),
+          liftedParamExprs);
+    }
+  }
+  return new FunctionCallNodeParser(
+      primary->cloneForLift(ctx),
+      util::transform_vec(
+        typeArgs.begin(), typeArgs.end(),
+        ParameterizedTypeString::CloneFunctor()),
+      util::transform_vec(
+        args.begin(), args.end(),
+        ASTExpressionNode::CloneLiftFunctor(ctx)));
 }
 
 FunctionCallNode*

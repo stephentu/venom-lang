@@ -50,7 +50,7 @@ public:
     return false;
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(UnopNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(UnopNode)
 
 protected:
   virtual analysis::InstantiatedType*

@@ -61,6 +61,12 @@ IfStmtNode::cloneImpl() {
       cond->clone(), true_branch->clone(), false_branch->clone());
 }
 
+ASTStatementNode*
+IfStmtNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new IfStmtNode(
+      cond->cloneForLift(ctx), true_branch->cloneForLift(ctx), false_branch->cloneForLift(ctx));
+}
+
 IfStmtNode*
 IfStmtNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new IfStmtNode(

@@ -195,6 +195,7 @@ bool Type::isAny() const { return equals(*AnyType); }
 
 bool Type::isListType() const { return equals(*ListType); }
 bool Type::isMapType() const { return equals(*MapType); }
+bool Type::isRefType() const { return equals(*RefType); }
 
 bool Type::isFunction() const {
   for (vector<Type*>::const_iterator it = FuncTypes.begin();
@@ -383,6 +384,13 @@ string InstantiatedType::createClassNameImpl(bool fullName) const {
     buf << "}";
   }
   return buf.str();
+}
+
+InstantiatedType*
+InstantiatedType::refify(SemanticContext* ctx) {
+  // should never refify a ref...
+  assert(!getType()->equals(*Type::RefType));
+  return Type::RefType->instantiate(ctx, util::vec1(this));
 }
 
 }

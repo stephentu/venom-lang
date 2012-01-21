@@ -4,6 +4,7 @@
 
 #include <backend/codegenerator.h>
 
+using namespace std;
 using namespace venom::analysis;
 using namespace venom::backend;
 
@@ -27,6 +28,11 @@ NilLiteralNode::codeGen(CodeGenerator& cg) {
 
 NilLiteralNode*
 NilLiteralNode::cloneImpl() {
+  return new NilLiteralNode;
+}
+
+ASTExpressionNode*
+NilLiteralNode::cloneForLiftImpl(LiftContext& ctx) {
   return new NilLiteralNode;
 }
 

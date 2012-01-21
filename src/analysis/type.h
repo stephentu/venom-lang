@@ -142,6 +142,7 @@ public:
 
   bool isListType() const;
   bool isMapType() const;
+  bool isRefType() const;
 
   bool isFunction() const;
   bool isClassType() const;
@@ -355,6 +356,8 @@ public:
   }
 
   ClassSymbol* findSpecializedClassSymbol();
+
+  InstantiatedType* refify(analysis::SemanticContext* ctx);
 
 private:
   struct class_name_functor {

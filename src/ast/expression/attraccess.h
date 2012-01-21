@@ -43,7 +43,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(AttrAccessNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(AttrAccessNode)
 
 protected:
   virtual analysis::InstantiatedType*

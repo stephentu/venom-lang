@@ -72,6 +72,11 @@ AttrAccessNode::cloneImpl() {
   return new AttrAccessNode(primary->clone(), name);
 }
 
+ASTExpressionNode*
+AttrAccessNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new AttrAccessNode(primary->cloneForLift(ctx), name);
+}
+
 AttrAccessNode*
 AttrAccessNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new AttrAccessNode(primary->cloneForTemplate(t), name);

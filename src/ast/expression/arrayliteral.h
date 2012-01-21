@@ -42,7 +42,7 @@ public:
     VENOM_NOT_REACHED;
   }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ArrayLiteralNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(ArrayLiteralNode)
 
 protected:
   virtual analysis::InstantiatedType*

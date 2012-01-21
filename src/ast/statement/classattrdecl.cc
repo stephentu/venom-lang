@@ -84,9 +84,9 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
   }
   assert(value || dummyValue);
 
+  AssignNode::decl_either decl(sym->getClassSymbol());
   AssignNode::TypeCheckAssignment(
-      ctx, symbols, variable, value ? value : dummyValue,
-      sym->getClassSymbol());
+      ctx, symbols, variable, value ? value : dummyValue, decl);
 
   if (dummyValue) delete dummyValue;
 }
@@ -117,6 +117,13 @@ ClassAttrDeclNode::cloneImpl() {
   return new ClassAttrDeclNode(
       variable->clone(),
       value ? value->clone() : NULL);
+}
+
+ASTStatementNode*
+ClassAttrDeclNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ClassAttrDeclNode(
+      variable->cloneForLift(ctx),
+      value ? value->cloneForLift(ctx) : NULL);
 }
 
 ClassAttrDeclNode*

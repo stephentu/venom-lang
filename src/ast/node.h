@@ -3,7 +3,13 @@
 
 #include <cassert>
 #include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+#include <utility>
 
+#include <util/container.h>
 #include <util/macros.h>
 
 namespace venom {
@@ -11,6 +17,7 @@ namespace venom {
 namespace analysis {
   /** Forward decls **/
   class BaseSymbol;
+  class Symbol;
   class InstantiatedType;
   class SemanticContext;
   class SymbolTable;
@@ -24,27 +31,83 @@ namespace backend {
 
 namespace ast {
 
+class ASTStatementNode;
 class FuncDeclNode;
 class ClassDeclNode;
 
-template <typename T>
-struct _CloneFunctor {
-  typedef T* result_type;
-  inline T* operator()(T* ptr) const { return ptr->clone(); }
+/** This represents the lift of a particular statement */
+struct LiftContext {
+  typedef std::pair< std::vector<analysis::BaseSymbol*>, ASTStatementNode* >
+          LiftMapEntry;
+
+  typedef std::map<analysis::BaseSymbol*, LiftMapEntry>
+          LiftMap;
+
+  typedef util::container_pool<analysis::BaseSymbol*>
+          LiftContainer;
+
+  LiftContext(analysis::BaseSymbol* curLiftSym,
+              const std::string& liftedName,
+              analysis::SymbolTable* definedIn,
+              const LiftMap& liftMap)
+    : curLiftSym(curLiftSym), liftedName(liftedName),
+      definedIn(definedIn), liftMap(liftMap) {}
+
+  std::string refParamName(analysis::Symbol* nonLocSym);
+
+  static std::string RefParamName(analysis::Symbol* nonLocSym,
+                                  size_t pos);
+
+  analysis::BaseSymbol* const curLiftSym;
+  const std::string liftedName;
+  analysis::SymbolTable* const definedIn;
+  const LiftMap liftMap;
+
+  LiftContainer refs;
 };
 
-template <typename T>
-struct _CloneTemplateFunctor {
-  _CloneTemplateFunctor(const analysis::TypeTranslator& t) : t(&t) {}
-  _CloneTemplateFunctor(const analysis::TypeTranslator* t) : t(t)  {}
-  typedef T* result_type;
-  inline T* operator()(T* ptr) const { return ptr->cloneForTemplate(*t); }
-  const analysis::TypeTranslator* t;
-};
+namespace {
+  template <typename T>
+  struct _CloneFunctor {
+    typedef T* result_type;
+    inline T* operator()(T* ptr) const { return ptr->clone(); }
+  };
+
+  template <typename T>
+  struct _CloneTemplateFunctor {
+    _CloneTemplateFunctor(const analysis::TypeTranslator& t) : t(&t) {}
+    _CloneTemplateFunctor(const analysis::TypeTranslator* t) : t(t)  {}
+    typedef T* result_type;
+    inline T* operator()(T* ptr) const { return ptr->cloneForTemplate(*t); }
+  private:
+    const analysis::TypeTranslator* t;
+  };
+
+  template <typename InputNode, typename ResultNode>
+  struct _CloneLiftFunctor {
+    _CloneLiftFunctor(LiftContext& ctx) : ctx(&ctx) {}
+    typedef ResultNode* result_type;
+    inline ResultNode* operator()(InputNode* ptr) const {
+      return ptr->cloneForLift(*ctx);
+    }
+  private:
+    LiftContext* ctx;
+  };
+
+#define VENOM_AST_CLONE_FUNCTOR_IMPL(type, restype) \
+  typedef _CloneFunctor<type> CloneFunctor; \
+  typedef _CloneTemplateFunctor<type> CloneTemplateFunctor; \
+  typedef _CloneLiftFunctor<type, restype> CloneLiftFunctor;
 
 #define VENOM_AST_CLONE_FUNCTOR(type) \
-  typedef _CloneFunctor<type> CloneFunctor; \
-  typedef _CloneTemplateFunctor<type> CloneTemplateFunctor;
+  VENOM_AST_CLONE_FUNCTOR_IMPL(type, ASTNode)
+
+#define VENOM_AST_CLONE_FUNCTOR_STMT(type) \
+  VENOM_AST_CLONE_FUNCTOR_IMPL(type, ASTStatementNode)
+
+#define VENOM_AST_CLONE_FUNCTOR_EXPR(type) \
+  VENOM_AST_CLONE_FUNCTOR_IMPL(type, ASTExpressionNode)
+}
 
 class ASTNode {
   friend class StmtListNode;
@@ -117,7 +180,7 @@ public:
   virtual void initSymbolTable(analysis::SymbolTable* symbols);
 
   /** Cannot call until after type-checking has completed */
-  virtual analysis::BaseSymbol* getSymbol() { VENOM_UNIMPLEMENTED; }
+  virtual analysis::BaseSymbol* getSymbol() { return NULL; }
 
   /**
    * Perform semantic checks on this node (recursively)
@@ -147,6 +210,12 @@ public:
       std::vector<analysis::InstantiatedType*>& types);
 
   /** Tree re-writing **/
+
+  virtual void collectNonLocalRefs(LiftContext& ctx);
+
+  virtual ASTNode* rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const std::set<analysis::BaseSymbol*>& refs);
 
   /**
    * Order is important- rewrites must be run in this order
@@ -208,6 +277,13 @@ public:
     return copy;
   };
 
+  template <typename From, typename To>
+  inline static To* CloneForLift(From* node, LiftContext& ctx) {
+    To* copy = node->cloneForLift(ctx);
+    copy->setLocationContext(node->locCtx);
+    return copy;
+  };
+
   /** Should use the above Clone, instead of this one */
   virtual ASTNode* clone();
 
@@ -215,21 +291,38 @@ public:
   virtual ASTNode* cloneForTemplate(
       const analysis::TypeTranslator& translator);
 
+  virtual ASTNode* cloneForLift(LiftContext& ctx);
+
   VENOM_AST_CLONE_FUNCTOR(ASTNode)
 
-#define VENOM_AST_TYPED_CLONE(type) \
+#define VENOM_AST_TYPED_CLONE_IMPL(type, restype) \
   virtual type* clone() { return static_cast<type*>(ASTNode::clone()); } \
   virtual type* cloneForTemplate(const analysis::TypeTranslator& t) \
     { return static_cast<type*>(ASTNode::cloneForTemplate(t)); } \
-  VENOM_AST_CLONE_FUNCTOR(type)
+  virtual restype* cloneForLift(LiftContext& ctx) \
+    { return static_cast<restype*>(ASTNode::cloneForLift(ctx)); } \
+  VENOM_AST_CLONE_FUNCTOR_IMPL(type, restype)
+
+#define VENOM_AST_TYPED_CLONE_STMT(type) \
+    VENOM_AST_TYPED_CLONE_IMPL(type, ASTStatementNode)
+
+#define VENOM_AST_TYPED_CLONE_EXPR(type) \
+    VENOM_AST_TYPED_CLONE_IMPL(type, ASTExpressionNode)
 
 /** Must be placed in the *public* section of the class decl */
-#define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(type) \
-  VENOM_AST_TYPED_CLONE(type) \
+#define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_IMPL(type, restype) \
+  VENOM_AST_TYPED_CLONE_IMPL(type, restype) \
   protected: \
   virtual type* cloneImpl(); \
-  virtual type* cloneForTemplateImpl(const analysis::TypeTranslator& t);
+  virtual type* cloneForTemplateImpl(const analysis::TypeTranslator& t); \
+  virtual restype* cloneForLiftImpl(LiftContext& ctx); \
   public:
+
+#define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(type) \
+    VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_IMPL(type, ASTStatementNode)
+
+#define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(type) \
+    VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_IMPL(type, ASTExpressionNode)
 
   /** Debugging helpers **/
 
@@ -274,6 +367,9 @@ protected:
   /** Do the actual cloning for template */
   virtual ASTNode* cloneForTemplateImpl(
       const analysis::TypeTranslator& t) = 0;
+
+  /** Do the actual cloning for lift */
+  virtual ASTNode* cloneForLiftImpl(LiftContext& ctx) = 0;
 
   analysis::SymbolTable* symbols;
   uint32_t               locCtx;

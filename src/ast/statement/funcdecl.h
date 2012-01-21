@@ -76,16 +76,12 @@ public:
   virtual void collectInstantiatedTypes(
       std::vector<analysis::InstantiatedType*>& types);
 
-  //virtual void lift(analysis::SemanticContext* ctx,
-  //                  std::vector<ASTStatementNode*>& liftedStmts,
-  //                  bool liftThisContext);
-
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE(FuncDeclNode)
+  VENOM_AST_TYPED_CLONE_STMT(FuncDeclNode)
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
@@ -122,7 +118,7 @@ public:
     { assert(!retTypeString || retType);
       return retType; }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FuncDeclNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(FuncDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(func " << name << " -> ";
@@ -159,7 +155,7 @@ public:
   virtual bool isCtor() const { return true; }
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(CtorDeclNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(CtorDeclNode)
 
 private:
   ExprNodeVec superArgs;

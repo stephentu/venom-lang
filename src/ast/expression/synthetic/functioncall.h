@@ -17,7 +17,7 @@ public:
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { return typeArgTypes; }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FunctionCallNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(FunctionCallNode)
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) {}

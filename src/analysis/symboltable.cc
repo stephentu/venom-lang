@@ -115,7 +115,13 @@ SymbolTable::canSee(BaseSymbol* bs) {
 
 bool
 SymbolTable::isModuleLevelSymbolTable() const {
-  return this == ctx->getModuleRoot()->getSymbolTable();
+  assert(ctx);
+  return ctx->getModuleRoot() ?
+    this == ctx->getModuleRoot()->getSymbolTable() :
+    // TODO: if there's no moduleroot, then its a builtin
+    // symbol, and we need another way of identifying
+    // if its a module level builtin symbol
+    false;
 }
 
 bool
@@ -149,8 +155,9 @@ SymbolTable::findBaseSymbol(const string& name,
 
 Symbol*
 SymbolTable::createSymbol(const string&     name,
-                          InstantiatedType* type) {
-  Symbol *sym = new Symbol(name, this, type);
+                          InstantiatedType* type,
+                          ASTNode*          decl) {
+  Symbol *sym = new Symbol(name, this, type, decl);
   symbolContainer.insert(name, sym);
   return sym;
 }

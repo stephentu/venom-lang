@@ -10,7 +10,9 @@ else
 CXXFLAGS_REST = -O3 -DNDEBUG
 endif
 
-CXXFLAGS = -Wall -Werror -I$(PWD) $(CXXFLAGS_REST) 
+# -Wno-invalid-offsetof is used to allow offsetof() on non-POD,
+#  where offsetof() is still meaningful
+CXXFLAGS = -Wall -Werror -Wno-invalid-offsetof -I$(PWD) $(CXXFLAGS_REST) 
 LDFLAGS = 
 
 PWD := $(shell pwd)

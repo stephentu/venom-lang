@@ -40,18 +40,18 @@ protected:
   /** protected destructor, to prevent accidental deletes */
   ~venom_dict_impl() {}
 
-  static backend::FunctionDescriptor* const InitDescriptor;
-  static backend::FunctionDescriptor* const ReleaseDescriptor;
-  static backend::FunctionDescriptor* const CtorDescriptor;
-  static backend::FunctionDescriptor* const StringifyDescriptor;
-  static backend::FunctionDescriptor* const HashDescriptor;
-  static backend::FunctionDescriptor* const EqDescriptor;
+  static backend::FunctionDescriptor& InitDescriptor();
+  static backend::FunctionDescriptor& ReleaseDescriptor();
+  static backend::FunctionDescriptor& CtorDescriptor();
+  static backend::FunctionDescriptor& StringifyDescriptor();
+  static backend::FunctionDescriptor& HashDescriptor();
+  static backend::FunctionDescriptor& EqDescriptor();
 
-  static backend::FunctionDescriptor* const GetDescriptor;
-  static backend::FunctionDescriptor* const SetDescriptor;
-  static backend::FunctionDescriptor* const SizeDescriptor;
+  static backend::FunctionDescriptor& GetDescriptor();
+  static backend::FunctionDescriptor& SetDescriptor();
+  static backend::FunctionDescriptor& SizeDescriptor();
 
-  static venom_class_object DictClassTable;
+  static venom_class_object& DictClassTable();
 
 public:
   static venom_ret_cell
@@ -132,7 +132,7 @@ public:
       throw std::invalid_argument("No such key");
     }
     return venom_ret_cell(
-        venom_cell::ExtractFunctor<Value>()(it->second));
+        typename value_utils::extractor()(it->second));
   }
 
   static venom_ret_cell
@@ -181,56 +181,81 @@ protected:
   cell_hash_map elems;
 };
 
-template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::InitDescriptor(
-    new backend::FunctionDescriptor((void*)init, 1, 0x1, true));
+// statics implementation
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::ReleaseDescriptor(
-    new backend::FunctionDescriptor((void*)release, 1, 0x1, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::InitDescriptor() {
+  static backend::FunctionDescriptor f((void*)init, 1, 0x1, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::CtorDescriptor(
-    new backend::FunctionDescriptor((void*)ctor, 1, 0x1, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::ReleaseDescriptor() {
+  static backend::FunctionDescriptor f((void*)release, 1, 0x1, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::StringifyDescriptor(
-    new backend::FunctionDescriptor((void*)stringify, 1, 0x1, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::CtorDescriptor() {
+  static backend::FunctionDescriptor f((void*)ctor, 1, 0x1, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::HashDescriptor(
-    new backend::FunctionDescriptor((void*)hash, 1, 0x1, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::StringifyDescriptor() {
+  static backend::FunctionDescriptor f((void*)stringify, 1, 0x1, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::EqDescriptor(
-    new backend::FunctionDescriptor((void*)eq, 2, 0x3, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::HashDescriptor() {
+  static backend::FunctionDescriptor f((void*)hash, 1, 0x1, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::GetDescriptor(
-    new backend::FunctionDescriptor((void*)get, 2, key_utils::isRefCounted ? 0x1 : 0x0, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::EqDescriptor() {
+  static backend::FunctionDescriptor f((void*)eq, 2, 0x3, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::SetDescriptor(
-    new backend::FunctionDescriptor((void*)set, 3,
-      (value_utils::isRefCounted ? 0x2 : 0x0) | (key_utils::isRefCounted ? 0x1 : 0x0),
-      true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::GetDescriptor() {
+  static backend::FunctionDescriptor f(
+      (void*)get, 2, key_utils::isRefCounted ? 0x1 : 0x0, true);
+  return f;
+}
 
 template <typename Key, typename Value>
-backend::FunctionDescriptor* const venom_dict_impl<Key, Value>::SizeDescriptor(
-    new backend::FunctionDescriptor((void*)size, 1, 0x1, true));
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::SetDescriptor() {
+  static backend::FunctionDescriptor f((void*)set, 3,
+      (value_utils::isRefCounted ? 0x2 : 0x0) |
+        (key_utils::isRefCounted ? 0x1 : 0x0),
+      true);
+  return f;
+}
 
 template <typename Key, typename Value>
-venom_class_object venom_dict_impl<Key, Value>::DictClassTable(
+backend::FunctionDescriptor& venom_dict_impl<Key, Value>::SizeDescriptor() {
+  static backend::FunctionDescriptor f((void*)size, 1, 0x1, true);
+  return f;
+}
+
+template <typename Key, typename Value>
+venom_class_object& venom_dict_impl<Key, Value>::DictClassTable() {
+  static venom_class_object c(
     "map",
     sizeof(self_type),
-    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
+    0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
     util::vec6(
-      StringifyDescriptor,
-      HashDescriptor,
-      EqDescriptor,
-      GetDescriptor,
-      SetDescriptor,
-      SizeDescriptor));
+      &StringifyDescriptor(),
+      &HashDescriptor(),
+      &EqDescriptor(),
+      &GetDescriptor(),
+      &SetDescriptor(),
+      &SizeDescriptor()));
+  return c;
+}
 
 class venom_dict {
 public:

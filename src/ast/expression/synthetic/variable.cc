@@ -14,7 +14,7 @@ namespace ast {
 void
 VariableNodeSynthetic::print(ostream& o, size_t indent) {
   o << "(ident " << name;
-  if (explicitType) o << " " << explicitType->stringify();
+  o << " " << explicitType->stringify();
   o << ")";
 }
 
@@ -23,10 +23,26 @@ VariableNodeSynthetic::cloneImpl() {
   return new VariableNodeSynthetic(name, explicitType);
 }
 
+ASTExpressionNode*
+VariableNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
+
+  // assert that we should never be a non-local ref
+#ifndef NDEBUG
+  Symbol* s;
+  assert(!isNonLocalRef(ctx.definedIn, s));
+  BaseSymbol* bs = getSymbol();
+  assert(bs != ctx.curLiftSym);
+  LiftContext::LiftMap::const_iterator it =
+    ctx.liftMap.find(bs);
+  assert(it == ctx.liftMap.end());
+#endif /* NDEBUG */
+
+  return new VariableNodeSynthetic(name, explicitType);
+}
+
 VariableNode*
 VariableNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
-  assert(!explicitType ||
-         (t.translate(
+  assert((t.translate(
               getSymbolTable()->getSemanticContext(), explicitType)
             ->equals(*explicitType)));
   return new VariableNodeSynthetic(name, explicitType);

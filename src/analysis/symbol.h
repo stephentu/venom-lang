@@ -92,25 +92,31 @@ class Symbol : public BaseSymbol, public SlotMixin {
 protected:
   Symbol(const std::string& name,
          SymbolTable*       table,
-         InstantiatedType*  type)
+         InstantiatedType*  type,
+         ast::ASTNode*      decl)
     : BaseSymbol(name, table),
       promoteToRef(false),
-      type(type) {}
+      type(type), decl(decl) {}
 
   virtual BaseSymbol* getThisSymbol() { return this; }
   virtual ClassSymbol* getClassSymbolForSlotCalc();
 
 public:
 
-  // currently unused, but will be in the future
   inline bool isPromoteToRef() const { return promoteToRef; }
+
   inline void markPromoteToRef() {
     assert(!isObjectField());
+    assert(!promoteToRef);
+    assert(type);
     promoteToRef = true;
   }
 
   inline InstantiatedType* getInstantiatedType() { return type; }
   inline const InstantiatedType* getInstantiatedType() const { return type; }
+
+  inline ast::ASTNode* getDecl() { return decl; }
+  inline const ast::ASTNode* getDecl() const { return decl; }
 
   virtual InstantiatedType*
     bind(SemanticContext* ctx, TypeTranslator& t,
@@ -126,6 +132,7 @@ public:
 private:
   unsigned promoteToRef : 1;
   InstantiatedType* type;
+  ast::ASTNode* decl;
 };
 
 class ClassAttributeSymbol : public Symbol {
@@ -135,7 +142,8 @@ protected:
                        SymbolTable*       table,
                        InstantiatedType*  type,
                        ClassSymbol*       classSymbol)
-    : Symbol(name, table, type), classSymbol(classSymbol) {}
+    : Symbol(name, table, type, NULL),
+      classSymbol(classSymbol) {}
 
   virtual ClassSymbol* getClassSymbolForSlotCalc() { return classSymbol; }
 

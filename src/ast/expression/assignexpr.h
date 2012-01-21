@@ -40,12 +40,16 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual ASTNode* rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const std::set<analysis::BaseSymbol*>& refs);
+
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(AssignExprNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(AssignExprNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(assign-expr ";

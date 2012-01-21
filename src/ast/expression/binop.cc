@@ -366,6 +366,11 @@ BinopNode::cloneImpl() {
   return new BinopNode(left->clone(), right->clone(), type);
 }
 
+ASTExpressionNode*
+BinopNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new BinopNode(left->cloneForLift(ctx), right->cloneForLift(ctx), type);
+}
+
 BinopNode*
 BinopNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new BinopNode(

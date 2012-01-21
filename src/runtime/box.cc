@@ -6,77 +6,32 @@ using namespace venom::backend;
 namespace venom {
 namespace runtime {
 
-FunctionDescriptor* const venom_integer::InitDescriptor(
-    new FunctionDescriptor((void*)init, 1, 0x1, true));
-
-FunctionDescriptor* const venom_integer::ReleaseDescriptor(
-    new FunctionDescriptor((void*)release, 1, 0x1, true));
-
-FunctionDescriptor* const venom_integer::CtorDescriptor(
-    new FunctionDescriptor((void*)ctor, 2, 0x1, true));
-
-FunctionDescriptor* const venom_integer::StringifyDescriptor(
-    new FunctionDescriptor((void*)stringify, 1, 0x1, true));
-
-FunctionDescriptor* const venom_integer::HashDescriptor(
-    new FunctionDescriptor((void*)hash, 1, 0x1, true));
-
-FunctionDescriptor* const venom_integer::EqDescriptor(
-    new FunctionDescriptor((void*)eq, 2, 0x3, true));
-
-venom_class_object venom_integer::IntegerClassTable(
+venom_class_object& venom_integer::IntegerClassTable() {
+  static venom_class_object c(
     "<Int>",
     sizeof(venom_integer),
-    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
-    util::vec3(StringifyDescriptor, HashDescriptor, EqDescriptor));
+    0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
+    util::vec3(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor()));
+  return c;
+}
 
-FunctionDescriptor* const venom_double::InitDescriptor(
-    new FunctionDescriptor((void*)init, 1, 0x1, true));
-
-FunctionDescriptor* const venom_double::ReleaseDescriptor(
-    new FunctionDescriptor((void*)release, 1, 0x1, true));
-
-FunctionDescriptor* const venom_double::CtorDescriptor(
-    new FunctionDescriptor((void*)ctor, 2, 0x1, true));
-
-FunctionDescriptor* const venom_double::StringifyDescriptor(
-    new FunctionDescriptor((void*)stringify, 1, 0x1, true));
-
-FunctionDescriptor* const venom_double::HashDescriptor(
-    new FunctionDescriptor((void*)hash, 1, 0x1, true));
-
-FunctionDescriptor* const venom_double::EqDescriptor(
-    new FunctionDescriptor((void*)eq, 2, 0x3, true));
-
-venom_class_object venom_double::DoubleClassTable(
+venom_class_object& venom_double::DoubleClassTable() {
+  static venom_class_object c(
     "<Float>",
     sizeof(venom_double),
-    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
-    util::vec3(StringifyDescriptor, HashDescriptor, EqDescriptor));
+    0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
+    util::vec3(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor()));
+  return c;
+}
 
-FunctionDescriptor* const venom_boolean::InitDescriptor(
-    new FunctionDescriptor((void*)init, 1, 0x1, true));
-
-FunctionDescriptor* const venom_boolean::ReleaseDescriptor(
-    new FunctionDescriptor((void*)release, 1, 0x1, true));
-
-FunctionDescriptor* const venom_boolean::CtorDescriptor(
-    new FunctionDescriptor((void*)ctor, 2, 0x1, true));
-
-FunctionDescriptor* const venom_boolean::StringifyDescriptor(
-    new FunctionDescriptor((void*)stringify, 1, 0x1, true));
-
-FunctionDescriptor* const venom_boolean::HashDescriptor(
-    new FunctionDescriptor((void*)hash, 1, 0x1, true));
-
-FunctionDescriptor* const venom_boolean::EqDescriptor(
-    new FunctionDescriptor((void*)eq, 2, 0x3, true));
-
-venom_class_object venom_boolean::BooleanClassTable(
+venom_class_object& venom_boolean::BooleanClassTable() {
+  static venom_class_object c(
     "<Bool>",
     sizeof(venom_boolean),
-    0, 0x0, InitDescriptor, ReleaseDescriptor, CtorDescriptor,
-    util::vec3(StringifyDescriptor, HashDescriptor, EqDescriptor));
+    0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
+    util::vec3(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor()));
+  return c;
+}
 
 }
 }

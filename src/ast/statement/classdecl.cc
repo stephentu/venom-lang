@@ -67,7 +67,8 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
     // no ctor defined, insert a default one
     CtorDeclNode *ctor =
       new CtorDeclNode(ExprNodeVec(), new StmtListNode, ExprNodeVec());
-    dynamic_cast<StmtListNode*>(stmts)->appendStatement(ctor);
+    VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+    static_cast<StmtListNode*>(stmts)->appendStatement(ctor);
 
     ctor->initSymbolTable(stmts->getSymbolTable());
     ctor->registerSymbol(ctx);
@@ -86,6 +87,14 @@ ClassDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
     if ((*it)->isSpecializedType()) types.push_back(*it);
   }
   ASTNode::collectInstantiatedTypes(types);
+}
+
+void
+ClassDeclNode::liftPhaseImpl(SemanticContext* ctx,
+                             SymbolTable* liftInto,
+                             vector<ASTStatementNode*>& liftedStmts) {
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+  static_cast<StmtListNode*>(stmts)->liftRecurseAndInsert(ctx);
 }
 
 void
@@ -185,6 +194,15 @@ ClassDeclNodeParser::cloneImpl() {
       util::transform_vec(parents.begin(), parents.end(),
         ParameterizedTypeString::CloneFunctor()),
       typeParams, stmts->clone());
+}
+
+ASTStatementNode*
+ClassDeclNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  return new ClassDeclNodeParser(
+      name,
+      util::transform_vec(parents.begin(), parents.end(),
+        ParameterizedTypeString::CloneFunctor()),
+      typeParams, stmts->cloneForLift(ctx));
 }
 
 ClassDeclNode*

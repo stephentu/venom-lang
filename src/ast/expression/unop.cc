@@ -61,6 +61,11 @@ UnopNode::cloneImpl() {
   return new UnopNode(kid->clone(), type);
 }
 
+ASTExpressionNode*
+UnopNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new UnopNode(kid->cloneForLift(ctx), type);
+}
+
 UnopNode*
 UnopNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new UnopNode(kid->cloneForTemplate(t), type);

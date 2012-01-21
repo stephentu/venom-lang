@@ -56,6 +56,12 @@ SymbolNode::cloneImpl() {
   return new SymbolNode(symbol, staticType, expectedType);
 }
 
+ASTExpressionNode*
+SymbolNode::cloneForLiftImpl(LiftContext& ctx) {
+  // should not clone symbol nodes for lifting...
+  VENOM_NOT_REACHED;
+}
+
 SymbolNode*
 SymbolNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new SymbolNode(symbol, staticType, expectedType);

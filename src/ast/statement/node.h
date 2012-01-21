@@ -17,16 +17,22 @@ namespace analysis {
 namespace ast {
 
 class ASTStatementNode : public ASTNode {
+  friend class StmtListNode;
 public:
   ASTStatementNode() {}
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
-  VENOM_AST_TYPED_CLONE(ASTStatementNode)
+  VENOM_AST_TYPED_CLONE_STMT(ASTStatementNode)
 
 protected:
+  virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
+                             analysis::SymbolTable* liftInto,
+                             std::vector<ASTStatementNode*>& liftedStmts);
+
   virtual ASTStatementNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);
+
   void checkExpectedType(analysis::InstantiatedType* expected);
 };
 

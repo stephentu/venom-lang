@@ -80,7 +80,7 @@ namespace {
         // 0 is stringify vtable entry
         elem->virtualDispatch(backend::ExecutionContext::current_context(), 0);
       scoped_ret_value<venom_object> ptr(str.asRawObject());
-      assert(ptr->getClassObj() == &venom_string::StringClassTable);
+      assert(ptr->getClassObj() == &venom_string::StringClassTable());
       return static_cast<venom_string*>(ptr.get())->getData();
     }
   };

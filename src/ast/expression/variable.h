@@ -39,18 +39,27 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
+  virtual void collectNonLocalRefs(LiftContext& ctx);
+
+  virtual ASTNode* rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const std::set<analysis::BaseSymbol*>& refs);
+
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE(VariableNode)
+  VENOM_AST_TYPED_CLONE_EXPR(VariableNode)
 
 protected:
   virtual analysis::InstantiatedType*
     typeCheckImpl(analysis::SemanticContext* ctx,
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs);
+
+  bool isNonLocalRef(analysis::SymbolTable* definedIn,
+                     analysis::Symbol*& nonLocalSym);
 
   std::string name;
 };
@@ -73,7 +82,7 @@ public:
 
   virtual analysis::InstantiatedType* getExplicitType();
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(VariableNode)
 
 public:
   virtual void print(std::ostream& o, size_t indent = 0) {
@@ -101,7 +110,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableSelfNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(VariableSelfNode)
 
 protected:
   virtual analysis::InstantiatedType*
@@ -135,7 +144,7 @@ protected:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(VariableSuperNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(VariableSuperNode)
 
 public:
   virtual void print(std::ostream& o, size_t indent = 0) {

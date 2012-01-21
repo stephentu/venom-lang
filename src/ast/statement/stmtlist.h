@@ -14,6 +14,7 @@ namespace ast {
 class ClassDeclNode;
 
 class StmtListNode : public ASTStatementNode {
+  friend class ClassDeclNode;
 public:
   StmtListNode() {}
   StmtListNode(const StmtNodeVec& stmts)
@@ -74,12 +75,16 @@ public:
       const std::vector<analysis::InstantiatedType*>& types,
       std::vector<ClassDeclNode*>& classDecls);
 
+  /** liftPhase should only be called on the top level
+   * module statement list */
+  void liftPhase(analysis::SemanticContext* ctx);
+
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(StmtListNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(StmtListNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(stmts" << std::endl << util::indent(indent + 1);
@@ -88,6 +93,12 @@ public:
   }
 
 protected:
+  virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
+                             analysis::SymbolTable* liftInto,
+                             std::vector<ASTStatementNode*>& liftedStmts);
+
+  void liftRecurseAndInsert(analysis::SemanticContext* ctx);
+
   virtual ASTNode* rewriteReturn(analysis::SemanticContext* ctx);
 
 private:

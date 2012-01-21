@@ -76,6 +76,11 @@ ImportStmtNode::cloneImpl() {
   return new ImportStmtNode(names);
 }
 
+ASTStatementNode*
+ImportStmtNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ImportStmtNode(names);
+}
+
 ImportStmtNode*
 ImportStmtNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ImportStmtNode(names);

@@ -56,7 +56,7 @@ ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
             new VariableNodeParser(tmpVar, NULL),
             "append"),
           TypeStringVec(),
-          util::vec1(Clone((*it)))));
+          util::vec1((*it)->clone())));
   }
   exprs.push_back(new VariableNodeParser(tmpVar, NULL));
   return replace(ctx, new ExprListNode(exprs));
@@ -103,6 +103,14 @@ ArrayLiteralNode::cloneImpl() {
       util::transform_vec(
         values.begin(), values.end(),
         ASTExpressionNode::CloneFunctor()));
+}
+
+ASTExpressionNode*
+ArrayLiteralNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ArrayLiteralNode(
+      util::transform_vec(
+        values.begin(), values.end(),
+        ASTExpressionNode::CloneLiftFunctor(ctx)));
 }
 
 ArrayLiteralNode*

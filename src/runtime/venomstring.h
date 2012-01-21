@@ -16,11 +16,11 @@ class venom_string : public venom_object,
 public:
   /** This constructor is not invocable from user code */
   venom_string(const char *data, size_t n)
-    : venom_object(&StringClassTable) { initData(data, n); }
+    : venom_object(&StringClassTable()) { initData(data, n); }
 
   /** This constructor is not invocable from user code */
   venom_string(const std::string& data)
-    : venom_object(&StringClassTable) { initData(data.data(), data.size()); }
+    : venom_object(&StringClassTable()) { initData(data.data(), data.size()); }
 
 protected:
   ~venom_string() { releaseData(); }
@@ -41,15 +41,15 @@ private:
     }
   }
 
-public:
-  static backend::FunctionDescriptor* const InitDescriptor;
-  static backend::FunctionDescriptor* const ReleaseDescriptor;
-  static backend::FunctionDescriptor* const CtorDescriptor;
-  static backend::FunctionDescriptor* const StringifyDescriptor;
-  static backend::FunctionDescriptor* const HashDescriptor;
-  static backend::FunctionDescriptor* const EqDescriptor;
+  static backend::FunctionDescriptor& InitDescriptor();
+  static backend::FunctionDescriptor& ReleaseDescriptor();
+  static backend::FunctionDescriptor& CtorDescriptor();
+  static backend::FunctionDescriptor& StringifyDescriptor();
+  static backend::FunctionDescriptor& HashDescriptor();
+  static backend::FunctionDescriptor& EqDescriptor();
 
-  static venom_class_object StringClassTable;
+public:
+  static venom_class_object& StringClassTable();
 
   inline std::string getData() const {
     return data ? std::string(data, size) : "";
@@ -99,7 +99,7 @@ public:
 
   static venom_ret_cell
   eq(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
-    if (that.asRawObject()->getClassObj() != &StringClassTable) {
+    if (that.asRawObject()->getClassObj() != &StringClassTable()) {
       return venom_ret_cell(false);
     }
     venom_string *this_s = asSelf(self);

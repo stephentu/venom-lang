@@ -9,7 +9,7 @@
 namespace venom {
 namespace runtime {
 
-extern backend::FunctionDescriptor* const BuiltinPrintDescriptor;
+backend::FunctionDescriptor& BuiltinPrintDescriptor();
 extern std::ostream venom_stdout;
 venom_ret_cell print(backend::ExecutionContext* ctx, venom_cell arg0);
 

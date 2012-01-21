@@ -63,6 +63,11 @@ ReturnNode::cloneImpl() {
   return new ReturnNode(expr ? expr->clone() : NULL);
 }
 
+ASTStatementNode*
+ReturnNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ReturnNode(expr ? expr->cloneForLift(ctx) : NULL);
+}
+
 ReturnNode*
 ReturnNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ReturnNode(expr ? expr->cloneForTemplate(t) : NULL);

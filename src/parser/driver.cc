@@ -152,6 +152,25 @@ struct _itype_less_cmp {
   }
 };
 
+#define _IMPL_PRINT_AST(rootNode, stagename) \
+  do { \
+    if (global_compile_opts.print_ast) { \
+      cerr << "After stage (" << (stagename) << "):" << endl; \
+      (rootNode)->print(cerr); \
+      cerr << endl; \
+    } \
+  } while (0)
+
+struct _lift_functor {
+  inline void operator()(ASTStatementNode* root,
+                         SemanticContext* ctx) const {
+    VENOM_ASSERT_TYPEOF_PTR(StmtListNode, root);
+    StmtListNode* stmtList = static_cast<StmtListNode*>(root);
+    stmtList->liftPhase(ctx);
+    _IMPL_PRINT_AST(root, "lift");
+  }
+};
+
 #define _REWRITE_LOCAL_STAGES(x) \
   x(DeSugar) \
   x(CanonicalRefs) \
@@ -164,11 +183,7 @@ struct _itype_less_cmp {
     inline void operator()(ASTStatementNode* root, \
                            SemanticContext* ctx) const { \
       root->rewriteLocal(ctx, ASTNode::stage); \
-      if (global_compile_opts.print_ast) { \
-        cerr << "After rewrite local stage (" << #stage << "):" << endl; \
-        root->print(cerr); \
-        cerr << endl; \
-      } \
+      _IMPL_PRINT_AST(root, "rewriteLocal: " #stage); \
     } \
   };
 
@@ -278,6 +293,11 @@ unsafe_compile(const string& fname, fstream& infile,
     }
   }
 
+  // lift phase
+  ctx.getProgramRoot()->forEachModule(_lift_functor());
+
+  // local rewrite phases
+
 #define _IMPL_REWRITE_LOCAL(stage) \
   do { \
     ctx.getProgramRoot()->forEachModule(_rewrite_functor_##stage()); \
@@ -289,10 +309,12 @@ unsafe_compile(const string& fname, fstream& infile,
 
   if (global_compile_opts.semantic_check_only) return;
 
+  // code gen phase
   ctx.getProgramRoot()->forEachModule(_codegen_functor());
 }
 
 #undef _REWRITE_LOCAL_STAGES
+#undef _IMPL_PRINT_AST
 
 static void exec(SemanticContext& ctx) {
   assert(ctx.getObjectCode());

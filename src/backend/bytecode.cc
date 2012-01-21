@@ -695,7 +695,30 @@ bool Instruction::GET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0
   venom_cell::AssertNonZeroRefCount(opnd0);
 
   // directly access the array instead of calling the virtual method get()
-  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+
+  // compile time assert that all the primitive list types are the same
+  // size + have the same offset for elems. this way, we can treat all
+  // primitive arrays the same
+
+  VENOM_COMPILE_TIME_ASSERT(
+    sizeof(venom_list::int_list_type) ==
+    sizeof(venom_list::float_list_type));
+  VENOM_COMPILE_TIME_ASSERT(
+    sizeof(venom_list::float_list_type) ==
+    sizeof(venom_list::bool_list_type));
+
+  // WARNING: offsetof() is technically not allowed for non-POD types, but
+  // should be ok on most compilers since venom_list_impl is non-virtual
+  VENOM_COMPILE_TIME_ASSERT(
+    offsetof(venom_list::int_list_type, elems) ==
+    offsetof(venom_list::float_list_type, elems));
+  VENOM_COMPILE_TIME_ASSERT(
+    offsetof(venom_list::float_list_type, elems) ==
+    offsetof(venom_list::bool_list_type, elems));
+
+  // this is OK b/c of the compile-time checks
+  venom_list::int_list_type* l =
+    static_cast<venom_list::int_list_type*>(opnd0.asRawObject());
   ctx.program_stack.push(l->elems.at(opnd1.asInt()));
 
   opnd0.decRef();
@@ -707,7 +730,8 @@ bool Instruction::GET_ARRAY_ACCESS_REF_impl(ExecutionContext& ctx, venom_cell& o
   venom_cell::AssertNonZeroRefCount(opnd0);
 
   // directly access the array instead of calling the virtual method get()
-  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  venom_list::ref_list_type* l =
+    static_cast<venom_list::ref_list_type*>(opnd0.asRawObject());
   venom_cell cell = l->elems.at(opnd1.asInt());
   venom_cell::AssertNonZeroRefCount(cell);
   cell.incRef();
@@ -721,7 +745,10 @@ bool Instruction::SET_ARRAY_ACCESS_impl(ExecutionContext& ctx, venom_cell& opnd0
   CheckNullPointer(opnd0);
   venom_cell::AssertNonZeroRefCount(opnd0);
   // directly access the array instead of calling the virtual method set()
-  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+
+  // see the compile time asserts in GET_ARRAY_ACCESS_impl()
+  venom_list::int_list_type* l =
+    static_cast<venom_list::int_list_type*>(opnd0.asRawObject());
   l->elems.at(opnd1.asInt()) = opnd2;
   opnd0.decRef();
   return true;
@@ -732,7 +759,8 @@ bool Instruction::SET_ARRAY_ACCESS_REF_impl(ExecutionContext& ctx, venom_cell& o
   venom_cell::AssertNonZeroRefCount(opnd0);
   venom_cell::AssertNonZeroRefCount(opnd2);
   // directly access the array instead of calling the virtual method set()
-  venom_list* l = static_cast<venom_list*>(opnd0.asRawObject());
+  venom_list::ref_list_type* l =
+    static_cast<venom_list::ref_list_type*>(opnd0.asRawObject());
   venom_cell &old = l->elems.at(opnd1.asInt());
   old.decRef();
   old = opnd2;

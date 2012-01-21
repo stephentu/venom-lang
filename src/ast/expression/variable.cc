@@ -5,6 +5,7 @@
 #include <ast/expression/synthetic/variable.h>
 
 #include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -39,6 +40,15 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
   }
 }
 
+void
+VariableNode::collectNonLocalRefs(LiftContext& ctx) {
+  Symbol *s;
+  if (isNonLocalRef(ctx.definedIn, s)) {
+    bool create;
+    ctx.refs.create(s, create);
+  }
+}
+
 InstantiatedType*
 VariableNode::typeCheckImpl(SemanticContext* ctx,
                             InstantiatedType* expected,
@@ -49,6 +59,35 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
         name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
   assert(sym);
   return sym->bind(ctx, t, typeParamArgs);
+}
+
+bool
+VariableNode::isNonLocalRef(SymbolTable* definedIn, Symbol*& nonLocalSym) {
+  BaseSymbol* bsym = getSymbol();
+  if (Symbol* sym = dynamic_cast<Symbol*>(bsym)) {
+    if (sym->getDefinedSymbolTable() == definedIn && !sym->isObjectField()) {
+      nonLocalSym = sym;
+      return true;
+    }
+  }
+  nonLocalSym = NULL;
+  return false;
+}
+
+ASTNode*
+VariableNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
+                               const set<BaseSymbol*>& refs) {
+  BaseSymbol* bs = getSymbol();
+  set<BaseSymbol*>::const_iterator it = refs.find(bs);
+  if (it == refs.end()) return NULL;
+  VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
+  Symbol* sym = static_cast<Symbol*>(bs);
+  assert(sym->getDefinedSymbolTable() == symbols);
+  assert(sym->isPromoteToRef());
+  return replace(
+      getSymbolTable()->getSemanticContext(),
+      new AttrAccessNode(
+        new VariableNodeParser(name, NULL), "value"));
 }
 
 ASTNode*
@@ -97,8 +136,8 @@ VariableNode::codeGen(CodeGenerator& cg) {
     size_t idx = cg.createLocalVariable(sym, create);
     assert(!create);
     cg.emitInstU32(
-        sym->getInstantiatedType()->isPrimitive() ?
-          Instruction::LOAD_LOCAL_VAR : Instruction::LOAD_LOCAL_VAR_REF,
+        getStaticType()->isRefCounted() ?
+          Instruction::LOAD_LOCAL_VAR_REF : Instruction::LOAD_LOCAL_VAR,
         idx);
   } else {
     // otherwise if we are referencing a module/class,
@@ -124,13 +163,45 @@ VariableNodeParser::cloneImpl() {
       name, explicitTypeString ? explicitTypeString->clone() : NULL);
 }
 
+ASTExpressionNode*
+VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  Symbol* s;
+  if (isNonLocalRef(ctx.definedIn, s)) {
+    assert(!explicitTypeString);
+    assert(!explicitType);
+    string newName = ctx.refParamName(s);
+    return new AttrAccessNode(
+        new VariableNodeParser(newName, NULL), "value");
+  }
+
+  BaseSymbol* bs = getSymbol();
+  if (bs == ctx.curLiftSym) {
+    return new VariableNodeParser(ctx.liftedName, NULL);
+  }
+
+  LiftContext::LiftMap::const_iterator it =
+    ctx.liftMap.find(bs);
+  if (it != ctx.liftMap.end()) {
+    ASTStatementNode* liftedStmt = it->second.second;
+    // TODO: add classes when we lift classes
+    VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, liftedStmt);
+    string liftedName =
+      static_cast<FuncDeclNode*>(liftedStmt)->getName();
+    return new VariableNodeParser(liftedName, NULL);
+  }
+
+  return new VariableNodeParser(
+      name, explicitTypeString ? explicitTypeString->clone() : NULL);
+}
+
 VariableNode*
 VariableNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   InstantiatedType* itype = getExplicitType();
   if (itype) {
     itype = t.translate(getSymbolTable()->getSemanticContext(), itype);
+    return new VariableNodeSynthetic(name, itype);
   }
-  return new VariableNodeSynthetic(name, itype);
+  return new VariableNodeParser(name, NULL);
 }
 
 void
@@ -164,6 +235,11 @@ VariableSelfNode::codeGen(CodeGenerator& cg) {
 
 VariableSelfNode*
 VariableSelfNode::cloneImpl() {
+  return new VariableSelfNode;
+}
+
+ASTExpressionNode*
+VariableSelfNode::cloneForLiftImpl(LiftContext& ctx) {
   return new VariableSelfNode;
 }
 
@@ -203,6 +279,11 @@ VariableSuperNode::codeGen(CodeGenerator& cg) {
 
 VariableSuperNode*
 VariableSuperNode::cloneImpl() {
+  return new VariableSuperNode;
+}
+
+ASTExpressionNode*
+VariableSuperNode::cloneForLiftImpl(LiftContext& ctx) {
   return new VariableSuperNode;
 }
 

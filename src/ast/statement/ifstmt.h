@@ -50,7 +50,7 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(IfStmtNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(IfStmtNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(if ";

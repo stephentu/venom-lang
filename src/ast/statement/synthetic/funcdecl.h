@@ -25,7 +25,7 @@ public:
 
   virtual analysis::InstantiatedType* getReturnType() const { return retType; }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FuncDeclNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(FuncDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);
 

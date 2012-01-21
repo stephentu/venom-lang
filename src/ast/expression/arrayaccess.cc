@@ -84,6 +84,11 @@ ArrayAccessNode::cloneImpl() {
   return new ArrayAccessNode(primary->clone(), index->clone());
 }
 
+ASTExpressionNode*
+ArrayAccessNode::cloneForLiftImpl(LiftContext& ctx) {
+  return new ArrayAccessNode(primary->cloneForLift(ctx), index->cloneForLift(ctx));
+}
+
 ArrayAccessNode*
 ArrayAccessNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ArrayAccessNode(

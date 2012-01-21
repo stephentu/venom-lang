@@ -34,7 +34,7 @@ public:
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(ImportStmtNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(ImportStmtNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(import " << getModuleName() << ")";

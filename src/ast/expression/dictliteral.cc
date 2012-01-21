@@ -50,6 +50,11 @@ DictPair::cloneImpl() {
   return new DictPair(first->clone(), second->clone());
 }
 
+ASTExpressionNode*
+DictPair::cloneForLiftImpl(LiftContext& ctx) {
+  return new DictPair(first->cloneForLift(ctx), second->cloneForLift(ctx));
+}
+
 DictPair*
 DictPair::cloneForTemplateImpl(const TypeTranslator& t) {
   return new DictPair(first->cloneForTemplate(t), second->cloneForTemplate(t));
@@ -109,7 +114,7 @@ DictLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
             new VariableNodeParser(tmpVar, NULL),
             "set"),
           TypeStringVec(),
-          util::vec2(Clone((*it)->key()), Clone((*it)->value()))));
+          util::vec2((*it)->key()->clone(), (*it)->value()->clone())));
   }
   exprs.push_back(new VariableNodeParser(tmpVar, NULL));
   return replace(ctx, new ExprListNode(exprs));
@@ -120,6 +125,18 @@ DictLiteralNode::cloneImpl() {
   return new DictLiteralNode(
       util::transform_vec(
         pairs.begin(), pairs.end(), DictPair::CloneFunctor()));
+}
+
+ASTExpressionNode*
+DictLiteralNode::cloneForLiftImpl(LiftContext& ctx) {
+
+  ExprNodeVec clonedExprs =
+    util::transform_vec(
+            pairs.begin(), pairs.end(), DictPair::CloneLiftFunctor(ctx));
+  DictPairVec cloned(clonedExprs.size());
+  transform(clonedExprs.begin(), clonedExprs.end(), cloned.begin(),
+            util::poly_ptr_cast_functor<ASTExpressionNode, DictPair>::checked());
+  return new DictLiteralNode(cloned);
 }
 
 DictLiteralNode*

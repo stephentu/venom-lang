@@ -53,7 +53,11 @@ public:
     checkAndInitTypeParams(ctx);
   }
 
-  VENOM_AST_TYPED_CLONE(FunctionCallNode)
+  virtual ASTNode* rewriteAfterLift(
+      const LiftContext::LiftMap& liftMap,
+      const std::set<analysis::BaseSymbol*>& refs);
+
+  VENOM_AST_TYPED_CLONE_EXPR(FunctionCallNode)
 
 protected:
   virtual analysis::InstantiatedType*
@@ -95,7 +99,7 @@ public:
     { assert(typeArgs.size() == typeArgTypes.size());
       return typeArgTypes; }
 
-  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL(FunctionCallNode)
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(FunctionCallNode)
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);

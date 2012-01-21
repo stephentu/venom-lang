@@ -8,6 +8,7 @@
 
 #include <util/macros.h>
 
+using namespace std;
 using namespace venom::analysis;
 
 namespace venom {
@@ -25,6 +26,18 @@ void ASTStatementNode::typeCheck(SemanticContext* ctx,
     }
   } endfor
   checkExpectedType(expected);
+}
+
+void
+ASTStatementNode::liftPhaseImpl(SemanticContext* ctx,
+                                SymbolTable* liftInto,
+                                vector<ASTStatementNode*>& liftedStmts) {
+  forchild (kid) {
+    if (!kid) continue;
+    if (ASTStatementNode *stmt = dynamic_cast<ASTStatementNode*>(kid)) {
+      stmt->liftPhaseImpl(ctx, liftInto, liftedStmts);
+    }
+  } endfor
 }
 
 ASTStatementNode*
