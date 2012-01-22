@@ -267,30 +267,10 @@ private:
     vec_type vec;
 
     inline void insert(const std::string& name, const S& elem) {
-      // TODO: insert is expensive now, in the case where
-      // we replace an element
       std::pair< typename map_type::iterator, bool > res =
         map.insert(typename map_type::value_type(name, elem));
-
-      if (res.second) {
-        // new elem inserted
-        vec.push_back(elem);
-      } else {
-        assert(false);
-        //// overwrote old elem- replace it with the new one
-        //S oldElem = res.first->second;
-        //// TODO: this seems to work, but is it guaranteed to work
-        //// across various implementations?
-        //res.first->second = elem;
-        //typename vec_type::iterator pos =
-        //  std::find(vec.begin(), vec.end(), oldElem);
-        //assert(pos != vec.end());
-        //vec[pos - vec.begin()] = elem;
-
-        //// free up the old element
-        //delete oldElem;
-      }
-
+      assert(res.second); // new elem should always be inserted
+      vec.push_back(elem);
       assert(map.size() == vec.size());
     }
 
