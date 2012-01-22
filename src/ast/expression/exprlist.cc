@@ -55,11 +55,11 @@ ExprListNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 ExprListNode*
-ExprListNode::cloneImpl() {
+ExprListNode::cloneImpl(CloneMode::Type type) {
   return new ExprListNode(
       util::transform_vec(
         exprs.begin(), exprs.end(),
-        ASTExpressionNode::CloneFunctor()));
+        ASTExpressionNode::CloneFunctor(type)));
 }
 
 ASTExpressionNode*

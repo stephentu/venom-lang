@@ -39,8 +39,8 @@ WhileStmtNode::codeGen(CodeGenerator& cg) {
 }
 
 WhileStmtNode*
-WhileStmtNode::cloneImpl() {
-  return new WhileStmtNode(cond->clone(), stmts->clone());
+WhileStmtNode::cloneImpl(CloneMode::Type type) {
+  return new WhileStmtNode(cond->clone(type), stmts->clone(type));
 }
 
 ASTStatementNode*

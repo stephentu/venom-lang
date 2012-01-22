@@ -56,9 +56,9 @@ void IfStmtNode::codeGen(CodeGenerator& cg) {
 }
 
 IfStmtNode*
-IfStmtNode::cloneImpl() {
+IfStmtNode::cloneImpl(CloneMode::Type type) {
   return new IfStmtNode(
-      cond->clone(), true_branch->clone(), false_branch->clone());
+      cond->clone(type), true_branch->clone(type), false_branch->clone(type));
 }
 
 ASTStatementNode*

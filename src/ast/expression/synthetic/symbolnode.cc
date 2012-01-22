@@ -17,11 +17,14 @@ using namespace venom::backend;
 namespace venom {
 namespace ast {
 
-InstantiatedType*
-SymbolNode::typeCheckImpl(SemanticContext* ctx,
-                          InstantiatedType* expected,
-                          const InstantiatedTypeVec& typeParamArgs) {
-  return staticType;
+SymbolNode::SymbolNode(
+    BaseSymbol* symbol,
+    const TypeTranslator& translator,
+    InstantiatedType* explicitType)
+  : VariableNode(symbol->getName()), explicitType(explicitType) {
+  assert(symbol);
+  this->symbol     = symbol;
+  this->translator = translator;
 }
 
 void
@@ -43,17 +46,22 @@ SymbolNode::codeGen(CodeGenerator& cg) {
 
     // push the const onto the stack
     cg.emitInstU32(Instruction::PUSH_CONST, constIdx);
+  } else {
+    VariableNode::codeGen(cg);
   }
 }
 
 void
 SymbolNode::print(ostream& o, size_t indent) {
-  o << "(synthetic-symbol-node " << symbol->getFullName() << ")";
+  o << "(symbol-node " << symbol->getFullName();
+  if (explicitType) o << " " << explicitType->stringify();
+  o << " (sym-addr " << std::hex << symbol << "))";
 }
 
 SymbolNode*
-SymbolNode::cloneImpl() {
-  return new SymbolNode(symbol, staticType, expectedType);
+SymbolNode::cloneImpl(CloneMode::Type type) {
+  assert(type == CloneMode::Semantic);
+  return new SymbolNode(symbol, translator, expectedType);
 }
 
 ASTExpressionNode*
@@ -64,7 +72,8 @@ SymbolNode::cloneForLiftImpl(LiftContext& ctx) {
 
 SymbolNode*
 SymbolNode::cloneForTemplateImpl(const TypeTranslator& t) {
-  return new SymbolNode(symbol, staticType, expectedType);
+  // should not clone symbol nodes for templating...
+  VENOM_NOT_REACHED;
 }
 
 }

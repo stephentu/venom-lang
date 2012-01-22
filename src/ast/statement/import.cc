@@ -72,7 +72,7 @@ ImportStmtNode::registerSymbol(SemanticContext* ctx) {
 }
 
 ImportStmtNode*
-ImportStmtNode::cloneImpl() {
+ImportStmtNode::cloneImpl(CloneMode::Type type) {
   return new ImportStmtNode(names);
 }
 

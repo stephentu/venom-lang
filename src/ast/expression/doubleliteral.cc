@@ -24,7 +24,7 @@ DoubleLiteralNode::codeGen(CodeGenerator& cg) {
 }
 
 DoubleLiteralNode*
-DoubleLiteralNode::cloneImpl() {
+DoubleLiteralNode::cloneImpl(CloneMode::Type type) {
   return new DoubleLiteralNode(value);
 }
 

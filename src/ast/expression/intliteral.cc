@@ -24,7 +24,7 @@ IntLiteralNode::codeGen(CodeGenerator& cg) {
 }
 
 IntLiteralNode*
-IntLiteralNode::cloneImpl() {
+IntLiteralNode::cloneImpl(CloneMode::Type type) {
   return new IntLiteralNode(value);
 }
 

@@ -53,10 +53,8 @@ void
 ClassAttrDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   // Do the right child first (this prevents recursive assignment, ie x = x)
   if (value) value->semanticCheckImpl(ctx, true);
-  if (doRegister) {
-    registerSymbol(ctx);
-  }
-  // dont recurse on variable...
+  if (doRegister) registerSymbol(ctx);
+	variable->semanticCheckImpl(ctx, true);
 }
 
 void
@@ -113,10 +111,10 @@ ClassAttrDeclNode::codeGen(CodeGenerator& cg) {
 }
 
 ClassAttrDeclNode*
-ClassAttrDeclNode::cloneImpl() {
+ClassAttrDeclNode::cloneImpl(CloneMode::Type type) {
   return new ClassAttrDeclNode(
-      variable->clone(),
-      value ? value->clone() : NULL);
+      variable->clone(type),
+      value ? value->clone(type) : NULL);
 }
 
 ASTStatementNode*

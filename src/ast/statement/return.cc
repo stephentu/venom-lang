@@ -59,8 +59,8 @@ ReturnNode::codeGen(CodeGenerator& cg) {
 }
 
 ReturnNode*
-ReturnNode::cloneImpl() {
-  return new ReturnNode(expr ? expr->clone() : NULL);
+ReturnNode::cloneImpl(CloneMode::Type type) {
+  return new ReturnNode(expr ? expr->clone(type) : NULL);
 }
 
 ASTStatementNode*

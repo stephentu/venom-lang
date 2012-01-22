@@ -15,11 +15,12 @@ void
 VariableNodeSynthetic::print(ostream& o, size_t indent) {
   o << "(ident " << name;
   o << " " << explicitType->stringify();
+	if (symbol) o << " (sym-addr " << std::hex << symbol << ")";
   o << ")";
 }
 
 VariableNode*
-VariableNodeSynthetic::cloneImpl() {
+VariableNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new VariableNodeSynthetic(name, explicitType);
 }
 
@@ -30,7 +31,7 @@ VariableNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
 #ifndef NDEBUG
   Symbol* s;
   assert(!isNonLocalRef(ctx.definedIn, s));
-  BaseSymbol* bs = getSymbol();
+  BaseSymbol* bs = symbol;
   assert(bs != ctx.curLiftSym);
   LiftContext::LiftMap::const_iterator it =
     ctx.liftMap.find(bs);

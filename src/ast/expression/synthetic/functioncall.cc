@@ -11,13 +11,13 @@ namespace venom {
 namespace ast {
 
 FunctionCallNode*
-FunctionCallNodeSynthetic::cloneImpl() {
+FunctionCallNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new FunctionCallNodeSynthetic(
-      primary->clone(),
+      primary->clone(type),
       typeArgTypes,
       util::transform_vec(
         args.begin(), args.end(),
-        ASTExpressionNode::CloneFunctor()));
+        ASTExpressionNode::CloneFunctor(type)));
 }
 
 ASTExpressionNode*

@@ -1,0 +1,12 @@
+def f(arg0::int) = 
+  a = 10;
+  print (a);
+  if arg0 > 10 then
+    a = 20;
+    print (a);
+    a::int = 30;
+    print (a);
+  end
+  print (a);
+end
+f(30);

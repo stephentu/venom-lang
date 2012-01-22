@@ -80,8 +80,8 @@ ArrayAccessNode::codeGenAssignLHS(CodeGenerator& cg, ASTExpressionNode* value) {
 }
 
 ArrayAccessNode*
-ArrayAccessNode::cloneImpl() {
-  return new ArrayAccessNode(primary->clone(), index->clone());
+ArrayAccessNode::cloneImpl(CloneMode::Type type) {
+  return new ArrayAccessNode(primary->clone(type), index->clone(type));
 }
 
 ASTExpressionNode*

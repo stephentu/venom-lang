@@ -147,12 +147,15 @@ FunctionCallNode::rewriteAfterLift(
 
   // the regular params
   transform(args.begin(), args.end(),
-            liftedParamExprs.end(), ASTExpressionNode::CloneFunctor());
+            liftedParamExprs.end(),
+						ASTExpressionNode::CloneFunctor(CloneMode::Structural));
 
   // replace calling the rewritten function
   return replace(
       getSymbolTable()->getSemanticContext(),
       new FunctionCallNodeSynthetic(
+        // don't need a SymbolNode here, b/c the name is guaranteed to be
+        // unique (since it is a lifted name)
         new VariableNodeParser(fdn->getName(), NULL),
         getTypeParams(),
         liftedParamExprs));
@@ -268,15 +271,27 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
 }
 
 FunctionCallNode*
-FunctionCallNodeParser::cloneImpl() {
-  return new FunctionCallNodeParser(
-      primary->clone(),
-      util::transform_vec(
-        typeArgs.begin(), typeArgs.end(),
-        ParameterizedTypeString::CloneFunctor()),
-      util::transform_vec(
-        args.begin(), args.end(),
-        ASTExpressionNode::CloneFunctor()));
+FunctionCallNodeParser::cloneImpl(CloneMode::Type type) {
+	switch (type) {
+	case CloneMode::Structural:
+		return new FunctionCallNodeParser(
+				primary->clone(type),
+				util::transform_vec(
+					typeArgs.begin(), typeArgs.end(),
+					ParameterizedTypeString::CloneFunctor()),
+				util::transform_vec(
+					args.begin(), args.end(),
+					ASTExpressionNode::CloneFunctor(type)));
+	case CloneMode::Semantic:
+		assert(typeArgs.size() == typeArgTypes.size());
+		return new FunctionCallNodeSynthetic(
+				primary->clone(type),
+				typeArgTypes,
+				util::transform_vec(
+					args.begin(), args.end(),
+					ASTExpressionNode::CloneFunctor(type)));
+	default: VENOM_NOT_REACHED;
+	}
 }
 
 ASTExpressionNode*

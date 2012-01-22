@@ -36,7 +36,11 @@ struct ParameterizedTypeString {
   std::string stringify() const;
 
   ParameterizedTypeString* clone();
-  typedef _CloneFunctor<ParameterizedTypeString> CloneFunctor;
+  struct CloneFunctor {
+    typedef ParameterizedTypeString* result_type;
+    inline ParameterizedTypeString*
+		operator()(ParameterizedTypeString* ptr) const { return ptr->clone(); }
+  };
 
   const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;
@@ -91,8 +95,6 @@ protected:
     typeCheckImpl(analysis::SemanticContext* ctx,
                   analysis::InstantiatedType* expected,
                   const analysis::InstantiatedTypeVec& typeParamArgs) = 0;
-
-  virtual void cloneSetState(ASTNode* node);
 
   virtual ASTExpressionNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);

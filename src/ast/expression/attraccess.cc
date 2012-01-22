@@ -68,8 +68,8 @@ AttrAccessNode::codeGen(CodeGenerator& cg) {
 }
 
 AttrAccessNode*
-AttrAccessNode::cloneImpl() {
-  return new AttrAccessNode(primary->clone(), name);
+AttrAccessNode::cloneImpl(CloneMode::Type type) {
+  return new AttrAccessNode(primary->clone(type), name);
 }
 
 ASTExpressionNode*

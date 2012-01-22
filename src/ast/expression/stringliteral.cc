@@ -26,7 +26,7 @@ StringLiteralNode::codeGen(CodeGenerator& cg) {
 }
 
 StringLiteralNode*
-StringLiteralNode::cloneImpl() {
+StringLiteralNode::cloneImpl(CloneMode::Type type) {
   return new StringLiteralNode(value);
 }
 

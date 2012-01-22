@@ -67,10 +67,14 @@ struct LiftContext {
 };
 
 namespace {
+  struct _CloneMode { enum Type { Structural, Semantic }; };
+
   template <typename T>
   struct _CloneFunctor {
+    _CloneFunctor(_CloneMode::Type type) : type(type) {}
     typedef T* result_type;
-    inline T* operator()(T* ptr) const { return ptr->clone(); }
+    inline T* operator()(T* ptr) const { return ptr->clone(type); }
+    _CloneMode::Type type;
   };
 
   template <typename T>
@@ -262,9 +266,19 @@ public:
    */
   virtual void codeGen(backend::CodeGenerator& cg);
 
+  /** Cloning **/
+
+  typedef _CloneMode CloneMode;
+
+  /**
+   * Use the clone static functions, when you will use the
+   * cloned node in the same static (location) context as
+   * the original node
+   */
+
   template <typename T>
-  inline static T* Clone(T* node) {
-    T* copy = node->clone();
+  inline static T* Clone(T* node, CloneMode::Type type) {
+    T* copy = node->clone(type);
     copy->setLocationContext(node->locCtx);
     return copy;
   };
@@ -284,10 +298,8 @@ public:
     return copy;
   };
 
-  /** Should use the above Clone, instead of this one */
-  virtual ASTNode* clone();
+  virtual ASTNode* clone(CloneMode::Type type);
 
-  /** Should use the above CloneForTemplate, instead of this one */
   virtual ASTNode* cloneForTemplate(
       const analysis::TypeTranslator& translator);
 
@@ -296,7 +308,8 @@ public:
   VENOM_AST_CLONE_FUNCTOR(ASTNode)
 
 #define VENOM_AST_TYPED_CLONE_IMPL(type, restype) \
-  virtual type* clone() { return static_cast<type*>(ASTNode::clone()); } \
+  virtual type* clone(CloneMode::Type t) \
+    { return static_cast<type*>(ASTNode::clone(t)); } \
   virtual type* cloneForTemplate(const analysis::TypeTranslator& t) \
     { return static_cast<type*>(ASTNode::cloneForTemplate(t)); } \
   virtual restype* cloneForLift(LiftContext& ctx) \
@@ -313,7 +326,7 @@ public:
 #define VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_IMPL(type, restype) \
   VENOM_AST_TYPED_CLONE_IMPL(type, restype) \
   protected: \
-  virtual type* cloneImpl(); \
+  virtual type* cloneImpl(CloneMode::Type type); \
   virtual type* cloneForTemplateImpl(const analysis::TypeTranslator& t); \
   virtual restype* cloneForLiftImpl(LiftContext& ctx); \
   public:
@@ -362,7 +375,7 @@ protected:
   virtual void cloneSetState(ASTNode* node) {}
 
   /** Do the actual cloning */
-  virtual ASTNode* cloneImpl() = 0;
+  virtual ASTNode* cloneImpl(CloneMode::Type type) = 0;
 
   /** Do the actual cloning for template */
   virtual ASTNode* cloneForTemplateImpl(

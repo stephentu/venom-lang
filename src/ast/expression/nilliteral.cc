@@ -27,7 +27,7 @@ NilLiteralNode::codeGen(CodeGenerator& cg) {
 }
 
 NilLiteralNode*
-NilLiteralNode::cloneImpl() {
+NilLiteralNode::cloneImpl(CloneMode::Type type) {
   return new NilLiteralNode;
 }
 

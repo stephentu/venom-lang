@@ -59,12 +59,12 @@ ClassDeclNodeSynthetic::createClassSymbol(
 }
 
 ClassDeclNode*
-ClassDeclNodeSynthetic::cloneImpl() {
+ClassDeclNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new ClassDeclNodeSynthetic(
       name,
       parentTypes,
       typeParamTypes,
-      stmts->clone());
+      stmts->clone(type));
 }
 
 ASTStatementNode*

@@ -138,8 +138,8 @@ ASTNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 }
 
 ASTNode*
-ASTNode::clone() {
-  ASTNode* copy = cloneImpl();
+ASTNode::clone(CloneMode::Type type) {
+  ASTNode* copy = cloneImpl(type);
   assert(copy);
   cloneSetState(copy);
   return copy;
@@ -157,7 +157,7 @@ ASTNode*
 ASTNode::cloneForLift(LiftContext& ctx) {
   ASTNode* copy = cloneForLiftImpl(ctx);
   assert(copy);
-  // NO cloneSetState()
+  cloneSetState(copy);
   return copy;
 }
 

@@ -34,13 +34,17 @@ AssignExprNode::registerSymbol(SemanticContext* ctx) {
 
 void
 AssignExprNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
+  // TODO: re-factor code duplication between here and
+  // ast/statement/assign.cc
+
   // Do the right child first (this prevents recursive assignment, ie x = x)
   if (value) value->semanticCheckImpl(ctx, true);
-  if (doRegister) {
-    registerSymbol(ctx);
-  }
-  // dont recurse on variable...
-  // TODO: not really sure if this is correct...
+
+  // register now, before recursing on variable
+  if (doRegister) registerSymbol(ctx);
+
+  // now recurse on variable
+  variable->semanticCheckImpl(ctx, true);
 }
 
 ASTNode*
@@ -82,8 +86,8 @@ AssignExprNode::codeGen(CodeGenerator& cg) {
 }
 
 AssignExprNode*
-AssignExprNode::cloneImpl() {
-  return new AssignExprNode(variable->clone(), value->clone());
+AssignExprNode::cloneImpl(CloneMode::Type type) {
+  return new AssignExprNode(variable->clone(type), value->clone(type));
 }
 
 ASTExpressionNode*

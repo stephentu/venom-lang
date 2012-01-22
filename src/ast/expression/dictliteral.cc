@@ -46,8 +46,8 @@ struct fold_functor {
 };
 
 DictPair*
-DictPair::cloneImpl() {
-  return new DictPair(first->clone(), second->clone());
+DictPair::cloneImpl(CloneMode::Type type) {
+  return new DictPair(first->clone(type), second->clone(type));
 }
 
 ASTExpressionNode*
@@ -101,9 +101,7 @@ DictLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
         new VariableNodeParser(tmpVar, NULL),
         new FunctionCallNodeSynthetic(
           new SymbolNode(
-            stype->getType()->getClassSymbol(),
-            Type::ClassType->instantiate(ctx, util::vec1(stype)),
-            NULL),
+            stype->getType()->getClassSymbol()),
           stype->getParams(),
           ExprNodeVec())));
   for (DictPairVec::iterator it = pairs.begin();
@@ -114,17 +112,18 @@ DictLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
             new VariableNodeParser(tmpVar, NULL),
             "set"),
           TypeStringVec(),
-          util::vec2((*it)->key()->clone(), (*it)->value()->clone())));
+          util::vec2((*it)->key()->clone(CloneMode::Semantic),
+										 (*it)->value()->clone(CloneMode::Semantic))));
   }
   exprs.push_back(new VariableNodeParser(tmpVar, NULL));
   return replace(ctx, new ExprListNode(exprs));
 }
 
 DictLiteralNode*
-DictLiteralNode::cloneImpl() {
+DictLiteralNode::cloneImpl(CloneMode::Type type) {
   return new DictLiteralNode(
       util::transform_vec(
-        pairs.begin(), pairs.end(), DictPair::CloneFunctor()));
+        pairs.begin(), pairs.end(), DictPair::CloneFunctor(type)));
 }
 
 ASTExpressionNode*

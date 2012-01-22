@@ -187,13 +187,27 @@ ClassDeclNodeParser::checkAndInitParents(SemanticContext* ctx) {
     parentTypes.push_back(InstantiatedType::ObjectType);
   }
 }
+
 ClassDeclNode*
-ClassDeclNodeParser::cloneImpl() {
-  return new ClassDeclNodeParser(
-      name,
-      util::transform_vec(parents.begin(), parents.end(),
-        ParameterizedTypeString::CloneFunctor()),
-      typeParams, stmts->clone());
+ClassDeclNodeParser::cloneImpl(CloneMode::Type type) {
+	switch (type) {
+	case CloneMode::Structural:
+		return new ClassDeclNodeParser(
+				name,
+				util::transform_vec(parents.begin(), parents.end(),
+					ParameterizedTypeString::CloneFunctor()),
+				typeParams, stmts->clone(type));
+	case CloneMode::Semantic:
+		assert(parents.empty() ?
+						 parentTypes.size() == 1 :
+						 parents.size() == parentTypes.size());
+		assert(typeParamTypes.size() == typeParams.size());
+		return new ClassDeclNodeSynthetic(
+				name,
+				parentTypes,
+				typeParamTypes, stmts->clone(type));
+	default: VENOM_NOT_REACHED;
+	}
 }
 
 ASTStatementNode*

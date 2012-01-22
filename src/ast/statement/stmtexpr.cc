@@ -38,13 +38,12 @@ StmtExprNode::codeGen(CodeGenerator& cg) {
 
 ASTNode*
 StmtExprNode::rewriteReturn(SemanticContext* ctx) {
-  ReturnNode *ret = new ReturnNode(expr->clone());
-  return replace(ctx, ret);
+  return replace(ctx, new ReturnNode(expr->clone(CloneMode::Semantic)));
 }
 
 StmtExprNode*
-StmtExprNode::cloneImpl() {
-  return new StmtExprNode(expr->clone());
+StmtExprNode::cloneImpl(CloneMode::Type type) {
+  return new StmtExprNode(expr->clone(type));
 }
 
 ASTStatementNode*

@@ -279,14 +279,28 @@ FuncDeclNodeParser::checkAndInitReturnType(SemanticContext* ctx) {
 }
 
 FuncDeclNode*
-FuncDeclNodeParser::cloneImpl() {
-  return new FuncDeclNodeParser(
-    name,
-    typeParams,
-    util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneFunctor()),
-    retTypeString ? retTypeString->clone() : NULL,
-    stmts->clone());
+FuncDeclNodeParser::cloneImpl(CloneMode::Type type) {
+	switch (type) {
+	case CloneMode::Structural:
+		return new FuncDeclNodeParser(
+			name,
+			typeParams,
+			util::transform_vec(params.begin(), params.end(),
+				ASTExpressionNode::CloneFunctor(type)),
+			retTypeString ? retTypeString->clone() : NULL,
+			stmts->clone(type));
+	case CloneMode::Semantic:
+		assert(typeParams.size() == typeParamTypes.size());
+		assert(retType);
+		return new FuncDeclNodeSynthetic(
+			name,
+			typeParamTypes,
+			util::transform_vec(params.begin(), params.end(),
+				ASTExpressionNode::CloneFunctor(type)),
+			retType,
+			stmts->clone(type));
+	default: VENOM_NOT_REACHED;
+	}
 }
 
 ASTStatementNode*
@@ -383,13 +397,13 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
 }
 
 CtorDeclNode*
-CtorDeclNode::cloneImpl() {
+CtorDeclNode::cloneImpl(CloneMode::Type type) {
   return new CtorDeclNode(
     util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneFunctor()),
-    stmts->clone(),
+      ASTExpressionNode::CloneFunctor(type)),
+    stmts->clone(type),
     util::transform_vec(superArgs.begin(), superArgs.end(),
-      ASTExpressionNode::CloneFunctor()));
+      ASTExpressionNode::CloneFunctor(type)));
 }
 
 ASTStatementNode*

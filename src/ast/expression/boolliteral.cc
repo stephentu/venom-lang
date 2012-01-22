@@ -24,7 +24,7 @@ BoolLiteralNode::codeGen(CodeGenerator& cg) {
 }
 
 BoolLiteralNode*
-BoolLiteralNode::cloneImpl() {
+BoolLiteralNode::cloneImpl(CloneMode::Type type) {
   return new BoolLiteralNode(value);
 }
 

@@ -57,8 +57,8 @@ UnopNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 UnopNode*
-UnopNode::cloneImpl() {
-  return new UnopNode(kid->clone(), type);
+UnopNode::cloneImpl(CloneMode::Type t) {
+  return new UnopNode(kid->clone(t), type);
 }
 
 ASTExpressionNode*

@@ -24,17 +24,12 @@ using namespace venom::backend;
 namespace venom {
 namespace ast {
 
-BaseSymbol*
-VariableNode::getSymbol() {
-  TypeTranslator t;
-  return symbols->findBaseSymbol(
-      name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
-}
-
 void
 VariableNode::registerSymbol(SemanticContext* ctx) {
-  if (!symbols->isDefined(
-        name, SymbolTable::Any, SymbolTable::AllowCurrentScope)) {
+  assert(!symbol);
+  symbol = symbols->findBaseSymbol(
+      name, SymbolTable::Any, SymbolTable::AllowCurrentScope, translator);
+  if (!symbol) {
     throw SemanticViolationException(
         "Symbol " + name + " is not defined in scope");
   }
@@ -53,17 +48,13 @@ InstantiatedType*
 VariableNode::typeCheckImpl(SemanticContext* ctx,
                             InstantiatedType* expected,
                             const InstantiatedTypeVec& typeParamArgs) {
-  TypeTranslator t;
-  BaseSymbol *sym =
-    symbols->findBaseSymbol(
-        name, SymbolTable::Any, SymbolTable::AllowCurrentScope, t);
-  assert(sym);
-  return sym->bind(ctx, t, typeParamArgs);
+  assert(symbol);
+  return symbol->bind(ctx, translator, typeParamArgs);
 }
 
 bool
 VariableNode::isNonLocalRef(SymbolTable* definedIn, Symbol*& nonLocalSym) {
-  BaseSymbol* bsym = getSymbol();
+  BaseSymbol* bsym = symbol;
   if (Symbol* sym = dynamic_cast<Symbol*>(bsym)) {
     if (sym->getDefinedSymbolTable() == definedIn && !sym->isObjectField()) {
       nonLocalSym = sym;
@@ -77,7 +68,8 @@ VariableNode::isNonLocalRef(SymbolTable* definedIn, Symbol*& nonLocalSym) {
 ASTNode*
 VariableNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
                                const set<BaseSymbol*>& refs) {
-  BaseSymbol* bs = getSymbol();
+  BaseSymbol* bs = symbol;
+  if (!bs) return NULL;
   set<BaseSymbol*>::const_iterator it = refs.find(bs);
   if (it == refs.end()) return NULL;
   VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
@@ -96,8 +88,8 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
     return ASTExpressionNode::rewriteLocal(ctx, mode);
   }
 
-  BaseSymbol *bs = getSymbol();
-  assert(bs);
+  BaseSymbol *bs = symbol;
+  assert(bs); // TODO: why is this assert ok?
   if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
     if (sym->isModuleLevelSymbol()) {
       assert(!sym->isObjectField());
@@ -108,13 +100,7 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
         ctx->getRootSymbolTable()->findModuleSymbol(
             ctx->getModuleName(), SymbolTable::NoRecurse);
       assert(msym);
-      AttrAccessNode *rep =
-        new AttrAccessNode(
-            new SymbolNode(
-              msym,
-              msym->getModuleClassSymbol()->getType()->instantiate(ctx),
-              NULL),
-            name);
+      AttrAccessNode *rep = new AttrAccessNode(new SymbolNode(msym), name);
       return replace(ctx, rep);
     }
 
@@ -129,7 +115,7 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
 void
 VariableNode::codeGen(CodeGenerator& cg) {
-  BaseSymbol *bs = getSymbol();
+  BaseSymbol *bs = symbol;
   assert(bs);
   if (Symbol* sym = dynamic_cast<Symbol*>(bs)) {
     bool create;
@@ -158,9 +144,16 @@ VariableNodeParser::getExplicitType() {
 }
 
 VariableNode*
-VariableNodeParser::cloneImpl() {
-  return new VariableNodeParser(
-      name, explicitTypeString ? explicitTypeString->clone() : NULL);
+VariableNodeParser::cloneImpl(CloneMode::Type type) {
+  switch (type) {
+  case CloneMode::Structural:
+    return new VariableNodeParser(
+        name, explicitTypeString ? explicitTypeString->clone() : NULL);
+  case CloneMode::Semantic:
+    assert(symbol);
+    return new SymbolNode(symbol, translator, getExplicitType());
+  default: VENOM_NOT_REACHED;
+  }
 }
 
 ASTExpressionNode*
@@ -174,7 +167,7 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
         new VariableNodeParser(newName, NULL), "value");
   }
 
-  BaseSymbol* bs = getSymbol();
+  BaseSymbol* bs = symbol;
   if (bs == ctx.curLiftSym) {
     return new VariableNodeParser(ctx.liftedName, NULL);
   }
@@ -234,7 +227,7 @@ VariableSelfNode::codeGen(CodeGenerator& cg) {
 }
 
 VariableSelfNode*
-VariableSelfNode::cloneImpl() {
+VariableSelfNode::cloneImpl(CloneMode::Type type) {
   return new VariableSelfNode;
 }
 
@@ -278,7 +271,7 @@ VariableSuperNode::codeGen(CodeGenerator& cg) {
 }
 
 VariableSuperNode*
-VariableSuperNode::cloneImpl() {
+VariableSuperNode::cloneImpl(CloneMode::Type type) {
   return new VariableSuperNode;
 }
 

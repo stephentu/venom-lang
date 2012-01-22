@@ -362,8 +362,8 @@ BinopNode::codeGen(CodeGenerator& cg) {
 }
 
 BinopNode*
-BinopNode::cloneImpl() {
-  return new BinopNode(left->clone(), right->clone(), type);
+BinopNode::cloneImpl(CloneMode::Type t) {
+  return new BinopNode(left->clone(t), right->clone(t), type);
 }
 
 ASTExpressionNode*

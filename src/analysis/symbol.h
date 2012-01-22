@@ -115,6 +115,10 @@ public:
   inline InstantiatedType* getInstantiatedType() { return type; }
   inline const InstantiatedType* getInstantiatedType() const { return type; }
 
+  /** Can only do if no type set */
+  inline void setInstantiatedType(InstantiatedType* type)
+    { assert(!this->type); assert(type); this->type = type; }
+
   inline ast::ASTNode* getDecl() { return decl; }
   inline const ast::ASTNode* getDecl() const { return decl; }
 

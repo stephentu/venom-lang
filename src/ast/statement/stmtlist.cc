@@ -323,10 +323,10 @@ StmtListNode::codeGen(CodeGenerator& cg) {
 }
 
 StmtListNode*
-StmtListNode::cloneImpl() {
+StmtListNode::cloneImpl(CloneMode::Type type) {
   return new StmtListNode(
       util::transform_vec(stmts.begin(), stmts.end(),
-        ASTStatementNode::CloneFunctor()));
+        ASTStatementNode::CloneFunctor(type)));
 }
 
 ASTStatementNode*

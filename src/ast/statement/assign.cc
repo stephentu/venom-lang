@@ -58,13 +58,12 @@ AssignNode::rewriteAfterLift(
 
         SemanticContext* ctx = symbols->getSemanticContext();
 
-        InstantiatedType* refType =
-          variable->getStaticType()->refify(ctx);
-
         // this will replace this assignment. but first, clone it
         // and semantic/type check it (rewrite below)
         AssignExprNode* assignExpr =
-            new AssignExprNode(variable->clone(), value->clone());
+            new AssignExprNode(
+                variable->clone(CloneMode::Semantic),
+                value->clone(CloneMode::Semantic));
         assignExpr->initSymbolTable(symbols);
         assignExpr->semanticCheck(ctx);
         assignExpr->typeCheck(ctx);
@@ -77,14 +76,10 @@ AssignNode::rewriteAfterLift(
         // need to add an instantiation of the ref
         exprs->appendExpression(
           new AssignExprNode(
-            new VariableNodeParser(sym->getName(), NULL),
+            variable->clone(CloneMode::Semantic),
             new FunctionCallNodeSynthetic(
-              new SymbolNode(
-                Type::RefType->getClassSymbol(),
-                Type::ClassType->instantiate(
-                  ctx, util::vec1(refType)),
-                NULL),
-              util::vec1(refType),
+              new SymbolNode(Type::RefType->getClassSymbol()),
+              util::vec1(variable->getStaticType()),
               ExprNodeVec())));
 
         // semantic/typecheck so that we can rewrite the var/value
@@ -107,13 +102,17 @@ AssignNode::rewriteAfterLift(
 
 void
 AssignNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
+  // TODO: re-factor code duplication between here and
+  // ast/expression/assignexpr.cc
+
   // Do the right child first (this prevents recursive assignment, ie x = x)
   if (value) value->semanticCheckImpl(ctx, true);
-  if (doRegister) {
-    registerSymbol(ctx);
-  }
-  // dont recurse on variable...
-  // TODO: not really sure if this is correct...
+
+  // register now, before recursing on variable
+  if (doRegister) registerSymbol(ctx);
+
+  // now recurse on variable
+  variable->semanticCheckImpl(ctx, true);
 }
 
 void
@@ -130,8 +129,8 @@ AssignNode::codeGen(CodeGenerator& cg) {
 }
 
 AssignNode*
-AssignNode::cloneImpl() {
-  return new AssignNode(variable->clone(), value->clone());
+AssignNode::cloneImpl(CloneMode::Type type) {
+  return new AssignNode(variable->clone(type), value->clone(type));
 }
 
 ASTStatementNode*
@@ -171,11 +170,21 @@ AssignNode::TypeCheckAssignment(
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, variable);
     VariableNode *vn = static_cast<VariableNode*>(variable);
     assert(!vn->getExpectedType());
+    BaseSymbol* bs = vn->getSymbol();
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
+    Symbol* sym = static_cast<Symbol*>(bs);
+
+    // some sanity assertions
     if (decl.isRight()) {
-      symbols->createClassAttributeSymbol(vn->getName(), rhs, decl.right());
+      VENOM_ASSERT_TYPEOF_PTR(ClassAttributeSymbol, sym);
+      assert(static_cast<ClassAttributeSymbol*>(sym)->getClassSymbol() ==
+             decl.right());
     } else {
-      symbols->createSymbol(vn->getName(), rhs, decl.left());
+      assert(sym->getDecl() == decl.left());
     }
+
+    sym->setInstantiatedType(rhs);
+
     // go again, so we can set the static type on variable
     return TypeCheckAssignment(ctx, symbols, variable, value, decl);
   }

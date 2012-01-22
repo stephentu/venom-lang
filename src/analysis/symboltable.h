@@ -8,7 +8,10 @@
 #include <utility>
 
 #include <ast/node.h>
+
 #include <analysis/symbol.h>
+#include <analysis/typetranslator.h>
+
 #include <util/macros.h>
 #include <util/stl.h>
 
@@ -25,34 +28,9 @@ namespace analysis {
 /** Forward decl */
 class InstantiatedType;
 class SemanticContext;
-typedef std::vector< std::pair<InstantiatedType*, InstantiatedType*> > TypeMap;
 
-class TypeTranslator {
-  friend class SymbolTable;
-  friend class FuncSymbol;
-public:
-  TypeTranslator() {}
-  InstantiatedType* translate(
-      SemanticContext* ctx, InstantiatedType* type) const;
-  void bind(InstantiatedType* obj);
-
-  struct TranslateFunctor {
-    typedef InstantiatedType* result_type;
-    TranslateFunctor(SemanticContext* ctx, const TypeTranslator* t)
-      : ctx(ctx), t(t)  {}
-    TranslateFunctor(SemanticContext* ctx, const TypeTranslator& t)
-      : ctx(ctx), t(&t) {}
-    inline InstantiatedType* operator()(InstantiatedType* type) const {
-      return t->translate(ctx, type);
-    }
-  private:
-    SemanticContext* ctx;
-    const TypeTranslator* t;
-  };
-
-protected:
-  TypeMap map;
-};
+typedef std::vector< std::pair<InstantiatedType*, InstantiatedType*> >
+        TypeMap;
 
 class SymbolTable {
   friend class ast::ClassDeclNode;
@@ -298,18 +276,19 @@ private:
         // new elem inserted
         vec.push_back(elem);
       } else {
-        // overwrote old elem- replace it with the new one
-        S oldElem = res.first->second;
-        // TODO: this seems to work, but is it guaranteed to work
-        // across various implementations?
-        res.first->second = elem;
-        typename vec_type::iterator pos =
-          std::find(vec.begin(), vec.end(), oldElem);
-        assert(pos != vec.end());
-        vec[pos - vec.begin()] = elem;
+        assert(false);
+        //// overwrote old elem- replace it with the new one
+        //S oldElem = res.first->second;
+        //// TODO: this seems to work, but is it guaranteed to work
+        //// across various implementations?
+        //res.first->second = elem;
+        //typename vec_type::iterator pos =
+        //  std::find(vec.begin(), vec.end(), oldElem);
+        //assert(pos != vec.end());
+        //vec[pos - vec.begin()] = elem;
 
-        // free up the old element
-        delete oldElem;
+        //// free up the old element
+        //delete oldElem;
       }
 
       assert(map.size() == vec.size());

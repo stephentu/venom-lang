@@ -1,7 +1,7 @@
 #ifndef VENOM_AST_SYMBOL_NODE_H
 #define VENOM_AST_SYMBOL_NODE_H
 
-#include <ast/expression/node.h>
+#include <ast/expression/variable.h>
 
 namespace venom {
 namespace ast {
@@ -9,48 +9,28 @@ namespace ast {
 /**
  * Synthetic AST node
  */
-class SymbolNode : public ASTExpressionNode {
+class SymbolNode : public VariableNode {
 public:
-  /** Does *not* take ownership of symbol, nor type */
+  /** Does *not* take ownership of symbol */
   SymbolNode(analysis::BaseSymbol* symbol,
-             analysis::InstantiatedType* staticType,
-             analysis::InstantiatedType* expectedType)
-    : symbol(symbol) {
-    this->staticType = staticType;
-    this->expectedType = expectedType;
-  }
+             const analysis::TypeTranslator& translator =
+                analysis::TypeTranslator(),
+             analysis::InstantiatedType* explicitType =
+                NULL);
 
-  virtual size_t getNumKids() const { return 0; }
+  virtual analysis::InstantiatedType* getExplicitType()
+    { return explicitType; }
 
-  virtual ASTNode* getNthKid(size_t kid) {
-    throw std::out_of_range(VENOM_SOURCE_INFO);
-  }
-
-  virtual void setNthKid(size_t idx, ASTNode* kid) {
-    throw std::out_of_range(VENOM_SOURCE_INFO);
-  }
-
-  virtual bool needsNewScope(size_t k) const {
-    throw std::out_of_range(VENOM_SOURCE_INFO);
-  }
-
-  virtual analysis::BaseSymbol* getSymbol() { return symbol; }
+  virtual void registerSymbol(analysis::SemanticContext* ctx) {}
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(SymbolNode)
 
-protected:
-  virtual analysis::InstantiatedType*
-    typeCheckImpl(analysis::SemanticContext* ctx,
-                  analysis::InstantiatedType* expected,
-                  const analysis::InstantiatedTypeVec& typeParamArgs);
-
-public:
   virtual void print(std::ostream& o, size_t indent = 0);
 
 private:
-  analysis::BaseSymbol* symbol;
+  analysis::InstantiatedType* explicitType;
 };
 
 }

@@ -43,9 +43,7 @@ ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
         new VariableNodeParser(tmpVar, NULL),
         new FunctionCallNodeSynthetic(
           new SymbolNode(
-            stype->getType()->getClassSymbol(),
-            Type::ClassType->instantiate(ctx, util::vec1(stype)),
-            NULL),
+            stype->getType()->getClassSymbol()),
           stype->getParams(),
           ExprNodeVec())));
   for (ExprNodeVec::iterator it = values.begin();
@@ -56,7 +54,7 @@ ArrayLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
             new VariableNodeParser(tmpVar, NULL),
             "append"),
           TypeStringVec(),
-          util::vec1((*it)->clone())));
+          util::vec1((*it)->clone(CloneMode::Semantic))));
   }
   exprs.push_back(new VariableNodeParser(tmpVar, NULL));
   return replace(ctx, new ExprListNode(exprs));
@@ -98,11 +96,11 @@ ArrayLiteralNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 ArrayLiteralNode*
-ArrayLiteralNode::cloneImpl() {
+ArrayLiteralNode::cloneImpl(CloneMode::Type type) {
   return new ArrayLiteralNode(
       util::transform_vec(
         values.begin(), values.end(),
-        ASTExpressionNode::CloneFunctor()));
+        ASTExpressionNode::CloneFunctor(type)));
 }
 
 ASTExpressionNode*

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <ast/expression/node.h>
+#include <analysis/typetranslator.h>
 
 namespace venom {
 namespace ast {
@@ -13,7 +14,7 @@ namespace ast {
 class VariableNode : public ASTExpressionNode {
 public:
   VariableNode(const std::string& name)
-    : name(name) {}
+    : name(name), symbol(NULL) {}
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
@@ -35,7 +36,7 @@ public:
     throw std::out_of_range(VENOM_SOURCE_INFO);
   }
 
-  virtual analysis::BaseSymbol* getSymbol();
+  virtual analysis::BaseSymbol* getSymbol() { return symbol; }
 
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
@@ -62,6 +63,9 @@ protected:
                      analysis::Symbol*& nonLocalSym);
 
   std::string name;
+
+  analysis::BaseSymbol* symbol;
+  analysis::TypeTranslator translator;
 };
 
 class VariableNodeParser : public VariableNode {
@@ -88,6 +92,7 @@ public:
   virtual void print(std::ostream& o, size_t indent = 0) {
     o << "(ident " << name;
     if (explicitTypeString) o << " " << *explicitTypeString;
+    if (symbol) o << " (sym-addr " << std::hex << symbol << ")";
     o << ")";
   }
 

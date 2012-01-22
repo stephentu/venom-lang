@@ -2,9 +2,13 @@
 #include <sstream>
 
 #include <analysis/semanticcontext.h>
+
 #include <ast/expression/functioncall.h>
 #include <ast/expression/node.h>
+
+#include <ast/expression/synthetic/functioncall.h>
 #include <ast/expression/synthetic/symbolnode.h>
+
 #include <util/stl.h>
 
 using namespace std;
@@ -72,32 +76,14 @@ ASTExpressionNode::rewriteLocal(SemanticContext* ctx,
     } else assert(false);
     assert(boxClass);
 
-    TypeTranslator t;
     FunctionCallNode* rep =
-      new FunctionCallNodeParser(
-          new SymbolNode(
-            boxClass,
-            boxClass->bind(ctx, t, InstantiatedTypeVec()),
-            NULL),
-          TypeStringVec(),
-          util::vec1(this->clone()));
+      new FunctionCallNodeSynthetic(
+          new SymbolNode(boxClass),
+          InstantiatedTypeVec(),
+          util::vec1(this->clone(CloneMode::Semantic)));
     return replace(ctx, rep);
   }
   return NULL;
-}
-
-void
-ASTExpressionNode::cloneSetState(ASTNode* node) {
-  ASTNode::cloneSetState(node);
-
-  //VENOM_ASSERT_TYPEOF_PTR(ASTExpressionNode, node);
-  //ASTExpressionNode* enode = static_cast<ASTExpressionNode*>(node);
-
-  //ASTNode::cloneSetState(node);
-
-  //enode->staticType   = staticType;
-  //enode->expectedType = expectedType;
-  //enode->typeParams   = typeParams;
 }
 
 ASTExpressionNode*
