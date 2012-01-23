@@ -1,4 +1,5 @@
 class animal
+  def self() = print("animal noises"); end
 end
 
 x::animal = animal();

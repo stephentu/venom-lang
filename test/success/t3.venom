@@ -5,5 +5,11 @@ class LinkedList{T}
     self.elem = elem;
     self.next = next;
   end
+  
+  def print_ll() = 
+    print(elem);
+    if next then next.print_ll(); end
+  end
 end
 x::LinkedList{int} = LinkedList{int}(10, LinkedList{int}(20, Nil));
+x.print_ll();

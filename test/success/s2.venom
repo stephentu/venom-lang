@@ -1,3 +1,6 @@
 foo::object = Nil;
 bar = { "a": 10 };
 baz::map{string, int} = bar;
+print (foo);
+print (bar);
+print (baz);

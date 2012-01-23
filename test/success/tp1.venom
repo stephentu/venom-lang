@@ -6,3 +6,5 @@ class A{T}
 end
 a::A{int} = A{int}(1);
 b::A{string} = A{string}("foobar");
+print(a.elem_);
+print(b.elem_);

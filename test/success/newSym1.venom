@@ -8,3 +8,5 @@ class B <- A
     print(z);
   end
 end
+b = B(30);
+b.x();

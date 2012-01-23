@@ -1,8 +1,11 @@
 x::list{int} = [];
 y::list{int} = x;
+print(x == y);
 class foo 
   attr y::int
   def self(x::int) =
     y = x;
   end
 end
+f = foo(2);
+print (f.y);
