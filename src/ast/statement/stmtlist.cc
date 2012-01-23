@@ -5,9 +5,19 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <ast/expression/assignexpr.h>
+#include <ast/expression/attraccess.h>
+#include <ast/expression/exprlist.h>
+#include <ast/expression/variable.h>
+
+#include <ast/expression/synthetic/functioncall.h>
+#include <ast/expression/synthetic/symbolnode.h>
+#include <ast/expression/synthetic/variable.h>
+
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/return.h>
+#include <ast/statement/stmtexpr.h>
 #include <ast/statement/stmtlist.h>
 
 #include <backend/codegenerator.h>
@@ -252,10 +262,86 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
     }
   }
 
+  StmtNodeVec postPrepend;
+  if (hasLocationContext(TopLevelFuncBody)) {
+    // need to possibly rewrite parameters, for a case like this:
+    // def f(a::int) =
+    //   def g() = ..assign to a.. end
+    //   ...
+    // end
+    FuncDeclNode* enclosing = getEnclosingFuncNode();
+    assert(enclosing);
+
+    // scan param list (it *won't* include lifted refs),
+    // looking for refs we need to instantiate (and mark)
+    ExprNodeVec& params = enclosing->getParams();
+    for (ExprNodeVec::iterator it = params.begin();
+         it != params.end(); ++it) {
+      VENOM_ASSERT_TYPEOF_PTR(VariableNode, *it);
+      VariableNode* vn = static_cast<VariableNode*>(*it);
+      TypeTranslator t;
+      Symbol* s =
+        symbols->findSymbol(vn->getName(), SymbolTable::NoRecurse, t);
+      assert(s);
+      set<BaseSymbol*>::iterator sit = refs.find(s);
+      if (sit == refs.end()) continue;
+
+      // create new symbol
+      Symbol* repSym = symbols->createSymbol(vn->getName() + "$renamed",
+                                             s->getInstantiatedType(),
+                                             enclosing);
+
+      // replace old param
+      *it = new VariableNodeSynthetic(
+          repSym->getName(), s->getInstantiatedType());
+
+      // delete old param
+      delete vn;
+
+      // insert instantiation stmts
+      ExprListNode* exprs = new ExprListNode;
+      StmtExprNode* stmtexpr = new StmtExprNode(exprs);
+
+      // mark sym
+      s->markPromoteToRef();
+
+      exprs
+        // param = ref{type}();
+        ->appendExpression(
+          new AssignExprNode(
+            new SymbolNode(s),
+            new FunctionCallNodeSynthetic(
+              new SymbolNode(Type::RefType->getClassSymbol()),
+              util::vec1(s->getInstantiatedType()),
+              ExprNodeVec())))
+        // param.value = param$renamed;
+        ->appendExpression(
+          new AssignExprNode(
+            new AttrAccessNode(new SymbolNode(s), "value"),
+            new SymbolNode(repSym)));
+
+      // get ready to insert this stmtexpr into the stmt body
+      stmtexpr->initSymbolTable(symbols);
+      stmtexpr->semanticCheck(ctx);
+      stmtexpr->typeCheck(ctx);
+
+      // but don't actually do it yet (buffer it up instead)
+      postPrepend.push_back(stmtexpr);
+    }
+  }
+
   // now, rewrite the references in *this* scope to reflect the
   // *lifted* symbols
   ASTNode* retVal = rewriteAfterLift(liftMap, refs);
   VENOM_ASSERT_NULL(retVal);
+
+  // now, prepend. we do this *after* rewriteAfterLift(), so
+  // we don't rewrite the statements we insert (since they
+  // are not meant to be rewritten
+  for (StmtNodeVec::reverse_iterator it = postPrepend.rbegin();
+       it != postPrepend.rend(); ++it) {
+    prependStatement(*it);
+  }
 
   // since this phase runs *after* template instantiation,
   // need to instantiate ref types manually. while this may seem

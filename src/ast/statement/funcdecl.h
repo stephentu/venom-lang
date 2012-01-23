@@ -36,6 +36,9 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  inline ExprNodeVec& getParams() { return params; }
+  inline const ExprNodeVec& getParams() const { return params; }
+
   inline ASTStatementNode* getStmts() { return stmts; }
   inline const ASTStatementNode* getStmts() const { return stmts; }
 

@@ -1,0 +1,10 @@
+def f(a::int) =
+  print(a);
+  def g() =
+    a = 30;
+    print(a);
+  end
+  g();
+  print(a);
+end
+f(1);
