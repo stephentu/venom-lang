@@ -9,6 +9,12 @@
 
 namespace venom {
 
+namespace ast {
+  /** Forward decl */
+  class AssignNode;
+  class FuncDeclNode;
+}
+
 namespace backend {
   /** Forward decl */
   class CodeGenerator;
@@ -87,6 +93,7 @@ private:
  * object's field.
  */
 class Symbol : public BaseSymbol, public SlotMixin {
+  friend class ast::AssignNode;
   friend class backend::CodeGenerator;
   friend class SymbolTable;
 protected:
@@ -168,7 +175,9 @@ private:
  * Represents a function/method declaration
  */
 class FuncSymbol : public BaseSymbol {
+  friend class ast::FuncDeclNode;
   friend class SymbolTable;
+
 protected:
   FuncSymbol(const std::string&         name,
              const InstantiatedTypeVec& typeParams,
@@ -206,10 +215,12 @@ public:
 
   virtual bool isMethod() const { return false; }
 
+  virtual bool isCodeGeneratable() const
+    { return typeParams.empty(); }
+
   virtual void cloneForTemplate(
-      ClassSymbol* newParent, const TypeTranslator& t) {
-    VENOM_NOT_REACHED;
-  }
+      ClassSymbol* newParent, const TypeTranslator& t)
+    { VENOM_NOT_REACHED; }
 
 private:
   InstantiatedTypeVec typeParams;
@@ -219,6 +230,7 @@ private:
 };
 
 class MethodSymbol : public FuncSymbol, public SlotMixin {
+  friend class ast::FuncDeclNode;
   friend class SymbolTable;
 protected:
   MethodSymbol(const std::string&         name,
@@ -228,7 +240,7 @@ protected:
                InstantiatedType*          returnType,
                bool                       native,
                ClassSymbol*               classSymbol,
-               FuncSymbol*                overrides)
+               bool                       overrides)
     : FuncSymbol(name, typeParams, table, params, returnType, native),
       classSymbol(classSymbol), overrides(overrides) {}
 
@@ -241,18 +253,19 @@ public:
   inline ClassSymbol* getClassSymbol() { return classSymbol; }
   inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
 
-  inline FuncSymbol* getOverrides() { return overrides; }
-  inline const FuncSymbol* getOverrides() const { return overrides; }
+  inline bool isOverride() const { return overrides; }
 
   virtual bool isConstructor() const { return name == "<ctor>"; }
   virtual bool isMethod() const { return true; }
+
+  virtual bool isCodeGeneratable() const;
 
   virtual void cloneForTemplate(
       ClassSymbol* newParent, const TypeTranslator& t);
 
 private:
   ClassSymbol* classSymbol;
-  FuncSymbol* overrides;
+  bool overrides;
 };
 
 /**
@@ -295,6 +308,12 @@ public:
     return type->isCurrentScopeOnly();
   }
 
+  virtual bool isSpecialized() const { return false; }
+
+  /** true if either no type params, or is a specialized class */
+  inline bool isCodeGeneratable() const
+    { return typeParams.empty() || isSpecialized(); }
+
   bool isModuleClassSymbol() const;
 
   /** Does *NOT* include constructor in methods */
@@ -302,10 +321,13 @@ public:
                        std::vector<FuncSymbol*>& methods);
 
   virtual void cloneForTemplate(
-      ClassSymbol* newParent, const TypeTranslator& t) {
-    VENOM_NOT_REACHED;
-  }
+      ClassSymbol* newParent, const TypeTranslator& t)
+    { VENOM_NOT_REACHED; }
 
+  /**
+   * Only works for built-in class symbols.
+   * Requires the type has non-zero type params
+   */
   ClassSymbol* instantiateSpecializedType(const TypeTranslator& t);
 
 private:
@@ -377,9 +399,8 @@ public:
          const InstantiatedTypeVec& params);
 
   virtual void cloneForTemplate(
-      ClassSymbol* newParent, const TypeTranslator& t) {
-    VENOM_NOT_REACHED;
-  }
+      ClassSymbol* newParent, const TypeTranslator& t)
+    { VENOM_NOT_REACHED; }
 
 private:
   SymbolTable* moduleTable;

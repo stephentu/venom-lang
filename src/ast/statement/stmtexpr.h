@@ -19,6 +19,9 @@ public:
     delete expr;
   }
 
+  inline ASTExpressionNode* getExpression() { return expr; }
+  inline const ASTExpressionNode* getExpression() const { return expr; }
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {

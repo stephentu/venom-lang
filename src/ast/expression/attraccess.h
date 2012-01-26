@@ -22,6 +22,9 @@ public:
   inline ASTExpressionNode* getPrimary() { return primary; }
   inline const ASTExpressionNode* getPrimary() const { return primary; }
 
+  inline std::string& getName() { return name; }
+  inline const std::string& getName() const { return name; }
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {

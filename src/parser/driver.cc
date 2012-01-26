@@ -19,6 +19,7 @@
 #include <bootstrap/analysis.h>
 
 #include <util/filesystem.h>
+#include <util/graph.h>
 
 using namespace std;
 
@@ -101,55 +102,76 @@ unsafe_compile_module(const string& fname, fstream& infile,
   }
 }
 
-struct _collect_types_functor {
-  _collect_types_functor(vector<InstantiatedType*>* types)
-    : types(types) {}
-  inline void operator()(ASTStatementNode* root,
-                         SemanticContext* ctx) const {
-    root->collectInstantiatedTypes(*types);
-  }
-  inline void operator()(
-      pair<ASTStatementNode*, SemanticContext*>& p) const {
-    operator()(p.first, p.second);
-  }
-  vector<InstantiatedType*>* types;
-};
-
-struct _instantiate_types_functor {
-  typedef multimap<SemanticContext*, InstantiatedType*> MultiMapType;
-
-  _instantiate_types_functor(
-      MultiMapType* typesByModule, vector<ClassDeclNode*>* classDecls)
-    : typesByModule(typesByModule), classDecls(classDecls) {}
-
-  inline void operator()(ASTStatementNode* root,
-                         SemanticContext* ctx) const {
-    pair<MultiMapType::iterator, MultiMapType::iterator> ret =
-      typesByModule->equal_range(ctx);
-    vector<InstantiatedType*> types;
-    for (MultiMapType::iterator it = ret.first; it != ret.second; ++it) {
-      types.push_back(it->second);
-    }
-    if (!types.empty()) {
-      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, root);
-      StmtListNode* stmtList = static_cast<StmtListNode*>(root);
-      stmtList->instantiateSpecializedTypes(types, *classDecls);
-    }
-  }
-  inline void operator()(
-      pair<ASTStatementNode*, SemanticContext*>& p) const {
-    operator()(p.first, p.second);
-  }
-
-  MultiMapType* typesByModule;
-  vector<ClassDeclNode*>* classDecls;
-};
-
 struct _itype_less_cmp {
   inline bool operator()(const InstantiatedType* lhs,
                          const InstantiatedType* rhs) const {
     return lhs->stringify() < rhs->stringify();
   }
+};
+
+//typedef util::directed_graph<InstantiatedType*, _itype_less_cmp>
+//        dep_graph;
+//
+//static void recursiveInsert(InstantiatedType* type, dep_graph& depGraph) {
+//  assert(type->isSpecializedType());
+//  InstantiatedType::AssertNoTypeParamPlaceholders(type);
+//
+//  if (type->getType()->getParent()->getParams().empty()) {
+//    // if this type does not depend on a parameterized type
+//    // then just add it
+//    depGraph.add_elem(type);
+//  } else {
+//    InstantiatedType* parentType = type->getParentInstantiatedType();
+//    InstantiatedType::AssertNoTypeParamPlaceholders(parentType);
+//    // add edge from type -> parent
+//    depGraph.add_edge(type, parentType);
+//
+//    // recurse on parent
+//    recursiveInsert(parentType, depGraph);
+//  }
+//}
+//
+//class collector : public ASTNode::CollectCallback {
+//public:
+//  virtual void offer(InstantiatedType* type) {
+//    assert(type->isSpecializedType());
+//    recursiveInsert(type, graph);
+//    if (type->getClassSymbolTable()->getOwner()) {
+//      TypeTranslator t;
+//      t.bind(type);
+//      type->getClassSymbolTable()->getOwner()->collectInstantiatedTypes(
+//          type->getClassSymbolTable()->getSemanticContext(),
+//          t, *this);
+//    }
+//  }
+//
+//  dep_graph graph;
+//};
+
+typedef set<InstantiatedType*, _itype_less_cmp> itype_set;
+
+class collector : public ASTNode::CollectCallback {
+public:
+  collector() : itypes(_itype_less_cmp()) {}
+  virtual void offer(InstantiatedType* type) {
+    assert(type->isSpecializedType());
+    itypes.insert(type);
+  }
+  itype_set itypes;
+};
+
+struct _collect_types_functor {
+  _collect_types_functor(ASTNode::CollectCallback& callback)
+    : callback(&callback) {}
+  inline void operator()(ASTStatementNode* root, SemanticContext* ctx) const {
+    TypeTranslator t;
+    root->collectInstantiatedTypes(ctx, t, *callback);
+  }
+  inline void operator()(
+      pair<ASTStatementNode*, SemanticContext*>& p) const {
+    operator()(p.first, p.second);
+  }
+  ASTNode::CollectCallback* callback;
 };
 
 #define _IMPL_PRINT_AST(rootNode, stagename) \
@@ -210,88 +232,142 @@ unsafe_compile(const string& fname, fstream& infile,
   // infile
   unsafe_compile_module(fname, infile, ctx);
 
-  // resolve all specialized classes
-  // TODO: this step needs to come *after* the lift phase,
-  // whenever we implement lifting- this is because it assumes
-  // only top level classes.
+  { // begin template phase
 
-  SemanticContext::ModuleVec workingSet;
-  ctx.getProgramRoot()->getAllModules(workingSet);
-  set<InstantiatedType*, _itype_less_cmp> processedAlready(
-      (_itype_less_cmp()));
-  while (true) {
+    // resolve all specialized classes / instantiation phase
+    // WARNING: this is tricky to get right
 
-    vector<InstantiatedType*> types;
-    for_each(workingSet.begin(), workingSet.end(),
-             _collect_types_functor(&types));
+    SemanticContext::ModuleVec workingSet;
+    ctx.getProgramRoot()->getAllModules(workingSet);
 
-    //cerr << "collected: " <<
-    //util::debug_stringify_ptr_coll(types.begin(), types.end(), ",") << endl;
+    itype_set processedAlready((_itype_less_cmp()));
 
-    set<InstantiatedType*, _itype_less_cmp> uniqueSpecializedTypes
-      (types.begin(), types.end(), _itype_less_cmp());
+    // maps (parameterized type -> vector of instantiated ast nodes)
+    typedef map<InstantiatedType*, vector<ClassDeclNode*>, _itype_less_cmp>
+            TypeNodeMap;
+    TypeNodeMap specializedTypes((_itype_less_cmp()));
 
-    // filter out the ones already processed
-    vector<InstantiatedType*> typesToProcess(uniqueSpecializedTypes.size());
-    vector<InstantiatedType*>::iterator end_it =
-      set_difference(uniqueSpecializedTypes.begin(),
-                     uniqueSpecializedTypes.end(),
-                     processedAlready.begin(),
-                     processedAlready.end(),
-                     typesToProcess.begin(), _itype_less_cmp());
+    while (true) {
 
-    //cerr << "typesToProcess: " <<
-    //util::debug_stringify_ptr_coll(typesToProcess.begin(), end_it, ",")
-    //<< endl;
+      // traverse the program and gather all types
+      collector callback;
+      for_each(workingSet.begin(), workingSet.end(),
+               _collect_types_functor(callback));
 
-    // if no types to process, then we are done
-    if (end_it == typesToProcess.begin()) break;
+      //cerr << "collected: " <<
+      //util::debug_stringify_ptr_coll(types.begin(), types.end(), ",") << endl;
 
-    // otherwise, mark that we are processing these types
-    processedAlready.insert(typesToProcess.begin(), typesToProcess.end());
+      // filter out the ones already processed
+      // (necessary to prevent infinite loops)
+      vector<InstantiatedType*> typesToProcess;
+      typesToProcess.reserve(callback.itypes.size());
+      for (itype_set::iterator it = callback.itypes.begin();
+           it != callback.itypes.end(); ++it) {
+        if (processedAlready.find(*it) == processedAlready.end()) {
+          typesToProcess.push_back(*it);
+        }
+      }
 
-    multimap<SemanticContext*, InstantiatedType*> typesByModule;
-    for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();
-         it != end_it; ++it) {
-      InstantiatedType* type = *it;
-      SemanticContext* ctx =
-        type->getClassSymbol()->getDefinedSymbolTable()->getSemanticContext();
-      typesByModule.insert(make_pair(ctx, type));
-    }
-    vector<ClassDeclNode*> classDecls;
-    _instantiate_types_functor instantiateFunctor(&typesByModule, &classDecls);
-    ctx.getProgramRoot()->forEachModule(instantiateFunctor);
+      //cerr << "typesToProcess: " <<
+      //util::debug_stringify_ptr_coll(typesToProcess.begin(), end_it, ",")
+      //<< endl;
 
-    // special case - for types belonging to <prelude>, we handle it separately
-    // (since it is not associated with some AST node). in the future, when we
-    // support native user extensions, then we will also have to include that
-    // here
-    SemanticContext* rootCtx = ctx.getProgramRoot();
-    SymbolTable* rootTable = rootCtx->getRootSymbolTable();
-    typedef _instantiate_types_functor::MultiMapType MultiMapType;
-    pair<MultiMapType::iterator, MultiMapType::iterator> ret =
-      typesByModule.equal_range(rootCtx);
-    for (MultiMapType::iterator it = ret.first; it != ret.second; ++it) {
-      TypeTranslator t;
-      ClassSymbol* csym =
-        rootTable->findClassSymbol(it->second->createClassName(),
-            SymbolTable::NoRecurse, t);
-      if (!csym) {
-        // need to create the specific instantiation
-        TypeTranslator t;
-        t.bind(it->second);
-        it->second->getClassSymbol()->instantiateSpecializedType(t);
+      // if no types to process, then we are done
+      if (typesToProcess.empty()) break;
+
+      // otherwise, mark that we are processing these types
+      processedAlready.insert(typesToProcess.begin(), typesToProcess.end());
+
+      vector<ClassDeclNode*> classDecls;
+      classDecls.reserve(typesToProcess.size());
+      for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();
+           it != typesToProcess.end(); ++it) {
+        InstantiatedType* itype = *it;
+        assert(itype->isSpecializedType());
+
+        ASTNode* node = itype->getClassSymbolTable()->getOwner();
+        if (node) {
+          // user-class case
+
+          VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, node);
+          ClassDeclNode *classNode = static_cast<ClassDeclNode*>(node);
+
+          // do the type instantiation
+          TypeTranslator t;
+          t.bind(itype);
+
+          // instantiate
+          ClassDeclNode* instantiation =
+            ASTNode::CloneForTemplate(classNode, t);
+
+          // process the new instantiation
+          SymbolTable* scope =
+            itype->getClassSymbol()->getDefinedSymbolTable();
+          instantiation->initSymbolTable(scope);
+          instantiation->semanticCheck(scope->getSemanticContext());
+          instantiation->typeCheck(scope->getSemanticContext());
+
+          // inserto type into map
+          InstantiatedType* selfType =
+            itype->getClassSymbol()->getSelfType(scope->getSemanticContext());
+          specializedTypes[selfType].push_back(instantiation);
+
+          classDecls.push_back(instantiation);
+        } else {
+          // builtin special case - for types belonging to <prelude>, we handle
+          // it separately (since it is not associated with some AST node). in
+          // the future, when we support native user extensions, then we will
+          // also have to include that here
+          SemanticContext* rootCtx = ctx.getProgramRoot();
+          SymbolTable* rootTable = rootCtx->getRootSymbolTable();
+          TypeTranslator t;
+          ClassSymbol* csym =
+            rootTable->findClassSymbol(itype->createClassName(),
+                SymbolTable::NoRecurse, t);
+          if (!csym) {
+            // need to create the specific instantiation
+            TypeTranslator t;
+            t.bind(itype);
+            itype->getClassSymbol()->instantiateSpecializedType(t);
+          }
+        }
+      }
+
+      workingSet.clear();
+      workingSet.reserve(classDecls.size());
+      for (vector<ClassDeclNode*>::iterator it = classDecls.begin();
+           it != classDecls.end(); ++it) {
+        workingSet.push_back(
+            make_pair(*it, (*it)->getSymbolTable()->getSemanticContext()));
       }
     }
 
-    workingSet.clear();
-    workingSet.reserve(classDecls.size());
-    for (vector<ClassDeclNode*>::iterator it = classDecls.begin();
-         it != classDecls.end(); ++it) {
-      workingSet.push_back(
-          make_pair(*it, (*it)->getSymbolTable()->getSemanticContext()));
+    // insert the create ast nodes alongside the original template ast
+    // node
+    for (TypeNodeMap::iterator it = specializedTypes.begin();
+         it != specializedTypes.end(); ++it) {
+      InstantiatedType* origType = it->first;
+      vector<ClassDeclNode*>& astNodes = it->second;
+
+      // assert not a builtin class (is user defined)
+      assert(origType->getClassSymbolTable()->getOwner());
+
+      ASTNode* owner =
+        origType->getClassSymbol()->getDefinedSymbolTable()->getOwner();
+      if (!owner) {
+        // is defined as a top level class
+        // TODO: this is kind of hacky...
+        owner = origType
+            ->getClassSymbolTable()
+            ->getSemanticContext()
+            ->getModuleRoot();
+      }
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, owner);
+      static_cast<StmtListNode*>(owner)
+        ->insertSpecializedTypes(origType, astNodes);
     }
-  }
+
+  } // end template phase
 
   // lift phase
   ctx.getProgramRoot()->forEachModule(_lift_functor());

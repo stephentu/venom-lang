@@ -23,6 +23,9 @@ public:
     util::delete_pointers(args.begin(), args.end());
   }
 
+  inline ASTExpressionNode* getPrimary() { return primary; }
+  inline const ASTExpressionNode* getPrimary() const { return primary; }
+
   // must call checkAndInitTypeParams() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 

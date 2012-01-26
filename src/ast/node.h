@@ -210,8 +210,14 @@ public:
 
   /** Templates **/
 
+  struct CollectCallback {
+    virtual void offer(analysis::InstantiatedType* type) = 0;
+  };
+
   virtual void collectInstantiatedTypes(
-      std::vector<analysis::InstantiatedType*>& types);
+      analysis::SemanticContext* ctx,
+      const analysis::TypeTranslator& t,
+      CollectCallback& callback);
 
   /** Tree re-writing **/
 

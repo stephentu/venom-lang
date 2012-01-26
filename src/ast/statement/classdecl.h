@@ -39,6 +39,11 @@ public:
   // must call checkAndInitTypeParams() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
+  // the parameterized type which this ClassDeclNode instantiates
+  // NULL if none
+  virtual analysis::InstantiatedType* getInstantiationOfType()
+    { return NULL; }
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {
@@ -62,7 +67,9 @@ public:
                                  bool doRegister);
 
   virtual void collectInstantiatedTypes(
-      std::vector<analysis::InstantiatedType*>& types);
+      analysis::SemanticContext* ctx,
+      const analysis::TypeTranslator& t,
+      CollectCallback& callback);
 
   virtual void codeGen(backend::CodeGenerator& cg);
 

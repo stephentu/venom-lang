@@ -191,8 +191,8 @@ VariableNode*
 VariableNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   InstantiatedType* itype = getExplicitType();
   if (itype) {
-    itype = t.translate(getSymbolTable()->getSemanticContext(), itype);
-    return new VariableNodeSynthetic(name, itype);
+    SemanticContext* ctx = getSymbolTable()->getSemanticContext();
+    return new VariableNodeSynthetic(name, t.translate(ctx, itype));
   }
   return new VariableNodeParser(name, NULL);
 }

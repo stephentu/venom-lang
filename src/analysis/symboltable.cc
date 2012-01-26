@@ -13,40 +13,31 @@ using namespace venom::ast;
 namespace venom {
 namespace analysis {
 
-SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* parent,
-                         const TypeMap& map, ASTNode* owner)
+SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* primaryParent,
+                         ASTNode* owner)
   : ctx(ctx),
     owner(owner),
-    parents(parent ? util::vec1(parent) : vector<SymbolTable*>()),
+    primaryParent(primaryParent),
     symbolContainer(
-        parent ?
-          util::vec1(&parent->symbolContainer) :
+        primaryParent ?
+          util::vec1(&primaryParent->symbolContainer) :
           CType<Symbol*>::vec_type(),
-        parent ?
-          util::vec1(map) :
-          vector<TypeMap>()),
+        util::vec1(TypeMap())),
     funcContainer(
-        parent ?
-          util::vec1(&parent->funcContainer) :
+        primaryParent ?
+          util::vec1(&primaryParent->funcContainer) :
           CType<FuncSymbol*>::vec_type(),
-        parent ?
-          util::vec1(map) :
-          vector<TypeMap>()),
+        util::vec1(TypeMap())),
     classContainer(
-        parent ?
-          util::vec1(&parent->classContainer) :
+        primaryParent ?
+          util::vec1(&primaryParent->classContainer) :
           CType<ClassSymbol*>::vec_type(),
-        parent ?
-          util::vec1(map) :
-          vector<TypeMap>()),
+        util::vec1(TypeMap())),
     moduleContainer(
-        parent ?
-          util::vec1(&parent->moduleContainer) :
+        primaryParent ?
+          util::vec1(&primaryParent->moduleContainer) :
           CType<ModuleSymbol*>::vec_type(),
-        parent ?
-          util::vec1(map) :
-          vector<TypeMap>()) {
-  assert(parent || map.empty());
+        util::vec1(TypeMap())) {
 }
 
 bool
@@ -172,7 +163,7 @@ SymbolTable::createMethodSymbol(const string&                    name,
                                 const vector<InstantiatedType*>& params,
                                 InstantiatedType*                returnType,
                                 ClassSymbol*                     classSymbol,
-                                FuncSymbol*                      overrides,
+                                bool                             overrides,
                                 bool                             native) {
   FuncSymbol *sym =
     new MethodSymbol(name, typeParams, this, params,
@@ -226,7 +217,7 @@ SymbolTable::insertClassSymbol(ClassSymbol* sym) {
     TypeTranslator t;
     t.bind(type->getParent());
     sym->getClassSymbolTable()->addClassParent(
-        type->getParent()->getClassSymbolTable(), t.map);
+        type->getParent(), t.map);
   }
   return sym;
 }
@@ -267,10 +258,14 @@ SymbolTable::getModuleSymbols(vector<ModuleSymbol*>& symbols) {
 }
 
 void
-SymbolTable::linearizedClassOrder(vector<SymbolTable*>& tables) {
-  for (vector<SymbolTable*>::iterator it = parents.begin() + 1;
-       it != parents.end(); ++it) {
-    (*it)->linearizedClassOrder(tables);
+SymbolTable::linearizedClassOrder(
+    vector<SymbolTable*>& tables,
+    bool specialized) {
+  for (vector<InstantiatedType*>::iterator it = classParents.begin();
+       it != classParents.end(); ++it) {
+    ClassSymbol *csym = specialized ?
+      (*it)->findSpecializedClassSymbol() : (*it)->getClassSymbol();
+    csym->getClassSymbolTable()->linearizedClassOrder(tables, specialized);
   }
   tables.push_back(this);
 }

@@ -77,7 +77,9 @@ public:
                          analysis::InstantiatedType* expected = NULL);
 
   virtual void collectInstantiatedTypes(
-      std::vector<analysis::InstantiatedType*>& types);
+      analysis::SemanticContext* ctx,
+      const analysis::TypeTranslator& t,
+      CollectCallback& callback);
 
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);

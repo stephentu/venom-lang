@@ -90,11 +90,16 @@ ASTNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
   } endfor
 }
 
+// TODO: use macros and/or templates to avoid code duplication
+
 void
-ASTNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+ASTNode::collectInstantiatedTypes(
+    SemanticContext* ctx,
+    const TypeTranslator& t,
+    CollectCallback& callback) {
   forchild (kid) {
     if (!kid) continue;
-    kid->collectInstantiatedTypes(types);
+    kid->collectInstantiatedTypes(ctx, t, callback);
   } endfor
 }
 

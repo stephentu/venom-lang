@@ -19,8 +19,10 @@ namespace analysis {
 /** Forward decl */
 class ClassSymbol;
 class InstantiatedType;
+class MethodSymbol;
 class SemanticContext;
 class SymbolTable;
+class TypeTranslator;
 
 /**
  * Represents a type in the language. Is not an instantiated type
@@ -308,6 +310,8 @@ public:
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 
+  InstantiatedType* getParentInstantiatedType();
+
   inline std::vector<InstantiatedType*>& getParams()
     { return params; }
   inline const std::vector<InstantiatedType*>& getParams() const
@@ -358,6 +362,9 @@ public:
   ClassSymbol* findSpecializedClassSymbol();
 
   InstantiatedType* refify(analysis::SemanticContext* ctx);
+
+  MethodSymbol*
+  findMethodSymbol(const std::string& name, InstantiatedType*& klass);
 
 private:
   struct class_name_functor {

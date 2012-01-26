@@ -76,7 +76,8 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
     //   0.0 (T = Double)
     //   False (T = Bool)
     //   Nil (otherwise)
-    dummyValue = sym->getInstantiatedType()->getType()->createDefaultInitializer();
+    dummyValue =
+			sym->getInstantiatedType()->getType()->createDefaultInitializer();
     //dummyValue->initSymbolTable(symbols);
     // no need to call semantic check on value
   }

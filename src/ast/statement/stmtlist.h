@@ -71,9 +71,9 @@ public:
 
 #undef IMPL_LOC_CONTEXT
 
-  void instantiateSpecializedTypes(
-      const std::vector<analysis::InstantiatedType*>& types,
-      std::vector<ClassDeclNode*>& classDecls);
+  void insertSpecializedTypes(
+      analysis::InstantiatedType* types,
+      const std::vector<ClassDeclNode*>& classDecls);
 
   /** liftPhase should only be called on the top level
    * module statement list */

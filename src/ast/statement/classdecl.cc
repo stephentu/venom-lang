@@ -80,13 +80,22 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 }
 
 void
-ClassDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+ClassDeclNode::collectInstantiatedTypes(
+    SemanticContext* ctx,
+    const TypeTranslator& t,
+    CollectCallback& callback) {
   vector<InstantiatedType*> parents = getParents();
   for (vector<InstantiatedType*>::iterator it = parents.begin();
        it != parents.end(); ++it) {
-    if ((*it)->isSpecializedType()) types.push_back(*it);
+    InstantiatedType* itype = t.translate(ctx, *it);
+    if (itype->isSpecializedType()) callback.offer(itype);
   }
-  ASTNode::collectInstantiatedTypes(types);
+  // don't recurse unless this class decl is instantiated
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, getSymbol());
+  ClassSymbol* csym = static_cast<ClassSymbol*>(getSymbol());
+  if (t.translate(ctx, csym->getSelfType(ctx))->isFullyInstantiated()) {
+    ASTNode::collectInstantiatedTypes(ctx, t, callback);
+  }
 }
 
 void
@@ -227,6 +236,7 @@ ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
            parents.size() == parentTypes.size());
   assert(typeParamTypes.size() == typeParams.size());
 
+  // TODO: this isn't true b/c of nested template types
   // assert that the type translator completely instantiates
   // this class's type
   BaseSymbol* bs = getSymbol();
@@ -235,16 +245,29 @@ ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   SemanticContext* ctx = getSymbolTable()->getSemanticContext();
   InstantiatedType* itype =
     t.translate(ctx, cs->getSelfType(ctx));
-  InstantiatedType::AssertNoTypeParamPlaceholders(itype);
 
-  return new ClassDeclNodeSynthetic(
-      itype->createClassName(),
-      util::transform_vec(
-        parentTypes.begin(), parentTypes.end(),
-        TypeTranslator::TranslateFunctor(ctx, t)),
-      InstantiatedTypeVec(),
-      stmts->cloneForTemplate(t),
-      itype);
+  if (itype->isSpecializedType()) {
+    // instantiated type
+    InstantiatedType::AssertNoTypeParamPlaceholders(itype);
+    return new ClassDeclNodeSynthetic(
+        itype->createClassName(),
+        util::transform_vec(
+          parentTypes.begin(), parentTypes.end(),
+          TypeTranslator::TranslateFunctor(ctx, t)),
+        InstantiatedTypeVec(),
+        stmts->cloneForTemplate(t),
+        itype);
+  } else {
+    // regular
+    return new ClassDeclNodeSynthetic(
+        name,
+        util::transform_vec(
+          parentTypes.begin(), parentTypes.end(),
+          TypeTranslator::TranslateFunctor(ctx, t)),
+        typeParamTypes,
+        stmts->cloneForTemplate(t),
+        NULL);
+  }
 }
 
 }

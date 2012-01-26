@@ -168,6 +168,11 @@ MethodSymbol::getFullName() const {
   return buf.str();
 }
 
+bool
+MethodSymbol::isCodeGeneratable() const {
+  return FuncSymbol::isCodeGeneratable() && classSymbol->isCodeGeneratable();
+}
+
 void
 MethodSymbol::cloneForTemplate(
     ClassSymbol* newParent, const TypeTranslator& t) {
@@ -224,7 +229,7 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
   }
 
   vector<SymbolTable*> tables;
-  classTable->linearizedClassOrder(tables);
+  classTable->linearizedClassOrder(tables, true);
 
   // attributes is easy, since there isn't any overriding
   // of attributes, we simply concat the attributes in order
@@ -234,7 +239,7 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
   }
 
   // methods are trickier, b/c they can override
-  map<MethodSymbol*, size_t> index;
+  map<string, size_t> index;
   for (vector<SymbolTable*>::iterator it = tables.begin();
        it != tables.end(); ++it) {
     vector<FuncSymbol*> clsMethods;
@@ -247,20 +252,16 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
           // don't include constructors
           continue;
         }
-        if (!msym->getOverrides()) {
-          map<MethodSymbol*, size_t>::iterator it =
-            index.find(msym);
+        if (!msym->isOverride()) {
+          map<string, size_t>::iterator it = index.find(msym->getName());
           assert(it == index.end());
-          index[msym] = methods.size();
+          index[msym->getName()] = methods.size();
           methods.push_back(msym);
         } else {
-          VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, msym->getOverrides());
           // find the symbol being overridden, and replace it
-          map<MethodSymbol*, size_t>::iterator it =
-            index.find(static_cast<MethodSymbol*>(msym->getOverrides()));
+          map<string, size_t>::iterator it = index.find(msym->getName());
           assert(it != index.end());
           methods[it->second] = msym;
-          index[msym] = it->second;
         }
       } else {
         methods.push_back((*fit));
@@ -285,21 +286,6 @@ ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
   InstantiatedType* parentType =
     t.translate(ctx, getType()->getParent());
   InstantiatedType::AssertNoTypeParamPlaceholders(parentType);
-
-  ClassSymbol* csym = NULL;
-  if (!parentType->getParams().empty()) {
-    // first, look up the type to see if we already have it
-    TypeTranslator tt;
-    csym =
-      parentType->getClassSymbol()->getDefinedSymbolTable()->findClassSymbol(
-          parentType->createClassName(), SymbolTable::NoRecurse, tt);
-    if (!csym) {
-      TypeTranslator t;
-      t.bind(parentType);
-      csym = parentType->getClassSymbol()->instantiateSpecializedType(t);
-    }
-  } else csym = parentType->getClassSymbol();
-  assert(csym);
 
   Type* type = ctx->createType(
       concreteType->createClassName(), parentType, 0);

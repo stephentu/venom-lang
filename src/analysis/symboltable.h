@@ -36,10 +36,11 @@ class SymbolTable {
   friend class ast::ClassDeclNode;
 private:
   /** Create a child symbol table */
-  SymbolTable(SemanticContext* ctx, SymbolTable* parent,
-              const TypeMap& typeMap, ast::ASTNode* owner);
+  SymbolTable(SemanticContext* ctx, SymbolTable* primaryParent,
+              ast::ASTNode* owner);
 
-  inline void addClassParent(SymbolTable* parent, const TypeMap& typeMap) {
+  inline void addClassParent(InstantiatedType* parent,
+                             const TypeMap& typeMap) {
     // assert we already have a primary parent
     assert(getPrimaryParent());
 
@@ -61,25 +62,28 @@ private:
     assert(funcContainer.parents.size() == classContainer.parents.size());
 
     // assert our parent vec is consistent w/ the containers
-    assert(symbolContainer.parents.size() == parents.size());
+    assert(symbolContainer.parents.size() == (1 + classParents.size()));
 
     // finally, add the class parent
 
-    parents.push_back(parent);
+    classParents.push_back(parent);
 
-    symbolContainer.parents.push_back(&parent->symbolContainer);
+    SymbolTable* psym = parent->getClassSymbolTable();
+
+    symbolContainer.parents.push_back(&psym->symbolContainer);
     symbolContainer.maps.push_back(typeMap);
 
-    funcContainer.parents.push_back(&parent->funcContainer);
+    funcContainer.parents.push_back(&psym->funcContainer);
     funcContainer.maps.push_back(typeMap);
 
-    classContainer.parents.push_back(&parent->classContainer);
+    classContainer.parents.push_back(&psym->classContainer);
     classContainer.maps.push_back(typeMap);
   }
 
 public:
   /** Create the root symbol table. Does *NOT* take ownership of ctx */
-  SymbolTable(SemanticContext *ctx) : ctx(ctx), owner(NULL) {}
+  SymbolTable(SemanticContext *ctx)
+    : ctx(ctx), owner(NULL), primaryParent(NULL) {}
 
   ~SymbolTable() {
     // delete children
@@ -92,14 +96,15 @@ public:
   inline ast::ASTNode* getOwner() { return owner; }
   inline const ast::ASTNode* getOwner() const { return owner; }
 
-  inline SymbolTable* getPrimaryParent() {
-    return parents.empty() ? NULL : parents.front(); }
-  inline const SymbolTable* getPrimaryParent() const {
-    return parents.empty() ? NULL : parents.front(); }
+  inline SymbolTable* getPrimaryParent() { return primaryParent; }
+  inline const SymbolTable* getPrimaryParent() const { return primaryParent; }
+
+  inline const std::vector<InstantiatedType*>& getClassParents() const
+    { return classParents; }
 
   inline SymbolTable*
   newChildScope(SemanticContext* ctx, ast::ASTNode* owner) {
-    SymbolTable *child = new SymbolTable(ctx, this, TypeMap(), owner);
+    SymbolTable *child = new SymbolTable(ctx, this, owner);
     children.push_back(child);
     return child;
   }
@@ -172,7 +177,7 @@ public:
                      const std::vector<InstantiatedType*>& params,
                      InstantiatedType*                     returnType,
                      ClassSymbol*                          classSymbol,
-                     FuncSymbol*                           overrides = NULL,
+                     bool                                  overrides = false,
                      bool                                  native = false);
 
   FuncSymbol*
@@ -211,7 +216,9 @@ public:
 
   void getModuleSymbols(std::vector<ModuleSymbol*>& symbols);
 
-  void linearizedClassOrder(std::vector<SymbolTable*>& tables);
+  void linearizedClassOrder(
+      std::vector<SymbolTable*>& tables,
+      bool specialized);
 
 private:
   /** The module (context) this symbol table belongs to */
@@ -223,7 +230,8 @@ private:
   /** WARNING: while a SymbolTable can have multiple parents, only
    * one of its parents can have it as a child. This allows us to
    * prevent double-deletes when calling the destructor */
-  std::vector<SymbolTable*> parents;
+  SymbolTable* primaryParent;
+  std::vector<InstantiatedType*> classParents;
   std::vector<SymbolTable*> children;
 
   static inline void AssertValidRecurseMode(RecurseMode mode) {

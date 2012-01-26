@@ -288,6 +288,15 @@ Type::instantiate(SemanticContext* ctx,
   }
 }
 
+InstantiatedType*
+InstantiatedType::getParentInstantiatedType() {
+  if (!getType()->getParent()) return NULL;
+  TypeTranslator t;
+  t.bind(this);
+  return t.translate(getClassSymbolTable()->getSemanticContext(),
+                     getType()->getParent());
+}
+
 struct equals_functor_t {
   inline bool operator()(const InstantiatedType* a,
                          const InstantiatedType* b) const {
@@ -391,6 +400,24 @@ InstantiatedType::refify(SemanticContext* ctx) {
   // should never refify a ref...
   assert(!getType()->equals(*Type::RefType));
   return Type::RefType->instantiate(ctx, util::vec1(this));
+}
+
+MethodSymbol*
+InstantiatedType::findMethodSymbol(const string& name,
+                                   InstantiatedType*& klass) {
+  // search cur symtab
+  TypeTranslator t;
+  FuncSymbol* fs =
+    getClassSymbolTable()->findFuncSymbol(name, SymbolTable::NoRecurse, t);
+  if (fs) {
+    klass = this;
+    VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);
+    return static_cast<MethodSymbol*>(fs);
+  } else {
+    InstantiatedType* ptype = getParentInstantiatedType();
+    if (!ptype) klass = NULL;
+    return ptype ? ptype->findMethodSymbol(name, klass) : NULL;
+  }
 }
 
 }

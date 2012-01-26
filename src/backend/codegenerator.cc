@@ -129,6 +129,7 @@ CodeGenerator::enterLocalClass(ClassSymbol* symbol, bool& create) {
   // assert local class
   assert(isLocalSymbol(symbol));
   assert(symbol->getTypeParams().empty());
+  assert(symbol->isCodeGeneratable());
   return class_reference_table.createLocal(symbol, create);
 }
 
@@ -137,6 +138,7 @@ CodeGenerator::enterExternalClass(ClassSymbol* symbol, bool& create) {
   // assert external class
   assert(!isLocalSymbol(symbol));
   assert(symbol->getTypeParams().empty());
+  assert(symbol->isCodeGeneratable());
   return class_reference_table.createExternal(symbol, create);
 }
 
@@ -162,6 +164,7 @@ CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
   // assert local function
   assert(symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
+  assert(symbol->isCodeGeneratable());
   size_t idx = func_reference_table.createLocal(symbol, create);
 
   // create func start label
@@ -179,6 +182,7 @@ CodeGenerator::enterExternalFunction(FuncSymbol* symbol, bool& create) {
   // assert external function
   assert(!symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
+  assert(symbol->isCodeGeneratable());
   return func_reference_table.createExternal(symbol, create);
 }
 
@@ -201,12 +205,6 @@ CodeGenerator::emitInstU32(SymbolicInstruction::Opcode opcode, uint32_t n0) {
   SInstU32 *inst = new SInstU32(opcode, n0);
   instructions.push_back(inst);
 }
-
-//void
-//CodeGenerator::emitInstI32(SymbolicInstruction::Opcode opcode, int32_t n0) {
-//  SInstI32 *inst = new SInstI32(opcode, n0);
-//  instructions.push_back(inst);
-//}
 
 void
 CodeGenerator::emitInstLabel(SymbolicInstruction::Opcode opcode, Label* label) {
@@ -281,6 +279,8 @@ CodeGenerator::createObjectCode() {
   classSigs.reserve(class_pool.vec.size());
   for (vector<ClassSymbol*>::iterator it = class_pool.vec.begin();
        it != class_pool.vec.end(); ++it) {
+
+    assert((*it)->isCodeGeneratable());
 
     vector<Symbol*> attributes;
     vector<FuncSymbol*> methods;
@@ -407,7 +407,7 @@ CodeGenerator::printDebugStream() {
   for (size_t i = 0; i < func_pool.vec.size(); i++) {
     cerr << i << ": ";
     FuncSymbol* fsym = func_pool.vec[i];
-    cerr << fsym->getName() << endl;
+    cerr << fsym->getFullName() << endl;
   }
   cerr << endl;
 

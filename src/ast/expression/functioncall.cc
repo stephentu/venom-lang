@@ -249,14 +249,35 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
         }
       }
 
-      if (ms->isConstructor() || isSuperInvoke) {
+      if (isSuperInvoke) {
+        // need to find the code-generatable symbol
+
+        // get the super type
+        InstantiatedType* superType =
+          static_cast<AttrAccessNode*>(primary)->getPrimary()->getStaticType();
+
+        // having to do this is sub-optimal, but it would be a lot of extra
+        // work to propagate this information in the AST nodes...
+        // TODO: eventually, we should fix this
+        InstantiatedType* klass;
+        MethodSymbol* msym = superType->findMethodSymbol(ms->getName(), klass);
+        assert(msym);
+        assert(klass);
+        SymbolTable* lookup =
+          klass->findSpecializedClassSymbol()->getClassSymbolTable();
+        TypeTranslator t;
+        fs = lookup->findFuncSymbol(ms->getName(), SymbolTable::NoRecurse, t);
+        VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);
+        ms = static_cast<MethodSymbol*>(fs);
+
         // ctors are not invoked virtually
         bool create;
-        size_t fidx = cg.enterFunction(fs, create);
+        size_t fidx = cg.enterFunction(ms, create);
         cg.emitInstU32(
             !ms->isNative() ? Instruction::CALL : Instruction::CALL_NATIVE,
             fidx);
       } else {
+        assert(!ms->isConstructor());
         size_t slotIdx = ms->getFieldIndex();
         cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
       }

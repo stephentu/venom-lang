@@ -1,0 +1,13 @@
+class A{T}
+  def foo(input::T) -> T = input; end
+end
+
+class B <- A{string}
+  def foo(input::string) -> string = 
+    print(super.foo(input));
+    input;
+  end
+end
+
+b = B();
+b.foo("hello");

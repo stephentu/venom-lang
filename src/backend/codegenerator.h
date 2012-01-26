@@ -260,8 +260,6 @@ public:
 
   void emitInstU32(Instruction::Opcode opcode, uint32_t n0);
 
-  //void emitInstI32(Instruction::Opcode opcode, int32_t n0);
-
   void emitInstLabel(Instruction::Opcode opcode, Label* label);
 
   void emitInstI64(Instruction::Opcode opcode, int64_t n0);

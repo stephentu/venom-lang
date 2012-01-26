@@ -35,6 +35,9 @@ public:
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { return typeParamTypes; }
 
+  virtual analysis::InstantiatedType* getInstantiationOfType()
+    { return instantiation; }
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(ClassDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0);

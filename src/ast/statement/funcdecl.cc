@@ -104,7 +104,7 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
 
     if (isCtor()) {
       symbols->createMethodSymbol(name, typeParamTypes, itypes,
-                                  retType, classSymbol, NULL);
+                                  retType, classSymbol);
     } else {
       // check that type-signature matches for overrides
       TypeTranslator t;
@@ -159,19 +159,23 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 }
 
 void
-FuncDeclNode::collectInstantiatedTypes(vector<InstantiatedType*>& types) {
+FuncDeclNode::collectInstantiatedTypes(
+    SemanticContext* ctx,
+    const TypeTranslator& t,
+    CollectCallback& callback) {
+
   // parameters
   for (ExprNodeVec::iterator it = params.begin();
        it != params.end(); ++it) {
-    (*it)->collectInstantiatedTypes(types);
+    (*it)->collectInstantiatedTypes(ctx, t, callback);
   }
 
   // ret type
-  InstantiatedType* retType = getReturnType();
-  if (retType->isSpecializedType()) types.push_back(retType);
+  InstantiatedType* retType = t.translate(ctx, getReturnType());
+  if (retType->isSpecializedType()) callback.offer(retType);
 
   // stmts
-  ASTNode::collectInstantiatedTypes(types);
+  ASTNode::collectInstantiatedTypes(ctx, t, callback);
 }
 
 ASTNode*
@@ -379,19 +383,46 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   // into
   //
   // def self(...) = super.<ctor>(a0, a1, ...); stmts end
-  StmtExprNode *stmt =
-    new StmtExprNode(
-      new FunctionCallNodeParser(
-          new AttrAccessNode(new VariableSuperNode, "<ctor>"),
-          TypeStringVec(),
-          superArgs));
+  //
+  // if such a call does not exist
 
   VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
-  static_cast<StmtListNode*>(stmts)->prependStatement(stmt);
+  StmtListNode* stmtListNode = static_cast<StmtListNode*>(stmts);
 
-  // stmt gets semanticCheck called *AFTER* this invocation
-  // to registerSymbol(), so we don't need to call it manually
-  stmt->initSymbolTable(stmts->getSymbolTable());
+  bool ctorCallFound = false;
+
+  { // pattern match for ctor
+
+    // TODO: gross and fragile...
+    if (stmtListNode->getNumKids())
+      if (StmtExprNode* s1 =
+            dynamic_cast<StmtExprNode*>(stmtListNode->getNthKid(0)))
+        if (FunctionCallNode* s2 =
+              dynamic_cast<FunctionCallNode*>(s1->getExpression()))
+          if (AttrAccessNode* s3 =
+                dynamic_cast<AttrAccessNode*>(s2->getPrimary()))
+            if (s3->getName() == "<ctor>")
+              if (dynamic_cast<VariableSuperNode*>(s3->getPrimary()))
+                ctorCallFound = true;
+  } // end pattern match
+
+  if (!ctorCallFound) {
+    // clone mode must be structural, because there are no
+    // symbols at this point
+    StmtExprNode *stmt =
+      new StmtExprNode(
+        new FunctionCallNodeParser(
+            new AttrAccessNode(new VariableSuperNode, "<ctor>"),
+            TypeStringVec(),
+            util::transform_vec(superArgs.begin(), superArgs.end(),
+              ASTExpressionNode::CloneFunctor(CloneMode::Structural))));
+
+    stmtListNode->prependStatement(stmt);
+
+    // stmt gets semanticCheck called *AFTER* this invocation
+    // to registerSymbol(), so we don't need to call it manually
+    stmt->initSymbolTable(stmts->getSymbolTable());
+  }
 
   FuncDeclNode::registerSymbol(ctx);
 }
