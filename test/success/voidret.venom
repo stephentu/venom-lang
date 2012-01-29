@@ -1,0 +1,2 @@
+def a() = 10; end
+print(a());
