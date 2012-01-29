@@ -43,7 +43,8 @@ BaseSymbol::isLocalTo(const SymbolTable* query) const {
 }
 
 InstantiatedType*
-Symbol::bind(SemanticContext* ctx, TypeTranslator& t,
+Symbol::bind(SemanticContext* ctx,
+             const TypeTranslator& t,
              const InstantiatedTypeVec& params) {
   if (!type) return NULL;
   InstantiatedType* translated = t.translate(ctx, type);
@@ -130,7 +131,8 @@ ClassAttributeSymbol::cloneForTemplate(
 }
 
 InstantiatedType*
-FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+FuncSymbol::bind(SemanticContext* ctx,
+                 const TypeTranslator& t,
                  const InstantiatedTypeVec& params) {
   if (typeParams.size() != params.size()) {
     throw TypeViolationException(
@@ -139,11 +141,17 @@ FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
         util::stringify(params.size()));
   }
 
-  // add mapping to the type translator
-  TypeMap map(typeParams.size());
-  util::zip(typeParams.begin(), typeParams.end(),
-            params.begin(), map.begin());
-  t.map.insert(t.map.end(), map.begin(), map.end());
+  TypeTranslator tt = t;
+
+  // add mapping to a new type translator
+  TypeMap map;
+  map.reserve(params.size());
+  for (size_t i = 0; i < params.size(); i++) {
+    if (!typeParams[i]->equals(*params[i])) {
+      map.push_back(make_pair(typeParams[i], params[i]));
+    }
+  }
+  tt.map.insert(tt.map.end(), map.begin(), map.end());
 
   // TODO: bind params to func type when we have parameterized
   // function types
@@ -157,7 +165,7 @@ FuncSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
   InstantiatedType *ret =
     Type::FuncTypes.at(this->params.size())->instantiate(ctx, fparams);
   assert(ret);
-  return t.translate(ctx, ret);
+  return tt.translate(ctx, ret);
 }
 
 string
@@ -191,7 +199,8 @@ MethodSymbol::cloneForTemplate(
 }
 
 InstantiatedType*
-ClassSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+ClassSymbol::bind(SemanticContext* ctx,
+                  const TypeTranslator& t,
                   const InstantiatedTypeVec& params) {
   return t.translate(
       ctx,
@@ -313,7 +322,8 @@ ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
 }
 
 InstantiatedType*
-ModuleSymbol::bind(SemanticContext* ctx, TypeTranslator& t,
+ModuleSymbol::bind(SemanticContext* ctx,
+                   const TypeTranslator& t,
                    const InstantiatedTypeVec& params) {
   if (origCtx != ctx) {
     throw TypeViolationException(

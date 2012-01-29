@@ -13,6 +13,17 @@ using namespace std;
 namespace venom {
 namespace analysis {
 
+InstantiatedType*
+TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) const {
+  bool changed = false;
+  InstantiatedType* ret = translateImpl(ctx, type, changed);
+  while (changed) {
+    changed = false;
+    ret = translateImpl(ctx, ret, changed);
+  }
+  return ret;
+}
+
 struct find_functor {
   find_functor(InstantiatedType* type) : type(type) {}
   inline bool operator()(const InstantiatedTypePair& p) const {
@@ -22,14 +33,18 @@ struct find_functor {
 };
 
 InstantiatedType*
-TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) const {
+TypeTranslator::translateImpl(
+    SemanticContext* ctx, InstantiatedType* type, bool& changed) const {
   TypeMap::const_iterator it =
     find_if(map.begin(), map.end(), find_functor(type));
-  if (it != map.end()) return it->second;
+  if (it != map.end()) {
+    changed = true;
+    return it->second;
+  }
   vector<InstantiatedType*> buf(type->getParams().size());
   transform(type->getParams().begin(), type->getParams().end(),
-            buf.begin(), TypeTranslator::TranslateFunctor(ctx, this));
-  return ctx->createInstantiatedType(type->getType(), buf);
+            buf.begin(), TranslateImplFunctor(ctx, this, &changed));
+  return changed ? ctx->createInstantiatedType(type->getType(), buf) : type;
 }
 
 void
@@ -38,9 +53,29 @@ TypeTranslator::bind(InstantiatedType* type) {
     type->getType()->getClassSymbol()->getTypeParams();
   vector<InstantiatedType*> &rhs = type->getParams();
   assert(lhs.size() == rhs.size());
-  TypeMap tmap(lhs.size());
-  util::zip(lhs.begin(), lhs.end(), rhs.begin(), tmap.begin());
+  TypeMap tmap;
+  tmap.reserve(lhs.size());
+  for (size_t i = 0; i < lhs.size(); i++) {
+    if (!lhs[i]->equals(*rhs[i])) {
+      tmap.push_back(make_pair(lhs[i], rhs[i]));
+    }
+  }
   map.insert(map.end(), tmap.begin(), tmap.end());
+}
+
+void
+TypeTranslator::printStderr() const {
+  cerr << "{";
+
+  for (TypeMap::const_iterator it = map.begin();
+       it != map.end(); ++it) {
+    cerr << it->first->stringify() << " => " << it->second->stringify();
+    if ((it + 1) != map.end()) {
+      cerr << "," << endl;
+    }
+  }
+
+  cerr << "}";
 }
 
 }

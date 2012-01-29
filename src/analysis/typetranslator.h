@@ -19,8 +19,10 @@ public:
           TypeMap;
 
   TypeTranslator() {}
+
   InstantiatedType* translate(
       SemanticContext* ctx, InstantiatedType* type) const;
+
   void bind(InstantiatedType* obj);
 
   struct TranslateFunctor {
@@ -35,6 +37,33 @@ public:
   private:
     SemanticContext* ctx;
     const TypeTranslator* t;
+  };
+
+  void printStderr() const;
+
+private:
+  /**
+   * Caller must call with changed = false- this
+   * method only sets changed = true when something happens (it does
+   * not touch changed if nothing is translated)
+   */
+  InstantiatedType* translateImpl(
+      SemanticContext* ctx, InstantiatedType* type, bool& changed) const;
+
+  struct TranslateImplFunctor {
+    typedef InstantiatedType* result_type;
+    TranslateImplFunctor(SemanticContext* ctx, const TypeTranslator* t, bool* changed)
+      : ctx(ctx), t(t), changed(changed)  {}
+    inline InstantiatedType* operator()(InstantiatedType* type) const {
+      bool _changed = false;
+      InstantiatedType* ret = t->translateImpl(ctx, type, _changed);
+      *changed |= _changed;
+      return ret;
+    }
+  private:
+    SemanticContext* ctx;
+    const TypeTranslator* t;
+    bool* changed;
   };
 
 protected:

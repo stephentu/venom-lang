@@ -1,0 +1,24 @@
+class A{T}
+  attr elem::T
+  def self(elem::T) = self.elem = elem; end
+  def overrideMe() -> T = elem; end
+end
+
+class B{TT} <- A{TT}
+  def self(elem::TT) : super(elem) = end
+end
+
+class C <- B{string}
+  def self(elem::string) : super(elem) = end
+end
+
+class D{TTT} <- C
+  def self(elem::string) : super(elem) = end
+  def foo(x::TTT) = print(x); end
+  def overrideMe() -> string = super.overrideMe(); end
+end
+
+d = D{int}("foo");
+d.foo(12345);
+print(d.elem);
+print(d.overrideMe());

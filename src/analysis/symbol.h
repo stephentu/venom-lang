@@ -51,7 +51,8 @@ public:
   bool isLocalTo(const SymbolTable* query) const;
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx, TypeTranslator& t,
+    bind(SemanticContext* ctx,
+         const TypeTranslator& t,
          const InstantiatedTypeVec& params) = 0;
 
   /** Is this symbol visible to the current scope (and not
@@ -130,7 +131,8 @@ public:
   inline const ast::ASTNode* getDecl() const { return decl; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx, TypeTranslator& t,
+    bind(SemanticContext* ctx,
+         const TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
   virtual bool isObjectField() const { return false; }
@@ -208,7 +210,8 @@ public:
   inline bool isNative() const { return native; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx, TypeTranslator& t,
+    bind(SemanticContext* ctx,
+         const TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
   virtual bool isConstructor() const { return false; }
@@ -297,7 +300,8 @@ public:
   inline const Type* getType() const { return type; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx, TypeTranslator& t,
+    bind(SemanticContext* ctx,
+         const TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
   InstantiatedType* getSelfType(SemanticContext* ctx);
@@ -395,7 +399,8 @@ public:
     getOriginalContext() const { return origCtx; }
 
   virtual InstantiatedType*
-    bind(SemanticContext* ctx, TypeTranslator& t,
+    bind(SemanticContext* ctx,
+         const TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
   virtual void cloneForTemplate(
