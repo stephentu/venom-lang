@@ -1,0 +1,12 @@
+class A{T} 
+  attr x::T
+end
+
+class B{T1}
+  attr a::A{T1}
+end
+
+b = B{int}();
+b.a = A{int}();
+b.a.x = 32;
+print (b.a.x);
