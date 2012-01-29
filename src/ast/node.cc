@@ -93,13 +93,13 @@ ASTNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 // TODO: use macros and/or templates to avoid code duplication
 
 void
-ASTNode::collectInstantiatedTypes(
+ASTNode::collectSpecialized(
     SemanticContext* ctx,
     const TypeTranslator& t,
     CollectCallback& callback) {
   forchild (kid) {
     if (!kid) continue;
-    kid->collectInstantiatedTypes(ctx, t, callback);
+    kid->collectSpecialized(ctx, t, callback);
   } endfor
 }
 

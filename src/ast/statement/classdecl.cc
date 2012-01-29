@@ -21,6 +21,17 @@ using namespace venom::backend;
 namespace venom {
 namespace ast {
 
+InstantiatedType*
+ClassDeclNode::getSelfType(SemanticContext* ctx) {
+  InstantiatedType* itype = getInstantiationOfType();
+  if (itype) return itype;
+  TypeTranslator t;
+  ClassSymbol *cs = getSymbolTable()->findClassSymbol(
+        getName(), SymbolTable::NoRecurse, t);
+  assert(cs);
+  return cs->getSelfType(ctx);
+}
+
 void
 ClassDeclNode::registerSymbol(SemanticContext* ctx) {
   // check to see if this class is already defined in this scope
@@ -80,7 +91,7 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 }
 
 void
-ClassDeclNode::collectInstantiatedTypes(
+ClassDeclNode::collectSpecialized(
     SemanticContext* ctx,
     const TypeTranslator& t,
     CollectCallback& callback) {
@@ -88,13 +99,13 @@ ClassDeclNode::collectInstantiatedTypes(
   for (vector<InstantiatedType*>::iterator it = parents.begin();
        it != parents.end(); ++it) {
     InstantiatedType* itype = t.translate(ctx, *it);
-    if (itype->isSpecializedType()) callback.offer(itype);
+    if (itype->isSpecializedType()) callback.offerType(itype);
   }
   // don't recurse unless this class decl is instantiated
   VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, getSymbol());
   ClassSymbol* csym = static_cast<ClassSymbol*>(getSymbol());
   if (t.translate(ctx, csym->getSelfType(ctx))->isFullyInstantiated()) {
-    ASTNode::collectInstantiatedTypes(ctx, t, callback);
+    ASTNode::collectSpecialized(ctx, t, callback);
   }
 }
 
@@ -236,15 +247,17 @@ ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
            parents.size() == parentTypes.size());
   assert(typeParamTypes.size() == typeParams.size());
 
-  // TODO: this isn't true b/c of nested template types
-  // assert that the type translator completely instantiates
-  // this class's type
   BaseSymbol* bs = getSymbol();
   VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
   ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
   SemanticContext* ctx = getSymbolTable()->getSemanticContext();
   InstantiatedType* itype =
     t.translate(ctx, cs->getSelfType(ctx));
+
+  // TODO: assert only two cases:
+  //   1) full type instantiation
+  //   2) no instantiations
+  // In other words, no partial instantiations allowed
 
   if (itype->isSpecializedType()) {
     // instantiated type

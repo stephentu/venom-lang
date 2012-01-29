@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 
+#include <analysis/boundfunction.h>
 #include <analysis/semanticcontext.h>
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
@@ -22,6 +23,24 @@ TypeTranslator::translate(SemanticContext* ctx, InstantiatedType* type) const {
     ret = translateImpl(ctx, ret, changed);
   }
   return ret;
+}
+
+void
+TypeTranslator::translate(
+      SemanticContext* ctx,
+      BoundFunction& from,
+      BoundFunction& result) const {
+  // create a new dummy type, and then use itype's translator
+  string dummyName = "dummy$$" + util::stringify(ctx->uniqueId());
+  Type* dummyType =
+    ctx->createType(dummyName,
+                    InstantiatedType::AnyType,
+                    from.first->getTypeParams().size());
+  InstantiatedType* dummyItype =
+    dummyType->instantiate(ctx, from.first->getTypeParams());
+  InstantiatedType* translated = translate(ctx, dummyItype);
+  result.first = from.first;
+  result.second = translated->getParams();
 }
 
 struct find_functor {
@@ -52,6 +71,19 @@ TypeTranslator::bind(InstantiatedType* type) {
   vector<InstantiatedType*> &lhs =
     type->getType()->getClassSymbol()->getTypeParams();
   vector<InstantiatedType*> &rhs = type->getParams();
+  bind(lhs, rhs);
+}
+
+void
+TypeTranslator::bind(BoundFunction& func) {
+  vector<InstantiatedType*>& lhs = func.first->getTypeParams();
+  vector<InstantiatedType*>& rhs = func.second;
+  bind(lhs, rhs);
+}
+
+void
+TypeTranslator::bind(const vector<InstantiatedType*>& lhs,
+                     const vector<InstantiatedType*>& rhs) {
   assert(lhs.size() == rhs.size());
   TypeMap tmap;
   tmap.reserve(lhs.size());

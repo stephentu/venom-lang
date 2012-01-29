@@ -44,6 +44,9 @@ public:
   virtual analysis::InstantiatedType* getInstantiationOfType()
     { return NULL; }
 
+  /** Returns the NON-specialized self-type */
+  analysis::InstantiatedType* getSelfType(analysis::SemanticContext* ctx);
+
   virtual size_t getNumKids() const { return 1; }
 
   virtual ASTNode* getNthKid(size_t kid) {
@@ -66,7 +69,7 @@ public:
   virtual void semanticCheckImpl(analysis::SemanticContext* ctx,
                                  bool doRegister);
 
-  virtual void collectInstantiatedTypes(
+  virtual void collectSpecialized(
       analysis::SemanticContext* ctx,
       const analysis::TypeTranslator& t,
       CollectCallback& callback);

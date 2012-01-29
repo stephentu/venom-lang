@@ -9,6 +9,7 @@
 #include <parser/driver.h>
 #include <parser/scanner.h>
 
+#include <analysis/boundfunction.h>
 #include <analysis/semanticcontext.h>
 
 #include <ast/include.h>
@@ -109,55 +110,84 @@ struct _itype_less_cmp {
   }
 };
 
-//typedef util::directed_graph<InstantiatedType*, _itype_less_cmp>
-//        dep_graph;
-//
-//static void recursiveInsert(InstantiatedType* type, dep_graph& depGraph) {
-//  assert(type->isSpecializedType());
-//  InstantiatedType::AssertNoTypeParamPlaceholders(type);
-//
-//  if (type->getType()->getParent()->getParams().empty()) {
-//    // if this type does not depend on a parameterized type
-//    // then just add it
-//    depGraph.add_elem(type);
-//  } else {
-//    InstantiatedType* parentType = type->getParentInstantiatedType();
-//    InstantiatedType::AssertNoTypeParamPlaceholders(parentType);
-//    // add edge from type -> parent
-//    depGraph.add_edge(type, parentType);
-//
-//    // recurse on parent
-//    recursiveInsert(parentType, depGraph);
-//  }
-//}
-//
-//class collector : public ASTNode::CollectCallback {
-//public:
-//  virtual void offer(InstantiatedType* type) {
-//    assert(type->isSpecializedType());
-//    recursiveInsert(type, graph);
-//    if (type->getClassSymbolTable()->getOwner()) {
-//      TypeTranslator t;
-//      t.bind(type);
-//      type->getClassSymbolTable()->getOwner()->collectInstantiatedTypes(
-//          type->getClassSymbolTable()->getSemanticContext(),
-//          t, *this);
-//    }
-//  }
-//
-//  dep_graph graph;
-//};
+struct _itype_vec_less_cmp {
+  inline bool operator()(const vector<InstantiatedType*>& lhs,
+                         const vector<InstantiatedType*>& rhs) const {
+    if (lhs.size() != rhs.size()) return lhs.size() < rhs.size();
+    _itype_less_cmp cmp;
+    for (size_t i = 0; i < lhs.size(); i++) {
+      if (cmp(lhs[i], rhs[i])) return true;
+    }
+    return false;
+  }
+};
 
-typedef set<InstantiatedType*, _itype_less_cmp> itype_set;
+struct _bound_func_less_cmp {
+  inline bool operator()(const BoundFunction& lhs,
+                         const BoundFunction& rhs) const {
+    if (lhs.first != rhs.first) return lhs.first < rhs.first;
+    _itype_vec_less_cmp cmp;
+    return cmp(lhs.second, rhs.second);
+  }
+};
+
+typedef set<InstantiatedType*, _itype_less_cmp>
+        itype_set;
+
+typedef set<vector<InstantiatedType*>, _itype_vec_less_cmp>
+        type_params_set;
+
+typedef map<FuncSymbol*, type_params_set>
+        func_sym_map;
+
+typedef map<InstantiatedType*, func_sym_map, _itype_less_cmp>
+        itype_func_sym_map;
+
+typedef set<BoundFunction, _bound_func_less_cmp>
+        bound_function_set;
 
 class collector : public ASTNode::CollectCallback {
 public:
-  collector() : itypes(_itype_less_cmp()) {}
-  virtual void offer(InstantiatedType* type) {
+  collector() : itypes(_itype_less_cmp()), msyms(_itype_less_cmp()) {}
+  virtual void offerType(InstantiatedType* type) {
     assert(type->isSpecializedType());
     itypes.insert(type);
   }
+
+  virtual void offerFunction(BoundFunction& function) {
+    InsertIntoFuncSymMap(fsyms, function);
+  }
+
+  virtual void offerMethod(
+      InstantiatedType* klass,
+      BoundFunction& method) {
+    itype_func_sym_map::iterator it = msyms.find(klass);
+    if (it != msyms.end()) {
+      InsertIntoFuncSymMap(it->second, method);
+    } else {
+      func_sym_map m;
+      InsertIntoFuncSymMap(m, method);
+      msyms[klass] = m;
+    }
+  }
+
+private:
+  static void InsertIntoFuncSymMap(func_sym_map& fsyms,
+                                   BoundFunction& function) {
+    func_sym_map::iterator it = fsyms.find(function.first);
+    if (it != fsyms.end()) {
+      it->second.insert(function.second);
+    } else {
+      type_params_set s((_itype_vec_less_cmp()));
+      s.insert(function.second);
+      fsyms[function.first] = s;
+    }
+  }
+
+public:
   itype_set itypes;
+  func_sym_map fsyms;
+  itype_func_sym_map msyms;
 };
 
 struct _collect_types_functor {
@@ -165,7 +195,7 @@ struct _collect_types_functor {
     : callback(&callback) {}
   inline void operator()(ASTStatementNode* root, SemanticContext* ctx) const {
     TypeTranslator t;
-    root->collectInstantiatedTypes(ctx, t, *callback);
+    root->collectSpecialized(ctx, t, *callback);
   }
   inline void operator()(
       pair<ASTStatementNode*, SemanticContext*>& p) const {
@@ -241,11 +271,17 @@ unsafe_compile(const string& fname, fstream& infile,
     ctx.getProgramRoot()->getAllModules(workingSet);
 
     itype_set processedAlready((_itype_less_cmp()));
+    bound_function_set freeFuncsProcessedAlready((_bound_func_less_cmp()));
 
     // maps (parameterized type -> vector of instantiated ast nodes)
     typedef map<InstantiatedType*, vector<ClassDeclNode*>, _itype_less_cmp>
             TypeNodeMap;
     TypeNodeMap specializedTypes((_itype_less_cmp()));
+
+    // maps (func symbol -> vector of instantiated ast nodes)
+    typedef map< FuncSymbol*, vector<FuncDeclNode*> >
+            FuncNodeMap;
+    FuncNodeMap specializedFuncs;
 
     while (true) {
 
@@ -268,18 +304,38 @@ unsafe_compile(const string& fname, fstream& infile,
         }
       }
 
+      vector<BoundFunction> freeFuncsToProcess;
+      freeFuncsToProcess.reserve(callback.fsyms.size());
+      for (func_sym_map::iterator it = callback.fsyms.begin();
+           it != callback.fsyms.end(); ++it) {
+        for (type_params_set::iterator iit = it->second.begin();
+             iit != it->second.end(); ++iit) {
+          BoundFunction bf(it->first, *iit);
+          if (freeFuncsProcessedAlready.find(bf) ==
+              freeFuncsProcessedAlready.end()) {
+            freeFuncsToProcess.push_back(bf);
+          }
+        }
+      }
+
       //cerr << "typesToProcess: " <<
       //util::debug_stringify_ptr_coll(typesToProcess.begin(), end_it, ",")
       //<< endl;
 
       // if no types to process, then we are done
-      if (typesToProcess.empty()) break;
+      if (typesToProcess.empty() && freeFuncsToProcess.empty()) break;
 
       // otherwise, mark that we are processing these types
       processedAlready.insert(typesToProcess.begin(), typesToProcess.end());
 
-      vector<ClassDeclNode*> classDecls;
-      classDecls.reserve(typesToProcess.size());
+      // and mark we are processing these free functions
+      freeFuncsProcessedAlready.insert(freeFuncsToProcess.begin(),
+                                       freeFuncsToProcess.end());
+
+      vector<ASTStatementNode*> astStmts;
+      astStmts.reserve(typesToProcess.size());
+
+      // instantiate class specializations
       for (vector<InstantiatedType*>::iterator it = typesToProcess.begin();
            it != typesToProcess.end(); ++it) {
         InstantiatedType* itype = *it;
@@ -307,12 +363,12 @@ unsafe_compile(const string& fname, fstream& infile,
           instantiation->semanticCheck(scope->getSemanticContext());
           instantiation->typeCheck(scope->getSemanticContext());
 
-          // inserto type into map
+          // insert type into map
           InstantiatedType* selfType =
             itype->getClassSymbol()->getSelfType(scope->getSemanticContext());
           specializedTypes[selfType].push_back(instantiation);
 
-          classDecls.push_back(instantiation);
+          astStmts.push_back(instantiation);
         } else {
           // builtin special case - for types belonging to <prelude>, we handle
           // it separately (since it is not associated with some AST node). in
@@ -333,10 +389,46 @@ unsafe_compile(const string& fname, fstream& infile,
         }
       }
 
+      // instantiate free function specializations
+      // TODO: very similar to class specialization, should generalize
+      // code
+      for (vector<BoundFunction>::iterator it = freeFuncsToProcess.begin();
+           it != freeFuncsToProcess.end(); ++it) {
+        BoundFunction& bf = *it;
+        InstantiatedType::AssertNoTypeParamPlaceholders(bf.second);
+
+        ASTNode* node = bf.first->getFunctionSymbolTable()->getOwner();
+        if (node) {
+          // user case
+
+          VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, node);
+          FuncDeclNode *funcNode = static_cast<FuncDeclNode*>(node);
+
+          TypeTranslator t;
+          t.bind(bf);
+
+          FuncDeclNode* instantiation =
+            ASTNode::CloneForTemplate(funcNode, t);
+
+          SymbolTable* scope =
+            bf.first->getDefinedSymbolTable();
+          instantiation->initSymbolTable(scope);
+          instantiation->semanticCheck(scope->getSemanticContext());
+          instantiation->typeCheck(scope->getSemanticContext());
+
+          specializedFuncs[bf.first].push_back(instantiation);
+
+          astStmts.push_back(instantiation);
+        } else {
+          // builtin case
+          VENOM_UNIMPLEMENTED;
+        }
+      }
+
       workingSet.clear();
-      workingSet.reserve(classDecls.size());
-      for (vector<ClassDeclNode*>::iterator it = classDecls.begin();
-           it != classDecls.end(); ++it) {
+      workingSet.reserve(astStmts.size());
+      for (vector<ASTStatementNode*>::iterator it = astStmts.begin();
+           it != astStmts.end(); ++it) {
         workingSet.push_back(
             make_pair(*it, (*it)->getSymbolTable()->getSemanticContext()));
       }
@@ -365,6 +457,29 @@ unsafe_compile(const string& fname, fstream& infile,
       VENOM_ASSERT_TYPEOF_PTR(StmtListNode, owner);
       static_cast<StmtListNode*>(owner)
         ->insertSpecializedTypes(origType, astNodes);
+    }
+
+    for (FuncNodeMap::iterator it = specializedFuncs.begin();
+         it != specializedFuncs.end(); ++it) {
+      FuncSymbol* function = it->first;
+      vector<FuncDeclNode*>& astNodes = it->second;
+
+      // assert not a builtin function (is user defined)
+      assert(function->getFunctionSymbolTable()->getOwner());
+
+      ASTNode* owner =
+        function->getDefinedSymbolTable()->getOwner();
+      if (!owner) {
+        // is defined as a top level function
+        // TODO: this is kind of hacky...
+        owner = function
+            ->getDefinedSymbolTable()
+            ->getSemanticContext()
+            ->getModuleRoot();
+      }
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, owner);
+      static_cast<StmtListNode*>(owner)
+        ->insertSpecializedFunctions(function, astNodes);
     }
 
   } // end template phase

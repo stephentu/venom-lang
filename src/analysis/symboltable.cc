@@ -147,27 +147,29 @@ SymbolTable::getSymbols(vector<Symbol*>& symbols) {
 
 FuncSymbol*
 SymbolTable::createFuncSymbol(const string&                    name,
+                              SymbolTable*                     funcTable,
                               const vector<InstantiatedType*>& typeParams,
                               const vector<InstantiatedType*>& params,
                               InstantiatedType*                returnType,
                               bool                             native) {
-  FuncSymbol *sym =
-    new FuncSymbol(name, typeParams, this, params, returnType, native);
+  FuncSymbol *sym = new FuncSymbol(
+      name, typeParams, this, funcTable, params, returnType, native);
   funcContainer.insert(name, sym);
   return sym;
 }
 
 FuncSymbol*
 SymbolTable::createMethodSymbol(const string&                    name,
+                                SymbolTable*                     funcTable,
                                 const vector<InstantiatedType*>& typeParams,
                                 const vector<InstantiatedType*>& params,
                                 InstantiatedType*                returnType,
                                 ClassSymbol*                     classSymbol,
                                 bool                             overrides,
                                 bool                             native) {
-  FuncSymbol *sym =
-    new MethodSymbol(name, typeParams, this, params,
-                     returnType, native, classSymbol, overrides);
+  FuncSymbol *sym = new MethodSymbol(
+      name, typeParams, this, funcTable, params,
+      returnType, native, classSymbol, overrides);
   funcContainer.insert(name, sym);
   return sym;
 }

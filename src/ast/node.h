@@ -17,6 +17,7 @@ namespace venom {
 namespace analysis {
   /** Forward decls **/
   class BaseSymbol;
+  class BoundFunction;
   class Symbol;
   class InstantiatedType;
   class SemanticContext;
@@ -211,10 +212,14 @@ public:
   /** Templates **/
 
   struct CollectCallback {
-    virtual void offer(analysis::InstantiatedType* type) = 0;
+    virtual void offerType(analysis::InstantiatedType* type) = 0;
+    virtual void offerFunction(analysis::BoundFunction& func) = 0;
+    virtual void offerMethod(
+        analysis::InstantiatedType* klass,
+        analysis::BoundFunction& method) = 0;
   };
 
-  virtual void collectInstantiatedTypes(
+  virtual void collectSpecialized(
       analysis::SemanticContext* ctx,
       const analysis::TypeTranslator& t,
       CollectCallback& callback);

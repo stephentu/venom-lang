@@ -43,14 +43,14 @@ ParameterizedTypeString* ParameterizedTypeString::clone() {
 }
 
 void
-ASTExpressionNode::collectInstantiatedTypes(
+ASTExpressionNode::collectSpecialized(
     SemanticContext* ctx,
     const TypeTranslator& t,
     CollectCallback& callback) {
-  ASTNode::collectInstantiatedTypes(ctx, t, callback);
+  ASTNode::collectSpecialized(ctx, t, callback);
   if (staticType) {
     InstantiatedType* itype = t.translate(ctx, staticType);
-    if (itype->isSpecializedType()) callback.offer(itype);
+    if (itype->isSpecializedType()) callback.offerType(itype);
   }
 }
 

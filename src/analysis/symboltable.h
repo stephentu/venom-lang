@@ -166,6 +166,7 @@ public:
 
   FuncSymbol*
   createFuncSymbol(const std::string&                    name,
+                   SymbolTable*                          funcTable,
                    const std::vector<InstantiatedType*>& typeParams,
                    const std::vector<InstantiatedType*>& params,
                    InstantiatedType*                     returnType,
@@ -173,6 +174,7 @@ public:
 
   FuncSymbol*
   createMethodSymbol(const std::string&                    name,
+                     SymbolTable*                          funcTable,
                      const std::vector<InstantiatedType*>& typeParams,
                      const std::vector<InstantiatedType*>& params,
                      InstantiatedType*                     returnType,

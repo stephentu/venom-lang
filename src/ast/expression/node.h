@@ -82,7 +82,7 @@ public:
       typeCheckImpl(ctx, expectedType = expected, typeParams = typeParamArgs);
   }
 
-  virtual void collectInstantiatedTypes(
+  virtual void collectSpecialized(
       analysis::SemanticContext* ctx,
       const analysis::TypeTranslator& t,
       CollectCallback& callback);

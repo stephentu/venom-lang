@@ -7,10 +7,12 @@
 
 #include <ast/expression/synthetic/functioncall.h>
 
+#include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 
 #include <ast/statement/synthetic/funcdecl.h>
 
+#include <analysis/boundfunction.h>
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
@@ -111,6 +113,71 @@ FunctionCallNode::typeCheckImpl(SemanticContext*  ctx,
   }
 
   return isCtor ? classType : funcType->getParams().back();
+}
+
+void
+FunctionCallNode::collectSpecialized(
+    SemanticContext* ctx,
+    const TypeTranslator& t,
+    CollectCallback& callback) {
+  ASTExpressionNode::collectSpecialized(ctx, t, callback);
+  vector<InstantiatedType*> tparams = getTypeParams();
+  if (tparams.empty()) return;
+  if (!InstantiatedType::IsFullyInstantiated(tparams.begin(), tparams.end())) {
+    return;
+  }
+  BaseSymbol* bs = primary->getSymbol();
+  if (!bs) return;
+  if (FuncSymbol* fs = dynamic_cast<FuncSymbol*>(bs)) {
+    if (fs->isMethod()) {
+      // harder case
+
+      // Must find the source of this FuncSymbol.
+      // It is not enough to grab the class symbol from FuncSymbol,
+      // since that will not include the necessary type instantiations
+      //
+      // TODO: the fact that we have to do this reflects a poor
+      // design in the semanticCheck/typeCheck phases. We should
+      // fix this at some point
+      //
+      // Because rewriteLocal() has not run yet, there are two
+      // cases we need to worry about:
+      //
+      // 1) expr.ident(...)
+      // 2) ident(...)
+      //
+      // In case (1), we use the type of expr. In case (2), we use
+      // the self type. One last caveat- in the case of a self-type,
+      // we use the non-specialized type
+
+      InstantiatedType* itype;
+      if (AttrAccessNode* aan = dynamic_cast<AttrAccessNode*>(primary)) {
+        // case 1
+        itype = aan->getPrimary()->getStaticType();
+      } else {
+        // case 2
+        VENOM_ASSERT_TYPEOF_PTR(VariableNode, primary);
+        ClassDeclNode* cdn = getEnclosingClassNode();
+        itype = cdn->getSelfType(ctx); // non-specialized type
+      }
+      InstantiatedType::AssertNoTypeParamPlaceholders(itype);
+
+      InstantiatedType* klass;
+      MethodSymbol* msToOffer =
+        // find the original definition (w/ the original class)
+        itype->findMethodSymbol(fs->getName(), klass, true);
+      assert(msToOffer);
+      assert(klass);
+      InstantiatedType::AssertNoTypeParamPlaceholders(klass);
+
+      BoundFunction bf(msToOffer, tparams);
+      callback.offerMethod(klass, bf);
+    } else {
+      // easy case
+      BoundFunction bf(fs, tparams);
+      callback.offerFunction(bf);
+    }
+  }
 }
 
 ASTNode*
@@ -282,6 +349,9 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
         cg.emitInstU32(Instruction::CALL_VIRTUAL, slotIdx);
       }
     } else {
+      vector<InstantiatedType*> typeParams = getTypeParams();
+      BoundFunction bf(fs, typeParams);
+      fs = bf.findSpecializedFuncSymbol();
       bool create;
       size_t fidx = cg.enterFunction(fs, create);
       cg.emitInstU32(

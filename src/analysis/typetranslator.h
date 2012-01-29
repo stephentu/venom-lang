@@ -8,6 +8,7 @@ namespace venom {
 namespace analysis {
 
 /** Forward decl */
+class BoundFunction;
 class InstantiatedType;
 class SemanticContext;
 
@@ -23,7 +24,14 @@ public:
   InstantiatedType* translate(
       SemanticContext* ctx, InstantiatedType* type) const;
 
+  void translate(
+      SemanticContext* ctx,
+      BoundFunction& from,
+      BoundFunction& result) const;
+
   void bind(InstantiatedType* obj);
+
+  void bind(BoundFunction& func);
 
   struct TranslateFunctor {
     typedef InstantiatedType* result_type;
@@ -42,6 +50,9 @@ public:
   void printStderr() const;
 
 private:
+  void bind(const std::vector<InstantiatedType*>& lhs,
+            const std::vector<InstantiatedType*>& rhs);
+
   /**
    * Caller must call with changed = false- this
    * method only sets changed = true when something happens (it does

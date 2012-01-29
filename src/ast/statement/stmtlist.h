@@ -8,6 +8,12 @@
 #include <util/macros.h>
 
 namespace venom {
+
+namespace analysis {
+  /** forward decl */
+  class FuncSymbol;
+}
+
 namespace ast {
 
 /** forward decl */
@@ -74,6 +80,10 @@ public:
   void insertSpecializedTypes(
       analysis::InstantiatedType* types,
       const std::vector<ClassDeclNode*>& classDecls);
+
+  void insertSpecializedFunctions(
+      analysis::FuncSymbol* function,
+      const std::vector<FuncDeclNode*>& funcDecls);
 
   /** liftPhase should only be called on the top level
    * module statement list */

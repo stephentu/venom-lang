@@ -402,9 +402,11 @@ InstantiatedType::refify(SemanticContext* ctx) {
   return Type::RefType->instantiate(ctx, util::vec1(this));
 }
 
-MethodSymbol*
-InstantiatedType::findMethodSymbol(const string& name,
-                                   InstantiatedType*& klass) {
+void
+InstantiatedType::findMethodSymbolImpl(const string& name,
+                                       MethodSymbol*& ms,
+                                       InstantiatedType*& klass,
+                                       bool findOrigDef) {
   // search cur symtab
   TypeTranslator t;
   FuncSymbol* fs =
@@ -412,11 +414,11 @@ InstantiatedType::findMethodSymbol(const string& name,
   if (fs) {
     klass = this;
     VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);
-    return static_cast<MethodSymbol*>(fs);
-  } else {
+    ms = static_cast<MethodSymbol*>(fs);
+  }
+  if (findOrigDef || !ms) {
     InstantiatedType* ptype = getParentInstantiatedType();
-    if (!ptype) klass = NULL;
-    return ptype ? ptype->findMethodSymbol(name, klass) : NULL;
+    if (ptype) ptype->findMethodSymbolImpl(name, ms, klass, true);
   }
 }
 

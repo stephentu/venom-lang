@@ -56,6 +56,11 @@ public:
     checkAndInitTypeParams(ctx);
   }
 
+  virtual void collectSpecialized(
+      analysis::SemanticContext* ctx,
+      const analysis::TypeTranslator& t,
+      CollectCallback& callback);
+
   virtual ASTNode* rewriteAfterLift(
       const LiftContext::LiftMap& liftMap,
       const std::set<analysis::BaseSymbol*>& refs);

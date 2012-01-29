@@ -1,0 +1,8 @@
+def f{A}(a::A) -> A = 
+  print (a);
+  return a;
+end
+x = f{int}(32);
+y::int = x;
+print (y);
+f{string}("foobar");

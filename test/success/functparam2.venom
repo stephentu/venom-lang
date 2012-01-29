@@ -1,0 +1,6 @@
+class A{T}
+  def self(a::T) = print(a); end
+end
+def mkA{U}(a::U) -> A{U} = A{U}(a); end
+mkA{int}(10);
+mkA{string}("foo");

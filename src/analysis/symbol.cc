@@ -189,6 +189,7 @@ MethodSymbol::cloneForTemplate(
   TypeTranslator tt;
   table->createMethodSymbol(
       name,
+      table->newChildScope(NULL),
       getTypeParams(),
       util::transform_vec(getParams().begin(), getParams().end(),
         TypeTranslator::TranslateFunctor(ctx, t)),

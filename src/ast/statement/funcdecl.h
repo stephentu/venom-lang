@@ -76,7 +76,7 @@ public:
   virtual void typeCheck(analysis::SemanticContext* ctx,
                          analysis::InstantiatedType* expected = NULL);
 
-  virtual void collectInstantiatedTypes(
+  virtual void collectSpecialized(
       analysis::SemanticContext* ctx,
       const analysis::TypeTranslator& t,
       CollectCallback& callback);

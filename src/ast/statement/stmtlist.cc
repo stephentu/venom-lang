@@ -71,6 +71,9 @@ struct _type_less_cmp {
 
 typedef map<Type*, vector<InstantiatedType*>, _type_less_cmp> TypeMap;
 
+// TODO: reconcile insertSpecializedTypes() and insertSpecializedFunctions() -
+// they are both very similar
+
 void
 StmtListNode::insertSpecializedTypes(
     InstantiatedType* type,
@@ -97,6 +100,33 @@ StmtListNode::insertSpecializedTypes(
   stmts.insert(pos + 1, classDecls.begin(), classDecls.end()); // insert after
   for (vector<ClassDeclNode*>::const_iterator it = classDecls.begin();
        it != classDecls.end(); ++it) {
+    (*it)->setLocationContext(locCtx);
+  }
+}
+
+void
+StmtListNode::insertSpecializedFunctions(
+    FuncSymbol* function,
+    const vector<FuncDeclNode*>& funcDecls) {
+
+  ASTNode *node = function->getFunctionSymbolTable()->getOwner();
+  VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, node);
+  FuncDeclNode *funcNode = static_cast<FuncDeclNode*>(node);
+  StmtNodeVec::iterator pos =
+    find(stmts.begin(), stmts.end(), funcNode);
+  assert(pos != stmts.end());
+
+#ifndef NDEBUG
+  // assert the FuncDeclNodes actually belong here
+  for (vector<FuncDeclNode*>::const_iterator it = funcDecls.begin();
+       it != funcDecls.end(); ++it) {
+    assert((*it)->getSymbolTable() == symbols);
+  }
+#endif /* NDEBUG */
+
+  stmts.insert(pos + 1, funcDecls.begin(), funcDecls.end()); // insert after
+  for (vector<FuncDeclNode*>::const_iterator it = funcDecls.begin();
+       it != funcDecls.end(); ++it) {
     (*it)->setLocationContext(locCtx);
   }
 }

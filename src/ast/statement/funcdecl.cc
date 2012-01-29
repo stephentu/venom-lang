@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <set>
 
+#include <analysis/boundfunction.h>
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
@@ -103,7 +104,8 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
     ClassSymbol *classSymbol = static_cast<ClassSymbol*>(cdn->getSymbol());
 
     if (isCtor()) {
-      symbols->createMethodSymbol(name, typeParamTypes, itypes,
+      symbols->createMethodSymbol(name, stmts->getSymbolTable(),
+                                  typeParamTypes, itypes,
                                   retType, classSymbol);
     } else {
       // check that type-signature matches for overrides
@@ -126,11 +128,13 @@ void FuncDeclNode::registerSymbol(SemanticContext* ctx) {
               " with type " + myType->stringify());
         }
       }
-      symbols->createMethodSymbol(name, typeParamTypes, itypes,
+      symbols->createMethodSymbol(name, stmts->getSymbolTable(),
+                                  typeParamTypes, itypes,
                                   retType, classSymbol, fs);
     }
   } else {
-    symbols->createFuncSymbol(name, typeParamTypes, itypes, retType);
+    symbols->createFuncSymbol(
+        name, stmts->getSymbolTable(), typeParamTypes, itypes, retType);
   }
 
   // add parameters to block (child) symtab
@@ -159,7 +163,7 @@ FuncDeclNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 }
 
 void
-FuncDeclNode::collectInstantiatedTypes(
+FuncDeclNode::collectSpecialized(
     SemanticContext* ctx,
     const TypeTranslator& t,
     CollectCallback& callback) {
@@ -167,15 +171,15 @@ FuncDeclNode::collectInstantiatedTypes(
   // parameters
   for (ExprNodeVec::iterator it = params.begin();
        it != params.end(); ++it) {
-    (*it)->collectInstantiatedTypes(ctx, t, callback);
+    (*it)->collectSpecialized(ctx, t, callback);
   }
 
   // ret type
   InstantiatedType* retType = t.translate(ctx, getReturnType());
-  if (retType->isSpecializedType()) callback.offer(retType);
+  if (retType->isSpecializedType()) callback.offerType(retType);
 
   // stmts
-  ASTNode::collectInstantiatedTypes(ctx, t, callback);
+  ASTNode::collectSpecialized(ctx, t, callback);
 }
 
 ASTNode*
@@ -213,6 +217,10 @@ FuncDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
 void
 FuncDeclNode::codeGen(CodeGenerator& cg) {
+  // if this is a parameterized func decl, then skip code gen
+  vector<InstantiatedType*> typeParams = getTypeParams();
+  if (!typeParams.empty()) return;
+
   BaseSymbol *bs = getSymbol();
   VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
 
@@ -355,20 +363,43 @@ FuncDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   assert(typeParams.size() == typeParamTypes.size());
   assert(retType);
 
-  vector<InstantiatedType*> translated(typeParamTypes.size());
-  transform(typeParamTypes.begin(), typeParamTypes.end(), translated.begin(),
-            TypeTranslator::TranslateFunctor(
-              getSymbolTable()->getSemanticContext(), t));
-  InstantiatedType::AssertNoTypeParamPlaceholders(translated);
+  //vector<InstantiatedType*> translated(typeParamTypes.size());
+  //transform(typeParamTypes.begin(), typeParamTypes.end(), translated.begin(),
+  //          TypeTranslator::TranslateFunctor(
+  //            getSymbolTable()->getSemanticContext(), t));
+  //InstantiatedType::AssertNoTypeParamPlaceholders(translated);
 
-  return new FuncDeclNodeSynthetic(
-    // TODO: generate the proper name
-    name,
-    translated,
-    util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneTemplateFunctor(t)),
-    t.translate(getSymbolTable()->getSemanticContext(), retType),
-    stmts->cloneForTemplate(t));
+  // TODO: assert only two cases:
+  //   1) full type instantiation
+  //   2) no instantiations
+  // In other words, no partial instantiations allowed
+
+  BaseSymbol *bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+
+  BoundFunction bf(static_cast<FuncSymbol*>(bs), typeParamTypes);
+  BoundFunction translatedBF;
+  t.translate(getSymbolTable()->getSemanticContext(),
+              bf, translatedBF);
+
+  if (translatedBF.isFullyInstantiated()) {
+    InstantiatedType::AssertNoTypeParamPlaceholders(translatedBF.second);
+    return new FuncDeclNodeSynthetic(
+      translatedBF.createFuncName(),
+      InstantiatedTypeVec(),
+      util::transform_vec(params.begin(), params.end(),
+        ASTExpressionNode::CloneTemplateFunctor(t)),
+      t.translate(getSymbolTable()->getSemanticContext(), retType),
+      stmts->cloneForTemplate(t));
+  } else {
+    return new FuncDeclNodeSynthetic(
+      name,
+      typeParamTypes,
+      util::transform_vec(params.begin(), params.end(),
+        ASTExpressionNode::CloneTemplateFunctor(t)),
+      t.translate(getSymbolTable()->getSemanticContext(), retType),
+      stmts->cloneForTemplate(t));
+  }
 }
 
 void

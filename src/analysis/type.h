@@ -278,12 +278,16 @@ public:
 
   static inline void AssertNoTypeParamPlaceholders(
       const std::vector<InstantiatedType*>& types) {
-#ifndef NDEBUG
-    for (std::vector<InstantiatedType*>::const_iterator it = types.begin();
-         it != types.end(); ++it) {
-      AssertNoTypeParamPlaceholders(*it);
+    assert(IsFullyInstantiated(types.begin(), types.end()));
+  }
+
+  template <typename ForwardIterator>
+  static bool IsFullyInstantiated(ForwardIterator begin, ForwardIterator end) {
+    while (begin != end) {
+      if (!(*begin)->isFullyInstantiated()) return false;
+      ++begin;
     }
-#endif /* NDEBUG */
+    return true;
   }
 
   /** Returns true iff contains no type parameters */
@@ -363,8 +367,27 @@ public:
 
   InstantiatedType* refify(analysis::SemanticContext* ctx);
 
-  MethodSymbol*
-  findMethodSymbol(const std::string& name, InstantiatedType*& klass);
+  /**
+   * If findOrigDef is true, finds the original
+   * definition for the method symbol. If it is false,
+   * finds the first occurance from this type all the
+   * way up to type Any */
+  inline MethodSymbol*
+  findMethodSymbol(const std::string& name,
+                   InstantiatedType*& klass,
+                   bool findOrigDef = false) {
+    MethodSymbol* ms = NULL; klass = NULL;
+    findMethodSymbolImpl(name, ms, klass, findOrigDef);
+    assert(bool(ms) == bool(klass));
+    return ms;
+  }
+
+protected:
+  void
+  findMethodSymbolImpl(const std::string& name,
+                       MethodSymbol*& ms,
+                       InstantiatedType*& klass,
+                       bool findOrigDef = false);
 
 private:
   struct class_name_functor {

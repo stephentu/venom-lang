@@ -6,11 +6,13 @@
 #include <vector>
 
 #include <analysis/type.h>
+#include <util/macros.h>
 
 namespace venom {
 
 namespace ast {
   /** Forward decl */
+  class ASTNode;
   class AssignNode;
   class FuncDeclNode;
 }
@@ -184,13 +186,19 @@ protected:
   FuncSymbol(const std::string&         name,
              const InstantiatedTypeVec& typeParams,
              SymbolTable*               table,
+             SymbolTable*               funcTable,
              const InstantiatedTypeVec& params,
              InstantiatedType*          returnType,
              bool                       native)
-    : BaseSymbol(name, table), typeParams(typeParams),
+    : BaseSymbol(name, table), funcTable(funcTable), typeParams(typeParams),
       params(params), returnType(returnType), native(native) {}
 
 public:
+
+  inline SymbolTable* getFunctionSymbolTable()
+    { return funcTable; }
+  inline const SymbolTable* getFunctionSymbolTable() const
+    { return funcTable; }
 
   inline InstantiatedTypeVec&
     getTypeParams() { return typeParams; }
@@ -226,6 +234,7 @@ public:
     { VENOM_NOT_REACHED; }
 
 private:
+  SymbolTable*        funcTable;
   InstantiatedTypeVec typeParams;
   InstantiatedTypeVec params;
   InstantiatedType*   returnType;
@@ -239,12 +248,14 @@ protected:
   MethodSymbol(const std::string&         name,
                const InstantiatedTypeVec& typeParams,
                SymbolTable*               table,
+               SymbolTable*               funcTable,
                const InstantiatedTypeVec& params,
                InstantiatedType*          returnType,
                bool                       native,
                ClassSymbol*               classSymbol,
                bool                       overrides)
-    : FuncSymbol(name, typeParams, table, params, returnType, native),
+    : FuncSymbol(name, typeParams, table, funcTable,
+                params, returnType, native),
       classSymbol(classSymbol), overrides(overrides) {}
 
   virtual BaseSymbol* getThisSymbol() { return this; }
