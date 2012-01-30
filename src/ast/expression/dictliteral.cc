@@ -113,7 +113,7 @@ DictLiteralNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
             "set"),
           TypeStringVec(),
           util::vec2((*it)->key()->clone(CloneMode::Semantic),
-										 (*it)->value()->clone(CloneMode::Semantic))));
+                     (*it)->value()->clone(CloneMode::Semantic))));
   }
   exprs.push_back(new VariableNodeParser(tmpVar, NULL));
   return replace(ctx, new ExprListNode(exprs));

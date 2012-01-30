@@ -67,6 +67,9 @@ public:
     return false;
   }
 
+  virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
+                                RewriteMode mode);
+
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(BinopNode)
 
 protected:

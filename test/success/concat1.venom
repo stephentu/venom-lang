@@ -1,0 +1,5 @@
+a = "hi";
+b = ", foo";
+print (a.concat(b));
+print (a + b);
+print ("hello " + "world");

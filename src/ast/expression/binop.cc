@@ -1,4 +1,6 @@
+#include <ast/expression/attraccess.h>
 #include <ast/expression/binop.h>
+#include <ast/expression/synthetic/functioncall.h>
 
 #include <analysis/semanticcontext.h>
 #include <analysis/symbol.h>
@@ -153,14 +155,38 @@ BinopNode::typeCheckImpl(SemanticContext* ctx,
   return NULL;
 }
 
+ASTNode*
+BinopNode::rewriteLocal(SemanticContext* ctx,
+                        RewriteMode mode) {
+  ASTNode* ret = ASTExpressionNode::rewriteLocal(ctx, mode);
+  if (mode != DeSugar) return ret;
+  assert(!ret);
+
+  // handle string concat case
+  switch (type) {
+  case ADD:
+    if (left->getStaticType()->isString()) {
+      assert(right->getStaticType()->isString());
+      return replace(ctx,
+          new FunctionCallNodeSynthetic(
+            new AttrAccessNode(left->clone(CloneMode::Semantic), "concat"),
+            InstantiatedTypeVec(),
+            util::vec1(right->clone(CloneMode::Semantic))));
+    }
+    break;
+  default: break;
+  }
+  return NULL;
+}
+
 void
 BinopNode::codeGen(CodeGenerator& cg) {
   left->codeGen(cg);
   switch (type) {
   case ADD: {
     if (left->getStaticType()->isString()) {
-      // TODO: str concat
-      VENOM_UNIMPLEMENTED;
+      // is rewritten in rewriteLocal()
+      VENOM_NOT_REACHED;
     }
   }
   case SUB: case MULT: case DIV: {

@@ -37,12 +37,18 @@ FunctionDescriptor& venom_string::EqDescriptor() {
   return f;
 }
 
+FunctionDescriptor& venom_string::ConcatDescriptor() {
+  static FunctionDescriptor f((void*)concat, 2, 0x3, true);
+  return f;
+}
+
 venom_class_object& venom_string::StringClassTable() {
   static venom_class_object c(
     "string",
     sizeof(venom_string),
     0, 0x0, &InitDescriptor(), &ReleaseDescriptor(), &CtorDescriptor(),
-    util::vec3(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor()));
+    util::vec4(&StringifyDescriptor(), &HashDescriptor(), &EqDescriptor(),
+               &ConcatDescriptor()));
   return c;
 }
 

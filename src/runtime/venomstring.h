@@ -15,8 +15,8 @@ class venom_string : public venom_object,
                      public venom_self_cast<venom_string> {
 public:
   /** This constructor is not invocable from user code */
-  venom_string(const char *data, size_t n)
-    : venom_object(&StringClassTable()) { initData(data, n); }
+  venom_string(char *data, size_t n)
+    : venom_object(&StringClassTable()) { initDataNoCopy(data, n); }
 
   /** This constructor is not invocable from user code */
   venom_string(const std::string& data)
@@ -26,6 +26,15 @@ protected:
   ~venom_string() { releaseData(); }
 
 private:
+  /**
+   * Takes ownership of data.
+   * Data MUST have been created via malloc()
+   */
+  inline void initDataNoCopy(char *data, size_t n) {
+    this->data = data;
+    this->size = n;
+  }
+
   inline void initData(const char *data, size_t n) {
     this->data = (char *) malloc(n);
     this->size = n;
@@ -47,6 +56,7 @@ private:
   static backend::FunctionDescriptor& StringifyDescriptor();
   static backend::FunctionDescriptor& HashDescriptor();
   static backend::FunctionDescriptor& EqDescriptor();
+  static backend::FunctionDescriptor& ConcatDescriptor();
 
 public:
   static venom_class_object& StringClassTable();
@@ -107,6 +117,20 @@ public:
     if (this_s->size != that_s->size) return venom_ret_cell(false);
     return venom_ret_cell(
         memcmp(this_s->data, that_s->data, this_s->size) == 0);
+  }
+
+  static venom_ret_cell
+  concat(backend::ExecutionContext* ctx, venom_cell self, venom_cell that) {
+    assert(that.asRawObject()->getClassObj() == &StringClassTable());
+    venom_string *this_s = asSelf(self);
+    venom_string *that_s = asSelf(that);
+    size_t total = this_s->size + that_s->size;
+    char *data = (char *) malloc(total);
+    // TODO: check data
+    assert(data);
+    memcpy(data, this_s->data, this_s->size);
+    memcpy(data + this_s->size, that_s->data, that_s->size);
+    return venom_ret_cell(new venom_string(data, total));
   }
 
 private:

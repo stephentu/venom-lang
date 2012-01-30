@@ -167,7 +167,14 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                    InstantiatedTypeVec(),
                                    InstantiatedType::VoidType,
                                    stringClassSym, NULL, true);
+
   _IMPL_OVERRIDE_ALL(stringClassSym);
+
+  stringSymTab->createMethodSymbol("concat", stringSymTab->newChildScopeNoNode(),
+                                   InstantiatedTypeVec(),
+                                   util::vec1(InstantiatedType::StringType),
+                                   InstantiatedType::StringType, stringClassSym,
+                                   NULL, true);
 
   // boxed primitives, with hidden names
   SymbolTable *IntSymTab = root->newChildScopeNoNode();

@@ -243,6 +243,7 @@ public:
    */
   enum RewriteMode {
     DeSugar,       // rewrite list/dict literals into lower-level ops
+                   // rewrite + -> concat for strings
 
     CanonicalRefs, // rewrite module level vars into attr access +
                    // un-qualified attrs x into self.x
