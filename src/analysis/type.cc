@@ -314,11 +314,11 @@ bool InstantiatedType::equals(const InstantiatedType& other) const {
   return it == params.end();
 }
 
-bool InstantiatedType::isSubtypeOf(const InstantiatedType& other) const {
-  const InstantiatedType* cur = this;
+bool InstantiatedType::isSubtypeOf(const InstantiatedType& other) {
+  InstantiatedType* cur = this;
   while (cur) {
     if (cur->equals(other)) return true;
-    cur = cur->getType()->getParent();
+    cur = cur->getParentInstantiatedType();
   }
   return false;
 }
@@ -327,7 +327,7 @@ static void FillStack(stack<InstantiatedType*>& st, InstantiatedType* type) {
   InstantiatedType *cur = type;
   while (cur) {
     st.push(cur);
-    cur = cur->getType()->getParent();
+    cur = cur->getParentInstantiatedType();
   }
 }
 

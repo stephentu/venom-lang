@@ -281,6 +281,11 @@ private:
   /** Helper for enterClass() */
   analysis::ClassSymbol* resolveToSymbol(analysis::InstantiatedType* klass);
 
+  /** Helper for createObjectCode() */
+  void addSymbolIfCreated(
+      std::vector<analysis::ClassSymbol*>& classSymsToProcess,
+      analysis::InstantiatedType* itype);
+
   /**
    * Create object code representation.
    * Note this can only be called *once*, and doing so gives ownership
@@ -289,7 +294,8 @@ private:
   ObjectCode* createObjectCode();
 
   /** helper for createObjectCode() */
-  size_t getClassRefIndexFromType(analysis::InstantiatedType* type);
+  size_t getClassRefIndexFromType(
+      analysis::InstantiatedType* type, bool& create);
 
   /** helper for createClass() */
   bool isLocalSymbol(const analysis::BaseSymbol* symbol) const;

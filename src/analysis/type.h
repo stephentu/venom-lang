@@ -352,7 +352,7 @@ public:
   bool equals(const InstantiatedType& other) const;
 
   /** this <: other ? */
-  bool isSubtypeOf(const InstantiatedType& other) const;
+  bool isSubtypeOf(const InstantiatedType& other);
 
   /** Find the most common type between this type and other */
   InstantiatedType* mostCommonType(InstantiatedType* other);

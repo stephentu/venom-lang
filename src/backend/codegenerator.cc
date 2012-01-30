@@ -243,14 +243,14 @@ static inline uint32_t PrimitiveTypeToIndex(Type* type) {
 }
 
 size_t
-CodeGenerator::getClassRefIndexFromType(InstantiatedType* type) {
+CodeGenerator::getClassRefIndexFromType(InstantiatedType* type, bool& create) {
   VENOM_ASSERT_NOT_NULL(type);
 
   // check if special primitive
   if (type->isPrimitive() || type->isVoid()) {
+    create = false;
     return PrimitiveTypeToIndex(type->getType());
   } else {
-    bool create;
     return enterClass(type, create);
   }
 }
@@ -272,10 +272,65 @@ CodeGenerator::createObjectCodeAndSet(analysis::SemanticContext* ctx) {
   ctx->setObjectCode(createObjectCode());
 }
 
+void
+CodeGenerator::addSymbolIfCreated(
+    vector<ClassSymbol*>& classSymsToProcess,
+    InstantiatedType* itype) {
+  bool create;
+  getClassRefIndexFromType(itype, create);
+  if (create) {
+    classSymsToProcess.push_back(itype->findSpecializedClassSymbol());
+  }
+}
+
 ObjectCode*
 CodeGenerator::createObjectCode() {
   assert(ownership);
   ownership = false;
+
+  // go once over all classes and functions, and enter all dependent types
+  // we do this before we build class/func sigs, so that we don't discover
+  // *new* dependent types during construction. we do this iteratively
+  // until convergence (until we have discovered the transitive closure
+  // of our dependent types)
+
+  vector<ClassSymbol*> classSymsToProcess
+    (class_pool.vec.begin(), class_pool.vec.end());
+  vector<FuncSymbol*> funcSymsToProcess
+    (func_pool.vec.begin(), func_pool.vec.end());
+  while (!classSymsToProcess.empty() || !funcSymsToProcess.empty()) {
+    // don't use iterator here, because the loop possibly
+    // invalidates iterators (via insertion)
+    for (size_t i = 0; i < classSymsToProcess.size(); i++) {
+      ClassSymbol *csym = classSymsToProcess[i];
+      assert(csym->isCodeGeneratable());
+      vector<Symbol*> attributes;
+      vector<FuncSymbol*> methods;
+      csym->linearizedOrder(attributes, methods);
+      for (vector<Symbol*>::iterator it = attributes.begin();
+           it != attributes.end(); ++it) {
+        addSymbolIfCreated(classSymsToProcess, (*it)->getInstantiatedType());
+      }
+      for (vector<FuncSymbol*>::iterator it = methods.begin();
+           it != methods.end(); ++it) {
+        bool create;
+        enterFunction(*it, create);
+        if (create) funcSymsToProcess.push_back(*it);
+      }
+    }
+    classSymsToProcess.clear();
+
+    for (vector<FuncSymbol*>::iterator it = funcSymsToProcess.begin();
+         it != funcSymsToProcess.end(); ++it) {
+      FuncSymbol *fsym = *it;
+      for (vector<InstantiatedType*>::iterator it = fsym->getParams().begin();
+           it != fsym->getParams().end(); ++it) {
+        addSymbolIfCreated(classSymsToProcess, *it);
+      }
+      addSymbolIfCreated(classSymsToProcess, fsym->getReturnType());
+    }
+    funcSymsToProcess.clear();
+  }
 
   // build the class signature pool
   vector<ClassSignature> classSigs;
@@ -294,9 +349,11 @@ CodeGenerator::createObjectCode() {
     attrVec.reserve(attributes.size());
     for (vector<Symbol*>::iterator it = attributes.begin();
          it != attributes.end(); ++it) {
+      bool create;
       attrVec.push_back(
           getClassRefIndexFromType(
-            (*it)->getInstantiatedType()));
+            (*it)->getInstantiatedType(), create));
+      assert(!create);
     }
 
     vector<uint32_t> methVec;
@@ -340,25 +397,31 @@ CodeGenerator::createObjectCode() {
     paramVec.reserve(fsym->getParams().size());
     for (vector<InstantiatedType*>::iterator it = fsym->getParams().begin();
          it != fsym->getParams().end(); ++it) {
+      bool create;
       paramVec.push_back(
-          getClassRefIndexFromType(*it));
+          getClassRefIndexFromType(*it, create));
+      assert(!create);
     }
 
     if (MethodSymbol* ms = dynamic_cast<MethodSymbol*>(fsym)) {
+      bool create;
       funcSigs.push_back(
           FunctionSignature(
             ms->getClassSymbol()->getName(),
             fsym->getName(),
             paramVec,
-            getClassRefIndexFromType(fsym->getReturnType()),
+            getClassRefIndexFromType(fsym->getReturnType(), create),
             funcIdxToLabels[idx]->index));
+      assert(!create);
     } else {
+      bool create;
       funcSigs.push_back(
           FunctionSignature(
             fsym->getName(),
             paramVec,
-            getClassRefIndexFromType(fsym->getReturnType()),
+            getClassRefIndexFromType(fsym->getReturnType(), create),
             funcIdxToLabels[idx]->index));
+      assert(!create);
     }
   }
 

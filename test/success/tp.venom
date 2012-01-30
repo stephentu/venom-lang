@@ -9,15 +9,27 @@ class tuple{A, B}
   def getSecond() -> B = self.second; end
 end
 
+def printTuple{A, B}(t::tuple{A, B}) =
+  print(t.getFirst());
+  print(t.getSecond());
+end
+
+tupleVar::tuple{int, string} = Nil;
+
 class s <- tuple{int, string}
   def self(a::int, b::string) : super(a, b) = end
   def addAndGet1(x::int) -> int = 
     return first + x;
   end
   def concatAndGet2(x::string) -> string = 
-    return second + x;
+    return second;
   end
 end
+
+obj = s(10, "foo");
+print(obj.addAndGet1(10));
+printTuple{int, string}(obj);
+tupleVar = obj;
 
 class t{V} <- tuple{int, V}
   def self(a::int, b::V) : super(a, b) = end
@@ -29,6 +41,6 @@ def makeTuple{A, B}(a::A, b::B) -> tuple{A, B} =
 end
 
 x = t{int}(10, 10);
-y::tuple{int, string} = makeTuple{int, string}(10, "foo");
+printTuple{int, int}(x);
 z = makeTuple{int, int}(10, 20);
-print (z);
+printTuple{int, int}(z);

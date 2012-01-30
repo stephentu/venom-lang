@@ -1,0 +1,14 @@
+class TwoParams{A, B}
+  attr a::A
+  attr b::B
+end
+class OneParam{V} <- TwoParams{int, V}
+end
+def printer{X, Y}(obj::TwoParams{X, Y}) =
+  print(obj.a);
+  print(obj.b);
+end
+x = OneParam{string}();
+x.a = 10;
+x.b = "hello";
+printer{int, string}(x);
