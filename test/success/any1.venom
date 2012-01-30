@@ -1,2 +1,12 @@
 a::any = 10;
 print (a);
+
+class Foo 
+  attr x::any
+  def self(x::int) =
+    self.x = x;
+  end
+end
+f = Foo(32);
+a = f.x;
+print (a);

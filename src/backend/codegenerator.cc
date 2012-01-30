@@ -154,6 +154,9 @@ CodeGenerator::enterExternalClass(InstantiatedType* klass, bool& create) {
 
 size_t
 CodeGenerator::enterClass(InstantiatedType* klass, bool& create) {
+  // any type is equivalent to object
+  if (klass->isAny()) klass = InstantiatedType::ObjectType;
+
   ClassSymbol* symbol = resolveToSymbol(klass);
   return isLocalSymbol(symbol) ?
      enterLocalClass(symbol, create) : enterExternalClass(symbol, create);
