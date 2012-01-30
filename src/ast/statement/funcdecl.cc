@@ -184,6 +184,8 @@ FuncDeclNode::collectSpecialized(
 
 ASTNode*
 FuncDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
+  assert(!isTypeParameterized());
+
   // recurse on children first
   ASTNode *ret = ASTNode::rewriteLocal(ctx, mode);
   VENOM_ASSERT_NULL(ret);
@@ -217,9 +219,7 @@ FuncDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
 void
 FuncDeclNode::codeGen(CodeGenerator& cg) {
-  // if this is a parameterized func decl, then skip code gen
-  vector<InstantiatedType*> typeParams = getTypeParams();
-  if (!typeParams.empty()) return;
+  assert(!isTypeParameterized());
 
   BaseSymbol *bs = getSymbol();
   VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
@@ -267,6 +267,45 @@ FuncDeclNode::codeGen(CodeGenerator& cg) {
   stmts->codeGen(cg);
 }
 
+ASTStatementNode*
+FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
+  assert(!isTypeParameterized());
+
+  // clone the stmts, then insert the lifted refs as
+  // parameters to this function. also rename it.
+  ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
+
+  // ref params
+  ExprNodeVec newParams;
+  newParams.reserve(ctx.refs.vec.size() + params.size());
+  for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
+       it != ctx.refs.vec.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+    assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
+    newParams.push_back(
+        new VariableNodeSynthetic(
+          ctx.refParamName(static_cast<Symbol*>(*it)),
+          static_cast<Symbol*>(*it)->getInstantiatedType()->refify(
+            ctx.definedIn->getSemanticContext())));
+  }
+
+  // regular params
+  // right now, we use clone template (w/ an empty translator),
+  // since it does exactly what we want...
+  TypeTranslator t;
+  newParams.resize(newParams.size() + params.size());
+  transform(params.begin(), params.end(),
+            newParams.begin() + ctx.refs.vec.size(),
+            ASTExpressionNode::CloneTemplateFunctor(t));
+
+  return new FuncDeclNodeSynthetic(
+      ctx.liftedName,
+      InstantiatedTypeVec(),
+      newParams,
+      getReturnType(),
+      stmtsClone);
+}
+
 void
 FuncDeclNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
   // type params
@@ -277,7 +316,7 @@ FuncDeclNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
     typeParamTypes.push_back(type->instantiate(ctx));
     stmts->getSymbolTable()->createClassSymbol(
         typeParams[pos],
-        ctx->getRootSymbolTable()->newChildScope(NULL),
+        ctx->getRootSymbolTable()->newChildScopeNoNode(),
         type);
   }
 }
@@ -317,44 +356,7 @@ FuncDeclNodeParser::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 FuncDeclNodeParser::cloneForLiftImpl(LiftContext& ctx) {
-  // assert that we have already registered this symbol
-  assert(typeParams.size() == typeParamTypes.size());
-  assert(retType);
-
-  // clone the stmts, then insert the lifted refs as
-  // parameters to this function. also rename it.
-
-  ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
-
-  // ref params
-  ExprNodeVec newParams;
-  newParams.reserve(ctx.refs.vec.size() + params.size());
-  for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
-       it != ctx.refs.vec.end(); ++it) {
-    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
-    assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
-    newParams.push_back(
-        new VariableNodeSynthetic(
-          ctx.refParamName(static_cast<Symbol*>(*it)),
-          static_cast<Symbol*>(*it)->getInstantiatedType()->refify(
-            ctx.definedIn->getSemanticContext())));
-  }
-
-  // regular params
-  // right now, we use clone template (w/ an empty translator),
-  // since it does exactly what we want...
-  TypeTranslator t;
-  newParams.resize(newParams.size() + params.size());
-  transform(params.begin(), params.end(),
-            newParams.begin() + ctx.refs.vec.size(),
-            ASTExpressionNode::CloneTemplateFunctor(t));
-
-  return new FuncDeclNodeSynthetic(
-      ctx.liftedName,
-      typeParamTypes,
-      newParams,
-      retType,
-      stmtsClone);
+  return cloneForLiftImplHelper(ctx);
 }
 
 FuncDeclNode*
@@ -362,12 +364,6 @@ FuncDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   // assert that we have already registered this symbol
   assert(typeParams.size() == typeParamTypes.size());
   assert(retType);
-
-  //vector<InstantiatedType*> translated(typeParamTypes.size());
-  //transform(typeParamTypes.begin(), typeParamTypes.end(), translated.begin(),
-  //          TypeTranslator::TranslateFunctor(
-  //            getSymbolTable()->getSemanticContext(), t));
-  //InstantiatedType::AssertNoTypeParamPlaceholders(translated);
 
   // TODO: assert only two cases:
   //   1) full type instantiation

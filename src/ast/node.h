@@ -224,6 +224,8 @@ public:
       const analysis::TypeTranslator& t,
       CollectCallback& callback);
 
+  virtual bool isTypeParameterized() const { return false; }
+
   /** Tree re-writing **/
 
   virtual void collectNonLocalRefs(LiftContext& ctx);

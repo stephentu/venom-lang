@@ -35,7 +35,7 @@ ClassDeclNodeSynthetic::checkAndInitTypeParams(SemanticContext* ctx) {
     VENOM_ASSERT_TYPEOF_PTR(TypeParamType, typeParamTypes[pos]->getType());
     stmts->getSymbolTable()->createClassSymbol(
         typeParamTypes[pos]->getType()->getName(),
-        ctx->getRootSymbolTable()->newChildScope(NULL),
+        ctx->getRootSymbolTable()->newChildScopeNoNode(),
         typeParamTypes[pos]->getType());
   }
 }

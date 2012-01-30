@@ -37,7 +37,7 @@ class SymbolTable {
 private:
   /** Create a child symbol table */
   SymbolTable(SemanticContext* ctx, SymbolTable* primaryParent,
-              ast::ASTNode* owner);
+              ast::ASTNode* owner, ast::ASTNode* node);
 
   inline void addClassParent(InstantiatedType* parent,
                              const TypeMap& typeMap) {
@@ -83,7 +83,7 @@ private:
 public:
   /** Create the root symbol table. Does *NOT* take ownership of ctx */
   SymbolTable(SemanticContext *ctx)
-    : ctx(ctx), owner(NULL), primaryParent(NULL) {}
+    : ctx(ctx), owner(NULL), node(NULL), primaryParent(NULL) {}
 
   ~SymbolTable() {
     // delete children
@@ -96,23 +96,40 @@ public:
   inline ast::ASTNode* getOwner() { return owner; }
   inline const ast::ASTNode* getOwner() const { return owner; }
 
+  inline ast::ASTNode* getNode() { return node; }
+  inline const ast::ASTNode* getNode() const { return node; }
+
   inline SymbolTable* getPrimaryParent() { return primaryParent; }
   inline const SymbolTable* getPrimaryParent() const { return primaryParent; }
 
   inline const std::vector<InstantiatedType*>& getClassParents() const
     { return classParents; }
 
-  inline SymbolTable*
-  newChildScope(SemanticContext* ctx, ast::ASTNode* owner) {
-    SymbolTable *child = new SymbolTable(ctx, this, owner);
+  inline SymbolTable* newChildScope(SemanticContext* ctx) {
+    return newChildScope(ctx, NULL, NULL);
+  }
+
+  inline SymbolTable* newChildScope(ast::ASTNode* owner, ast::ASTNode* node) {
+    // the one case which is not allowed, is owner != NULL with node == NULL
+    assert(!owner || node);
+    return newChildScope(ctx, owner, node);
+  }
+
+  /** For builtins to use */
+  inline SymbolTable* newChildScopeNoNode() {
+    return newChildScope(NULL, NULL);
+  }
+
+private:
+  inline SymbolTable* newChildScope(SemanticContext* ctx,
+                                    ast::ASTNode* owner,
+                                    ast::ASTNode* node) {
+    SymbolTable *child = new SymbolTable(ctx, this, owner, node);
     children.push_back(child);
     return child;
   }
 
-  inline SymbolTable* newChildScope(ast::ASTNode* owner) {
-    return newChildScope(ctx, owner);
-  }
-
+public:
   enum RecurseMode {
     NoRecurse,
     AllowCurrentScope,
@@ -228,6 +245,10 @@ private:
 
   /** The AST node which "owns" this scope. Can be NULL if none */
   ast::ASTNode*             owner;
+
+  /** The AST node which defines this scope.
+   * Is the child of owner (if owner is not NULL) */
+  ast::ASTNode*             node;
 
   /** WARNING: while a SymbolTable can have multiple parents, only
    * one of its parents can have it as a child. This allows us to

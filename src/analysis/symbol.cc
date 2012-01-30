@@ -189,7 +189,7 @@ MethodSymbol::cloneForTemplate(
   TypeTranslator tt;
   table->createMethodSymbol(
       name,
-      table->newChildScope(NULL),
+      table->newChildScopeNoNode(),
       getTypeParams(),
       util::transform_vec(getParams().begin(), getParams().end(),
         TypeTranslator::TranslateFunctor(ctx, t)),
@@ -299,7 +299,7 @@ ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
 
   Type* type = ctx->createType(
       concreteType->createClassName(), parentType, 0);
-  SymbolTable* newTable = getDefinedSymbolTable()->newChildScope(NULL);
+  SymbolTable* newTable = getDefinedSymbolTable()->newChildScopeNoNode();
   ClassSymbol* newSym = getDefinedSymbolTable()->createSpecializedClassSymbol(
       newTable, concreteType, type);
 

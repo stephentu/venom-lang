@@ -72,7 +72,7 @@ void ASTNode::initSymbolTable(SymbolTable* symbols) {
   forchild (kid) {
     if (!kid) continue;
     if (needsNewScope(i)) {
-      kid->initSymbolTable(symbols->newChildScope(this));
+      kid->initSymbolTable(symbols->newChildScope(this, kid));
     } else {
       kid->initSymbolTable(symbols);
     }
@@ -116,7 +116,7 @@ ASTNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
                           const set<BaseSymbol*>& refs) {
   for (size_t i = 0; i < getNumKids(); i++) {
     ASTNode* kid = getNthKid(i);
-    if (!kid) continue;
+    if (!kid || kid->isTypeParameterized()) continue;
     ASTNode* rep = kid->rewriteAfterLift(liftMap, refs);
     if (rep) {
       assert(rep != kid);
@@ -131,7 +131,7 @@ ASTNode*
 ASTNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
   for (size_t i = 0; i < getNumKids(); i++) {
     ASTNode* kid = getNthKid(i);
-    if (!kid) continue;
+    if (!kid || kid->isTypeParameterized()) continue;
     ASTNode* rep = kid->rewriteLocal(ctx, mode);
     if (rep) {
       assert(rep != kid);
@@ -160,6 +160,7 @@ ASTNode::cloneForTemplate(const TypeTranslator& t) {
 
 ASTNode*
 ASTNode::cloneForLift(LiftContext& ctx) {
+  assert(!isTypeParameterized());
   ASTNode* copy = cloneForLiftImpl(ctx);
   assert(copy);
   cloneSetState(copy);
@@ -169,7 +170,7 @@ ASTNode::cloneForLift(LiftContext& ctx) {
 void
 ASTNode::codeGen(CodeGenerator& cg) {
   forchild (kid) {
-    if (!kid) continue;
+    if (!kid || kid->isTypeParameterized()) continue;
     kid->codeGen(cg);
   } endfor
 }

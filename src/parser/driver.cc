@@ -93,7 +93,8 @@ unsafe_compile_module(const string& fname, fstream& infile,
     pctx.stmts->print(cerr);
     cerr << endl;
   }
-  pctx.stmts->initSymbolTable(ctx.getRootSymbolTable()->newChildScope(NULL));
+  pctx.stmts->initSymbolTable(
+      ctx.getRootSymbolTable()->newChildScope(NULL, pctx.stmts));
   pctx.stmts->semanticCheck(&ctx);
   pctx.stmts->typeCheck(&ctx);
   if (global_compile_opts.print_ast) {
@@ -213,6 +214,15 @@ struct _collect_types_functor {
     } \
   } while (0)
 
+struct _print_functor {
+  _print_functor(const char* name) : name(name) {}
+  inline void operator()(ASTStatementNode* root,
+                         SemanticContext* ctx) const {
+    _IMPL_PRINT_AST(root, name);
+  }
+  const char* name;
+};
+
 struct _lift_functor {
   inline void operator()(ASTStatementNode* root,
                          SemanticContext* ctx) const {
@@ -290,9 +300,6 @@ unsafe_compile(const string& fname, fstream& infile,
       for_each(workingSet.begin(), workingSet.end(),
                _collect_types_functor(callback));
 
-      //cerr << "collected: " <<
-      //util::debug_stringify_ptr_coll(types.begin(), types.end(), ",") << endl;
-
       // filter out the ones already processed
       // (necessary to prevent infinite loops)
       vector<InstantiatedType*> typesToProcess;
@@ -317,10 +324,6 @@ unsafe_compile(const string& fname, fstream& infile,
           }
         }
       }
-
-      //cerr << "typesToProcess: " <<
-      //util::debug_stringify_ptr_coll(typesToProcess.begin(), end_it, ",")
-      //<< endl;
 
       // if no types to process, then we are done
       if (typesToProcess.empty() && freeFuncsToProcess.empty()) break;
@@ -444,18 +447,10 @@ unsafe_compile(const string& fname, fstream& infile,
       // assert not a builtin class (is user defined)
       assert(origType->getClassSymbolTable()->getOwner());
 
-      ASTNode* owner =
-        origType->getClassSymbol()->getDefinedSymbolTable()->getOwner();
-      if (!owner) {
-        // is defined as a top level class
-        // TODO: this is kind of hacky...
-        owner = origType
-            ->getClassSymbolTable()
-            ->getSemanticContext()
-            ->getModuleRoot();
-      }
-      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, owner);
-      static_cast<StmtListNode*>(owner)
+      ASTNode* node =
+        origType->getClassSymbol()->getDefinedSymbolTable()->getNode();
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, node);
+      static_cast<StmtListNode*>(node)
         ->insertSpecializedTypes(origType, astNodes);
     }
 
@@ -467,20 +462,14 @@ unsafe_compile(const string& fname, fstream& infile,
       // assert not a builtin function (is user defined)
       assert(function->getFunctionSymbolTable()->getOwner());
 
-      ASTNode* owner =
-        function->getDefinedSymbolTable()->getOwner();
-      if (!owner) {
-        // is defined as a top level function
-        // TODO: this is kind of hacky...
-        owner = function
-            ->getDefinedSymbolTable()
-            ->getSemanticContext()
-            ->getModuleRoot();
-      }
-      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, owner);
-      static_cast<StmtListNode*>(owner)
+      ASTNode* node =
+        function->getDefinedSymbolTable()->getNode();
+      VENOM_ASSERT_TYPEOF_PTR(StmtListNode, node);
+      static_cast<StmtListNode*>(node)
         ->insertSpecializedFunctions(function, astNodes);
     }
+
+    ctx.getProgramRoot()->forEachModule(_print_functor("specialization"));
 
   } // end template phase
 

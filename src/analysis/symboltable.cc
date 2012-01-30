@@ -14,9 +14,10 @@ namespace venom {
 namespace analysis {
 
 SymbolTable::SymbolTable(SemanticContext* ctx, SymbolTable* primaryParent,
-                         ASTNode* owner)
+                         ASTNode* owner, ASTNode* node)
   : ctx(ctx),
     owner(owner),
+    node(node),
     primaryParent(primaryParent),
     symbolContainer(
         primaryParent ?

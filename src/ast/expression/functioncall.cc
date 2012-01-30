@@ -189,7 +189,15 @@ FunctionCallNode::rewriteAfterLift(
   VENOM_ASSERT_NULL(retVal);
 
   BaseSymbol* bs = primary->getSymbol();
-  LiftContext::LiftMap::const_iterator it = liftMap.find(bs);
+  // TODO: this will probably need to be handled
+  // differently when we implement lifting of class nodes
+  if (dynamic_cast<ClassSymbol*>(bs)) return NULL;
+  VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
+  FuncSymbol* fs = static_cast<FuncSymbol*>(bs);
+  BoundFunction bf(fs, getTypeParams());
+  fs = bf.findSpecializedFuncSymbol();
+
+  LiftContext::LiftMap::const_iterator it = liftMap.find(fs);
   if (it == liftMap.end()) return NULL;
 
   const vector<BaseSymbol*>& liftedParams = it->second.first;
@@ -213,9 +221,12 @@ FunctionCallNode::rewriteAfterLift(
   }
 
   // the regular params
+  ExprNodeVec clonedExprs(args.size());
   transform(args.begin(), args.end(),
-            liftedParamExprs.end(),
+            clonedExprs.begin(),
 						ASTExpressionNode::CloneFunctor(CloneMode::Structural));
+  liftedParamExprs.insert(liftedParamExprs.end(),
+                          clonedExprs.begin(), clonedExprs.end());
 
   // replace calling the rewritten function
   return replace(
@@ -224,7 +235,7 @@ FunctionCallNode::rewriteAfterLift(
         // don't need a SymbolNode here, b/c the name is guaranteed to be
         // unique (since it is a lifted name)
         new VariableNodeParser(fdn->getName(), NULL),
-        getTypeParams(),
+        InstantiatedTypeVec(),
         liftedParamExprs));
 }
 

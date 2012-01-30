@@ -48,33 +48,33 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // any is the root of the class hierarchy. primitive types derive from any
   // assigning a primitive to an any type, however, causes boxing of the
   // primitive
-  root->createClassSymbol("any", root->newChildScope(NULL), Type::AnyType);
+  root->createClassSymbol("any", root->newChildScopeNoNode(), Type::AnyType);
 
   // primitives
-  root->createClassSymbol("int", root->newChildScope(NULL), Type::IntType);
-  root->createClassSymbol("bool", root->newChildScope(NULL), Type::BoolType);
-  root->createClassSymbol("float", root->newChildScope(NULL), Type::FloatType);
+  root->createClassSymbol("int", root->newChildScopeNoNode(), Type::IntType);
+  root->createClassSymbol("bool", root->newChildScopeNoNode(), Type::BoolType);
+  root->createClassSymbol("float", root->newChildScopeNoNode(), Type::FloatType);
 
   // void exists so we can give everything a return type
-  root->createClassSymbol("void", root->newChildScope(NULL), Type::VoidType);
+  root->createClassSymbol("void", root->newChildScopeNoNode(), Type::VoidType);
 
   // object must come before all its children
-  SymbolTable* objSymTab = root->newChildScope(NULL);
+  SymbolTable* objSymTab = root->newChildScopeNoNode();
   ClassSymbol *objectClassSym =
     root->createClassSymbol("object", objSymTab, Type::ObjectType);
-  objSymTab->createMethodSymbol("<ctor>", objSymTab->newChildScope(NULL),
+  objSymTab->createMethodSymbol("<ctor>", objSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 InstantiatedTypeVec(),
                                 InstantiatedType::VoidType,
                                 objectClassSym, NULL, true);
   FuncSymbol *objStringifyFuncSym =
-    objSymTab->createMethodSymbol("stringify", objSymTab->newChildScope(NULL),
+    objSymTab->createMethodSymbol("stringify", objSymTab->newChildScopeNoNode(),
                                   InstantiatedTypeVec(),
                                   InstantiatedTypeVec(),
                                   InstantiatedType::StringType,
                                   objectClassSym, NULL, true);
   FuncSymbol *objHashFuncSym =
-    objSymTab->createMethodSymbol("hash", objSymTab->newChildScope(NULL),
+    objSymTab->createMethodSymbol("hash", objSymTab->newChildScopeNoNode(),
                                   InstantiatedTypeVec(),
                                   InstantiatedTypeVec(),
                                   InstantiatedType::IntType,
@@ -85,7 +85,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   // Equal{A} to be allowed as a key in a map. But our type-system
   // is currently not mature enough to support this.
   FuncSymbol *objEqFuncSym =
-    objSymTab->createMethodSymbol("eq", objSymTab->newChildScope(NULL),
+    objSymTab->createMethodSymbol("eq", objSymTab->newChildScopeNoNode(),
                                   InstantiatedTypeVec(),
                                   util::vec1(InstantiatedType::ObjectType),
                                   InstantiatedType::BoolType,
@@ -94,7 +94,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 #define _IMPL_OVERRIDE_STRINGIFY(classSym) \
   do { \
     (classSym)->getClassSymbolTable()->createMethodSymbol( \
-        "stringify", (classSym)->getClassSymbolTable()->newChildScope(NULL), \
+        "stringify", (classSym)->getClassSymbolTable()->newChildScopeNoNode(), \
         InstantiatedTypeVec(), \
         InstantiatedTypeVec(), \
         InstantiatedType::StringType, \
@@ -104,7 +104,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 #define _IMPL_OVERRIDE_HASH(classSym) \
   do { \
     (classSym)->getClassSymbolTable()->createMethodSymbol( \
-        "hash", (classSym)->getClassSymbolTable()->newChildScope(NULL), \
+        "hash", (classSym)->getClassSymbolTable()->newChildScopeNoNode(), \
         InstantiatedTypeVec(), \
         InstantiatedTypeVec(), \
         InstantiatedType::IntType, \
@@ -114,7 +114,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 #define _IMPL_OVERRIDE_EQ(classSym) \
   do { \
     (classSym)->getClassSymbolTable()->createMethodSymbol( \
-        "eq", (classSym)->getClassSymbolTable()->newChildScope(NULL), \
+        "eq", (classSym)->getClassSymbolTable()->newChildScopeNoNode(), \
         InstantiatedTypeVec(), \
         util::vec1(InstantiatedType::ObjectType), \
         InstantiatedType::BoolType, \
@@ -131,7 +131,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 #define _CREATE_FUNC(n) \
   do { \
     root->createClassSymbol( \
-        "func" #n, root->newChildScope(NULL), \
+        "func" #n, root->newChildScopeNoNode(), \
         Type::Func ## n ## Type, createTypeParams(ctx, 1 + n)); \
   } while (0)
 
@@ -159,10 +159,10 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
 #undef _CREATE_FUNC
 
-  SymbolTable *stringSymTab = root->newChildScope(NULL);
+  SymbolTable *stringSymTab = root->newChildScopeNoNode();
   ClassSymbol *stringClassSym =
     root->createClassSymbol("string", stringSymTab, Type::StringType);
-  stringSymTab->createMethodSymbol("<ctor>", stringSymTab->newChildScope(NULL),
+  stringSymTab->createMethodSymbol("<ctor>", stringSymTab->newChildScopeNoNode(),
                                    InstantiatedTypeVec(),
                                    InstantiatedTypeVec(),
                                    InstantiatedType::VoidType,
@@ -170,58 +170,58 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   _IMPL_OVERRIDE_ALL(stringClassSym);
 
   // boxed primitives, with hidden names
-  SymbolTable *IntSymTab = root->newChildScope(NULL);
+  SymbolTable *IntSymTab = root->newChildScopeNoNode();
   ClassSymbol *IntClassSym =
     root->createClassSymbol("<Int>", IntSymTab, Type::BoxedIntType);
-  IntSymTab->createMethodSymbol("<ctor>", IntSymTab->newChildScope(NULL),
+  IntSymTab->createMethodSymbol("<ctor>", IntSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 util::vec1(InstantiatedType::IntType),
                                 InstantiatedType::VoidType,
                                 IntClassSym, NULL, true);
   _IMPL_OVERRIDE_ALL(IntClassSym);
 
-  SymbolTable *FloatSymTab = root->newChildScope(NULL);
+  SymbolTable *FloatSymTab = root->newChildScopeNoNode();
   ClassSymbol *FloatClassSym =
     root->createClassSymbol("<Float>", FloatSymTab, Type::BoxedFloatType);
-  FloatSymTab->createMethodSymbol("<ctor>", FloatSymTab->newChildScope(NULL),
+  FloatSymTab->createMethodSymbol("<ctor>", FloatSymTab->newChildScopeNoNode(),
                                   InstantiatedTypeVec(),
                                   util::vec1(InstantiatedType::FloatType),
                                   InstantiatedType::VoidType,
                                   FloatClassSym, NULL, true);
   _IMPL_OVERRIDE_ALL(FloatClassSym);
 
-  SymbolTable *BoolSymTab = root->newChildScope(NULL);
+  SymbolTable *BoolSymTab = root->newChildScopeNoNode();
   ClassSymbol *BoolClassSym =
     root->createClassSymbol("<Bool>", BoolSymTab, Type::BoxedBoolType);
-  BoolSymTab->createMethodSymbol("<ctor>", BoolSymTab->newChildScope(NULL),
+  BoolSymTab->createMethodSymbol("<ctor>", BoolSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  util::vec1(InstantiatedType::BoolType),
                                  InstantiatedType::VoidType,
                                  BoolClassSym, NULL, true);
   _IMPL_OVERRIDE_ALL(BoolClassSym);
 
-  SymbolTable *RefSymTab = root->newChildScope(NULL);
+  SymbolTable *RefSymTab = root->newChildScopeNoNode();
   vector<InstantiatedType*> RefTypeParam = createTypeParams(ctx, 1);
   ClassSymbol *RefClassSym =
     root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
-  RefSymTab->createMethodSymbol("<ctor>", RefSymTab->newChildScope(NULL),
+  RefSymTab->createMethodSymbol("<ctor>", RefSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 InstantiatedTypeVec(),
                                 InstantiatedType::VoidType, RefClassSym,
                                 NULL, true);
   RefSymTab->createClassAttributeSymbol("value", RefTypeParam[0], RefClassSym);
 
-  root->createClassSymbol("classtype", root->newChildScope(NULL), Type::ClassType,
+  root->createClassSymbol("classtype", root->newChildScopeNoNode(), Type::ClassType,
                           createTypeParams(ctx, 1));
 
-  root->createClassSymbol("<moduletype>", root->newChildScope(NULL),
+  root->createClassSymbol("<moduletype>", root->newChildScopeNoNode(),
                           Type::ModuleType, InstantiatedTypeVec());
 
-  SymbolTable *ListSymTab = root->newChildScope(NULL);
+  SymbolTable *ListSymTab = root->newChildScopeNoNode();
   vector<InstantiatedType*> ListTypeParam = createTypeParams(ctx, 1);
   ClassSymbol *ListClassSym =
     root->createClassSymbol("list", ListSymTab, Type::ListType, ListTypeParam);
-  ListSymTab->createMethodSymbol("<ctor>", ListSymTab->newChildScope(NULL),
+  ListSymTab->createMethodSymbol("<ctor>", ListSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  InstantiatedTypeVec(),
                                  InstantiatedType::VoidType, ListClassSym,
@@ -229,32 +229,32 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
   _IMPL_OVERRIDE_ALL(ListClassSym);
 
-  ListSymTab->createMethodSymbol("get", ListSymTab->newChildScope(NULL),
+  ListSymTab->createMethodSymbol("get", ListSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  util::vec1(InstantiatedType::IntType),
                                  ListTypeParam[0], ListClassSym,
                                  NULL, true);
-  ListSymTab->createMethodSymbol("set", ListSymTab->newChildScope(NULL),
+  ListSymTab->createMethodSymbol("set", ListSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  util::vec2(InstantiatedType::IntType, ListTypeParam[0]),
                                  InstantiatedType::VoidType, ListClassSym,
                                  NULL, true);
-  ListSymTab->createMethodSymbol("append", ListSymTab->newChildScope(NULL),
+  ListSymTab->createMethodSymbol("append", ListSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  util::vec1(ListTypeParam[0]),
                                  InstantiatedType::VoidType, ListClassSym,
                                  NULL, true);
-  ListSymTab->createMethodSymbol("size", ListSymTab->newChildScope(NULL),
+  ListSymTab->createMethodSymbol("size", ListSymTab->newChildScopeNoNode(),
                                  InstantiatedTypeVec(),
                                  InstantiatedTypeVec(),
                                  InstantiatedType::IntType, ListClassSym,
                                  NULL, true);
 
-  SymbolTable *MapSymTab = root->newChildScope(NULL);
+  SymbolTable *MapSymTab = root->newChildScopeNoNode();
   vector<InstantiatedType*> MapTypeParams = createTypeParams(ctx, 2);
   ClassSymbol *MapClassSym =
     root->createClassSymbol("map", MapSymTab, Type::MapType, MapTypeParams);
-  MapSymTab->createMethodSymbol("<ctor>", MapSymTab->newChildScope(NULL),
+  MapSymTab->createMethodSymbol("<ctor>", MapSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 InstantiatedTypeVec(),
                                 InstantiatedType::VoidType, MapClassSym,
@@ -262,24 +262,24 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
   _IMPL_OVERRIDE_ALL(MapClassSym);
 
-  MapSymTab->createMethodSymbol("get", MapSymTab->newChildScope(NULL),
+  MapSymTab->createMethodSymbol("get", MapSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 util::vec1(MapTypeParams[0]),
                                 MapTypeParams[1], MapClassSym,
                                 NULL, true);
-  MapSymTab->createMethodSymbol("set", MapSymTab->newChildScope(NULL),
+  MapSymTab->createMethodSymbol("set", MapSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 MapTypeParams,
                                 InstantiatedType::VoidType, MapClassSym,
                                 NULL, true);
-  MapSymTab->createMethodSymbol("size", MapSymTab->newChildScope(NULL),
+  MapSymTab->createMethodSymbol("size", MapSymTab->newChildScopeNoNode(),
                                 InstantiatedTypeVec(),
                                 InstantiatedTypeVec(),
                                 InstantiatedType::IntType, MapClassSym,
                                 NULL, true);
 
   // func symbols
-  root->createFuncSymbol("print", root->newChildScope(NULL),
+  root->createFuncSymbol("print", root->newChildScopeNoNode(),
                          InstantiatedTypeVec(),
                          util::vec1(InstantiatedType::AnyType),
                          InstantiatedType::VoidType, true);

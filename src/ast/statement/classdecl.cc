@@ -119,9 +119,7 @@ ClassDeclNode::liftPhaseImpl(SemanticContext* ctx,
 
 void
 ClassDeclNode::codeGen(CodeGenerator& cg) {
-  // if this is a parameterized class decl, then skip code gen
-  vector<InstantiatedType*> typeParams = getTypeParams();
-  if (!typeParams.empty()) return;
+  assert(!isTypeParameterized());
 
   // otherwise, continue as usual
   ASTStatementNode::codeGen(cg);
@@ -189,7 +187,7 @@ ClassDeclNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
     typeParamTypes.push_back(type->instantiate(ctx));
     stmts->getSymbolTable()->createClassSymbol(
         typeParams[pos],
-        ctx->getRootSymbolTable()->newChildScope(NULL),
+        ctx->getRootSymbolTable()->newChildScopeNoNode(),
         type);
   }
 }
@@ -232,6 +230,7 @@ ClassDeclNodeParser::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 ClassDeclNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  assert(!isTypeParameterized());
   return new ClassDeclNodeParser(
       name,
       util::transform_vec(parents.begin(), parents.end(),

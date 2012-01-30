@@ -43,7 +43,7 @@ SemanticContext::newChildContext(const string& moduleName) {
   SemanticContext *child =
     new SemanticContext(moduleName, this,
                         isRootContext() ? this : programRoot);
-  child->setRootSymbolTable(rootSymbols->newChildScope(child, NULL));
+  child->setRootSymbolTable(rootSymbols->newChildScope(child));
   childrenMap[moduleName] = child;
   children.push_back(child);
   return child;

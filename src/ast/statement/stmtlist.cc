@@ -202,6 +202,13 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       // should never lift a ctor
       assert(!func->isCtor());
 
+      // don't lift type param functions (since this runs after
+      // type specialization)
+      if (func->isTypeParameterized()) {
+        ++it;
+        continue;
+      }
+
       // create a name for the lifted function
       string liftedName =
         func->getName() + "$lifted_" + util::stringify(ctx->uniqueId());

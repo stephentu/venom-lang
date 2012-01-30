@@ -81,6 +81,9 @@ public:
       const analysis::TypeTranslator& t,
       CollectCallback& callback);
 
+  virtual bool isTypeParameterized() const
+    { return !getTypeParams().empty(); }
+
   virtual ASTNode* rewriteLocal(analysis::SemanticContext* ctx,
                                 RewriteMode mode);
 
@@ -92,6 +95,8 @@ protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
 
   virtual void checkAndInitReturnType(analysis::SemanticContext* ctx) = 0;
+
+  ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
 
   std::string       name;
   ExprNodeVec       params;

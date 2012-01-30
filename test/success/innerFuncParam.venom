@@ -1,0 +1,6 @@
+def foo(x::int, y::string) =
+  def bar{A}(a::A) = print(a); end
+  bar{int}(x);
+  bar{string}(y);
+end
+foo(10, "hi");

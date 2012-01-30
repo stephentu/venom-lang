@@ -23,13 +23,7 @@ FuncDeclNodeSynthetic::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 FuncDeclNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
-  return new FuncDeclNodeSynthetic(
-    name,
-    typeParamTypes,
-    util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneLiftFunctor(ctx)),
-    retType,
-    stmts->cloneForLift(ctx));
+  return cloneForLiftImplHelper(ctx);
 }
 
 FuncDeclNode*

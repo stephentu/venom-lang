@@ -74,6 +74,9 @@ public:
       const analysis::TypeTranslator& t,
       CollectCallback& callback);
 
+  virtual bool isTypeParameterized() const
+    { return !getTypeParams().empty(); }
+
   virtual void codeGen(backend::CodeGenerator& cg);
 
   virtual analysis::BaseSymbol* getSymbol();
