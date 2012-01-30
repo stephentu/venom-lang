@@ -21,7 +21,7 @@ namespace ast {
 void
 StmtExprNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
   InstantiatedType *retType = expr->typeCheck(ctx);
-  if (!expected) return;
+  if (!expected || expected->isVoid()) return;
   if (!retType->isSubtypeOf(*expected)) {
     throw TypeViolationException(
         "Expected type " + expected->stringify() +

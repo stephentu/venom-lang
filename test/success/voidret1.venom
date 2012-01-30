@@ -1,0 +1,2 @@
+def f() -> void = 10; end
+print(f());
