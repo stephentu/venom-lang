@@ -1,0 +1,17 @@
+def foo(x::int) -> int =
+  if x > 10 then
+    y = 20;
+    def magic(z::int) -> int =
+      x + y + z;
+    end
+    magic(30);
+  else
+    y = 10;
+    def magic(z::int) -> int =
+      x + y + z;
+    end
+    magic(20);
+  end
+end
+print(foo(0));
+print(foo(100));

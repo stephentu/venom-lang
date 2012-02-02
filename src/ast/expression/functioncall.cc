@@ -213,7 +213,6 @@ FunctionCallNode::rewriteAfterLift(
        it != liftedParams.end(); ++it) {
     VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
     Symbol* sym = static_cast<Symbol*>(*it);
-    assert(sym->getDefinedSymbolTable() == symbols);
     assert(sym->isPromoteToRef());
     set<BaseSymbol*>::const_iterator it = refs.find(sym);
     assert(it != refs.end());
