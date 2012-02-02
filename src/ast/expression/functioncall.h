@@ -76,14 +76,6 @@ protected:
 public:
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  virtual void print(std::ostream& o, size_t indent = 0) {
-    o << "(funccall ";
-    primary->print(o, indent);
-    o << " ";
-    PrintExprNodeVec(o, args, indent);
-    o << ")";
-  }
-
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
 
@@ -108,6 +100,8 @@ public:
       return typeArgTypes; }
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(FunctionCallNode)
+
+  virtual void print(std::ostream& o, size_t indent = 0);
 
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx);

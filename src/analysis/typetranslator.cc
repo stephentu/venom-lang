@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <utility>
 
 #include <analysis/boundfunction.h>
 #include <analysis/semanticcontext.h>
@@ -93,6 +94,12 @@ TypeTranslator::bind(const vector<InstantiatedType*>& lhs,
     }
   }
   map.insert(map.end(), tmap.begin(), tmap.end());
+}
+
+void
+TypeTranslator::addTranslation(InstantiatedType* from,
+                               InstantiatedType* to) {
+  map.push_back(make_pair(from, to));
 }
 
 void

@@ -1,0 +1,12 @@
+def foo(x::int) -> int =
+  def foo(x::int) -> int = x; end
+  foo(x);
+end
+print(foo(30));
+
+def bar{A}(a::A) -> A =
+  def bar{B}(a::B) -> B = a; end
+  bar{A}(a);
+end
+print(bar{int}(40));
+print(bar{string}("hello"));

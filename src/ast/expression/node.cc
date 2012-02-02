@@ -17,12 +17,6 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
-struct stringer_functor {
-  inline string operator()(const ParameterizedTypeString* t) const {
-    return t->stringify();
-  }
-} stringer;
-
 string ParameterizedTypeString::stringify() const {
   stringstream s;
   s << util::join(names.begin(), names.end(), ".");
@@ -30,7 +24,7 @@ string ParameterizedTypeString::stringify() const {
     s << "{";
     vector<string> buf;
     buf.resize(params.size());
-    transform(params.begin(), params.end(), buf.begin(), stringer);
+    transform(params.begin(), params.end(), buf.begin(), StringerFunctor());
     s << util::join(buf.begin(), buf.end(), ",");
     s << "}";
   }

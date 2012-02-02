@@ -19,6 +19,8 @@ public:
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(FunctionCallNode)
 
+  virtual void print(std::ostream& o, size_t indent = 0);
+
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) {}
 

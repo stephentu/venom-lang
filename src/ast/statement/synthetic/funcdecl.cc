@@ -28,14 +28,7 @@ FuncDeclNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
 
 FuncDeclNode*
 FuncDeclNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
-  // TODO: assert translator doesn't change this type
-  return new FuncDeclNodeSynthetic(
-    name,
-    typeParamTypes,
-    util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneTemplateFunctor(t)),
-    retType,
-    stmts->cloneForTemplate(t));
+  return cloneForTemplateImplHelper(t);
 }
 
 void

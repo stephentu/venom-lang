@@ -7,6 +7,8 @@
 #include <vector>
 #include <utility>
 
+#include <util/stl.h>
+
 namespace venom {
 
 namespace ast {
@@ -226,6 +228,8 @@ protected:
   TypeParamType(const std::string& name, size_t pos);
 
 public:
+  inline size_t getPos() const { return pos; }
+
   virtual bool isCurrentScopeOnly() const { return true; }
 
   // TODO: not really sure if equals() is necessary...
@@ -358,6 +362,9 @@ public:
   InstantiatedType* mostCommonType(InstantiatedType* other);
 
   virtual std::string stringify() const;
+
+  struct StringerFunctor :
+    public util::stringify_functor<InstantiatedType>::ptr {};
 
   inline std::string createClassName() const {
     return createClassNameImpl(false);

@@ -98,6 +98,8 @@ protected:
 
   ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
 
+  FuncDeclNode* cloneForTemplateImplHelper(const analysis::TypeTranslator& t);
+
   std::string       name;
   ExprNodeVec       params;
   ASTStatementNode* stmts;

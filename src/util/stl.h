@@ -216,11 +216,13 @@ struct poly_ptr_cast_functor {
 
 template <typename T>
 struct _stringify_functor_ptr {
+  typedef std::string result_type;
   inline std::string operator()(const T* t) const { return t->stringify(); }
 };
 
 template <typename T>
 struct _stringify_functor_ref {
+  typedef std::string result_type;
   inline std::string operator()(const T& t) const { return t.stringify(); }
 };
 

@@ -171,9 +171,10 @@ StmtListNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
 
 void
 StmtListNode::liftRecurseAndInsert(SemanticContext* ctx) {
+  assert(ctx == symbols->getSemanticContext());
   for (size_t i = 0; i < stmts.size(); i++) {
+    if (stmts[i]->isTypeParameterized()) continue;
     vector<ASTStatementNode*> liftedStmts;
-    assert(ctx == symbols->getSemanticContext());
     stmts[i]->liftPhaseImpl(ctx, symbols, liftedStmts);
     // insert liftedStmts before pos i
     stmts.insert(stmts.begin() + i,
@@ -185,6 +186,7 @@ StmtListNode::liftRecurseAndInsert(SemanticContext* ctx) {
 void
 StmtListNode::liftPhase(SemanticContext* ctx) {
   assert(getSymbolTable()->isModuleLevelSymbolTable());
+  assert(!isTypeParameterized());
   liftRecurseAndInsert(ctx);
 }
 

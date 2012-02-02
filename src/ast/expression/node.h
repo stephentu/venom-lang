@@ -42,6 +42,9 @@ struct ParameterizedTypeString {
 		operator()(ParameterizedTypeString* ptr) const { return ptr->clone(); }
   };
 
+  struct StringerFunctor :
+    public util::stringify_functor<ParameterizedTypeString>::ptr {};
+
   const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;
 };

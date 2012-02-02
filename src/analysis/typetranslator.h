@@ -33,6 +33,8 @@ public:
 
   void bind(BoundFunction& func);
 
+  void addTranslation(InstantiatedType* from, InstantiatedType* to);
+
   struct TranslateFunctor {
     typedef InstantiatedType* result_type;
     TranslateFunctor(SemanticContext* ctx, const TypeTranslator* t)

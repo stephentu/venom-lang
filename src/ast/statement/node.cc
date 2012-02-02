@@ -33,7 +33,7 @@ ASTStatementNode::liftPhaseImpl(SemanticContext* ctx,
                                 SymbolTable* liftInto,
                                 vector<ASTStatementNode*>& liftedStmts) {
   forchild (kid) {
-    if (!kid) continue;
+    if (!kid || kid->isTypeParameterized()) continue;
     if (ASTStatementNode *stmt = dynamic_cast<ASTStatementNode*>(kid)) {
       stmt->liftPhaseImpl(ctx, liftInto, liftedStmts);
     }

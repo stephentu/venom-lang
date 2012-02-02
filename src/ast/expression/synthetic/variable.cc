@@ -43,10 +43,9 @@ VariableNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
 
 VariableNode*
 VariableNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
-  assert((t.translate(
-              getSymbolTable()->getSemanticContext(), explicitType)
-            ->equals(*explicitType)));
-  return new VariableNodeSynthetic(name, explicitType);
+  return new VariableNodeSynthetic(
+      name,
+      t.translate(getSymbolTable()->getSemanticContext(), explicitType));
 }
 
 }

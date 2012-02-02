@@ -10,6 +10,23 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+void
+FunctionCallNodeSynthetic::print(ostream& o, size_t indent) {
+  o << "(funccall-synthetic ";
+  primary->print(o, indent);
+  o << " ";
+  if (!typeArgTypes.empty()) {
+    o << "{";
+    vector<string> strs =
+      util::transform_vec(typeArgTypes.begin(), typeArgTypes.end(),
+                          InstantiatedType::StringerFunctor());
+    o << util::join(strs.begin(), strs.end(), ", ");
+    o << "} ";
+  }
+  PrintExprNodeVec(o, args, indent);
+  o << ")";
+}
+
 FunctionCallNode*
 FunctionCallNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new FunctionCallNodeSynthetic(

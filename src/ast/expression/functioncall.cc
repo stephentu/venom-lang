@@ -454,6 +454,23 @@ FunctionCallNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
 }
 
 void
+FunctionCallNodeParser::print(ostream& o, size_t indent) {
+  o << "(funccall-parser ";
+  primary->print(o, indent);
+  o << " ";
+  if (!typeArgs.empty()) {
+    o << "{";
+    vector<string> strs =
+      util::transform_vec(typeArgs.begin(), typeArgs.end(),
+                          ParameterizedTypeString::StringerFunctor());
+    o << util::join(strs.begin(), strs.end(), ", ");
+    o << "} ";
+  }
+  PrintExprNodeVec(o, args, indent);
+  o << ")";
+}
+
+void
 FunctionCallNodeParser::checkAndInitTypeParams(SemanticContext* ctx) {
   assert(typeArgTypes.empty());
   // instantiate type parameters
