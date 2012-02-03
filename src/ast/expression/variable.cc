@@ -188,6 +188,19 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
     return new VariableNodeParser(liftedName, NULL);
   }
 
+  // need to possibly retype, if the type is a lifted class
+  if (explicitType) {
+    LiftContext::LiftMap::const_iterator it =
+      ctx.liftMap.find(explicitType->findSpecializedClassSymbol());
+    if (it != ctx.liftMap.end()) {
+      BaseSymbol* bs = it->second.second->getSymbol();
+      VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+      ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
+      SemanticContext* sctx = symbols->getSemanticContext();
+      return new VariableNodeSynthetic(name, cs->getSelfType(sctx));
+    }
+  }
+
   return new VariableNodeParser(
       name, explicitTypeString ? explicitTypeString->clone() : NULL);
 }

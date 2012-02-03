@@ -197,6 +197,8 @@ static void LiftPhaseImplStmtAssertions(ASTStatementNode* stmt) {
   }
 }
 
+// TODO: make getName() a virtual function on ASTNode,
+// so we don't have to keep doing this...
 static inline string ExtractName(ASTStatementNode* stmt) {
   if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
     return func->getName();
