@@ -190,6 +190,22 @@ StmtListNode::liftPhase(SemanticContext* ctx) {
   liftRecurseAndInsert(ctx);
 }
 
+static void LiftPhaseImplStmtAssertions(ASTStatementNode* stmt) {
+  if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
+    // should never lift a ctor
+    assert(!func->isCtor());
+  }
+}
+
+static inline string ExtractName(ASTStatementNode* stmt) {
+  if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
+    return func->getName();
+  } else if (ClassDeclNode* klass = dynamic_cast<ClassDeclNode*>(stmt)) {
+    return klass->getName();
+  }
+  VENOM_NOT_REACHED;
+}
+
 void
 StmtListNode::liftPhaseImpl(SemanticContext* ctx,
                             SymbolTable* liftInto,
@@ -200,22 +216,24 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
   for (vector<ASTStatementNode*>::iterator it = stmts.begin();
        it != stmts.end(); ) {
     ASTStatementNode* stmt = *it;
-    if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
-      // should never lift a ctor
-      assert(!func->isCtor());
+    if (dynamic_cast<FuncDeclNode*>(stmt) ||
+        dynamic_cast<ClassDeclNode*>(stmt)) {
 
-      // don't lift type param functions (since this runs after
-      // type specialization)
-      if (func->isTypeParameterized()) {
+      // sanity checks
+      LiftPhaseImplStmtAssertions(stmt);
+
+      // don't lift type param functions/classes (since this runs after type
+      // specialization)
+      if (stmt->isTypeParameterized()) {
         ++it;
         continue;
       }
 
       // create a name for the lifted function
       string liftedName =
-        func->getName() + "$lifted_" + util::stringify(ctx->uniqueId());
+        ExtractName(stmt) + "$lifted_" + util::stringify(ctx->uniqueId());
 
-      LiftContext liftCtx(func->getSymbol(), liftedName, symbols, liftMap);
+      LiftContext liftCtx(stmt->getSymbol(), liftedName, symbols, liftMap);
 
       // gather all non-local refs first
       stmt->collectNonLocalRefs(liftCtx);
@@ -223,17 +241,16 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       // insert to refs
       refs.insert(liftCtx.refs.vec.begin(), liftCtx.refs.vec.end());
 
-      // clone/rewrite the function
+      // clone/rewrite the function/class
       ASTStatementNode* clone =
-        CloneForLift<FuncDeclNode, ASTStatementNode>(func, liftCtx);
-      VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, clone);
+        CloneForLift<ASTStatementNode, ASTStatementNode>(stmt, liftCtx);
 
       // need to set context correctly
       clone->setLocationContext(liftInto->getNode()->getLocationContext());
 
       // add to liftMap
-      assert(liftMap.find(func->getSymbol()) == liftMap.end());
-      liftMap[func->getSymbol()] = make_pair(liftCtx.refs.vec, clone);
+      assert(liftMap.find(stmt->getSymbol()) == liftMap.end());
+      liftMap[stmt->getSymbol()] = make_pair(liftCtx.refs.vec, clone);
 
       // remove the orig func stmt from the stmt list
       it = stmts.erase(it);
@@ -246,11 +263,6 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       clone->typeCheck(ctx);
 
       liftedStmts.push_back(clone);
-
-    } else if (ClassDeclNode* klass = dynamic_cast<ClassDeclNode*>(stmt)) {
-      // TODO: implement me
-      VENOM_ASSERT_NOT_NULL(klass);
-      ++it;
     } else {
       ++it;
     }

@@ -98,6 +98,13 @@ protected:
 
   ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
 
+  virtual FuncDeclNode* newFuncDeclNodeForLift(
+      LiftContext& ctx,
+      const std::string& name,
+      const ExprNodeVec& params,
+      analysis::InstantiatedType* returnType,
+      ASTStatementNode* stmts);
+
   FuncDeclNode* cloneForTemplateImplHelper(const analysis::TypeTranslator& t);
 
   std::string       name;
@@ -168,6 +175,14 @@ public:
   virtual void registerSymbol(analysis::SemanticContext* ctx);
 
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(CtorDeclNode)
+
+protected:
+  virtual FuncDeclNode* newFuncDeclNodeForLift(
+      LiftContext& ctx,
+      const std::string& name,
+      const ExprNodeVec& params,
+      analysis::InstantiatedType* returnType,
+      ASTStatementNode* stmts);
 
 private:
   ExprNodeVec superArgs;

@@ -61,6 +61,11 @@ public:
       const analysis::TypeTranslator& t,
       CollectCallback& callback);
 
+private:
+  analysis::BaseSymbol* extractSymbol(analysis::BaseSymbol* orig);
+
+public:
+
   virtual ASTNode* rewriteAfterLift(
       const LiftContext::LiftMap& liftMap,
       const std::set<analysis::BaseSymbol*>& refs);

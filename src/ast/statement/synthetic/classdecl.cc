@@ -69,11 +69,7 @@ ClassDeclNodeSynthetic::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 ClassDeclNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
-  return new ClassDeclNodeSynthetic(
-      name,
-      parentTypes,
-      typeParamTypes,
-      stmts->cloneForLift(ctx));
+  return cloneForLiftImplHelper(ctx);
 }
 
 ClassDeclNode*

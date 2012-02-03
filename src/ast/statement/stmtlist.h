@@ -44,6 +44,12 @@ public:
     return this;
   }
 
+  inline StmtListNode* insertStatement(size_t pos, ASTStatementNode* stmt) {
+    stmt->setLocationContext(locCtx);
+    stmts.insert(stmts.begin() + pos, stmt);
+    return this;
+  }
+
   virtual size_t getNumKids() const { return stmts.size(); }
 
   virtual ASTNode* getNthKid(size_t kid) { return stmts.at(kid); }

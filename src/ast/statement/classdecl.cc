@@ -6,6 +6,9 @@
 #include <analysis/symboltable.h>
 #include <analysis/type.h>
 
+#include <ast/expression/synthetic/variable.h>
+
+#include <ast/statement/classattrdecl.h>
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/stmtlist.h>
@@ -87,7 +90,8 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
                                          // since empty body
   }
   assert(stmts->getLocationContext() & TopLevelClassBody);
-  assert(stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t));
+  assert(stmts->getSymbolTable()->findFuncSymbol(
+          "<ctor>", SymbolTable::NoRecurse, t));
 }
 
 void
@@ -153,6 +157,37 @@ ClassDeclNode::registerClassSymbol(
     ctx->createType(name, parentTypes.front(), typeParamTypes.size());
   createClassSymbol(name, stmts->getSymbolTable(),
                     type, typeParamTypes);
+}
+
+ASTStatementNode*
+ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
+  assert(!isTypeParameterized());
+  assert(ctx.isLiftingClass());
+  assert(ctx.curLiftSym == getSymbol());
+
+  ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+
+  // now add ref versions of lifted symbols into
+  // class body definition
+  for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
+       it != ctx.refs.vec.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+    assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
+    Symbol* s = static_cast<Symbol*>(*it);
+    InstantiatedType* refType =
+      s->getInstantiatedType()->refify(ctx.definedIn->getSemanticContext());
+    ClassAttrDeclNode *cattr = new ClassAttrDeclNode(
+        new VariableNodeSynthetic(ctx.refParamName(s), refType),
+        NULL);
+    static_cast<StmtListNode*>(stmtsClone)->prependStatement(cattr);
+  }
+
+  return new ClassDeclNodeSynthetic(
+      ctx.liftedName,
+      getParents(),
+      InstantiatedTypeVec(),
+      stmtsClone);
 }
 
 struct functor {
@@ -230,12 +265,7 @@ ClassDeclNodeParser::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 ClassDeclNodeParser::cloneForLiftImpl(LiftContext& ctx) {
-  assert(!isTypeParameterized());
-  return new ClassDeclNodeParser(
-      name,
-      util::transform_vec(parents.begin(), parents.end(),
-        ParameterizedTypeString::CloneFunctor()),
-      typeParams, stmts->cloneForLift(ctx));
+  return cloneForLiftImplHelper(ctx);
 }
 
 ClassDeclNode*

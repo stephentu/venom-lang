@@ -20,6 +20,16 @@ using namespace venom::backend;
 namespace venom {
 namespace ast {
 
+bool
+LiftContext::isLiftingFunction() const {
+  return dynamic_cast<FuncSymbol*>(curLiftSym);
+}
+
+bool
+LiftContext::isLiftingClass() const {
+  return dynamic_cast<ClassSymbol*>(curLiftSym);
+}
+
 string
 LiftContext::refParamName(Symbol* nonLocSym) {
   bool create;

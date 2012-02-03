@@ -1,6 +1,7 @@
 #ifndef VENOM_AST_VARIABLE_H
 #define VENOM_AST_VARIABLE_H
 
+#include <cassert>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -14,7 +15,7 @@ namespace ast {
 class VariableNode : public ASTExpressionNode {
 public:
   VariableNode(const std::string& name)
-    : name(name), symbol(NULL) {}
+    : name(name), symbol(NULL) { assert(!name.empty()); }
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }

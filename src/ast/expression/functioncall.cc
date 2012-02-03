@@ -180,6 +180,34 @@ FunctionCallNode::collectSpecialized(
   }
 }
 
+BaseSymbol*
+FunctionCallNode::extractSymbol(BaseSymbol* orig) {
+  if (FuncSymbol* fs = dynamic_cast<FuncSymbol*>(orig)) {
+    BoundFunction bf(fs, getTypeParams());
+    BaseSymbol* ret = bf.findSpecializedFuncSymbol();
+    return ret;
+  } else if (ClassSymbol* klass = dynamic_cast<ClassSymbol*>(orig)) {
+    SemanticContext* ctx = symbols->getSemanticContext();
+    BaseSymbol* ret = klass
+      ->getType()
+      ->instantiate(ctx, getTypeParams())
+      ->findSpecializedClassSymbol();
+    return ret;
+  }
+  return NULL;
+}
+
+// TODO: make getName() a virtual function on ASTNode,
+// so we don't have to keep doing this...
+static inline string ExtractName(ASTStatementNode* stmt) {
+  if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
+    return func->getName();
+  } else if (ClassDeclNode* klass = dynamic_cast<ClassDeclNode*>(stmt)) {
+    return klass->getName();
+  }
+  VENOM_NOT_REACHED;
+}
+
 ASTNode*
 FunctionCallNode::rewriteAfterLift(
       const LiftContext::LiftMap& liftMap,
@@ -188,22 +216,13 @@ FunctionCallNode::rewriteAfterLift(
   ASTNode* retVal = ASTExpressionNode::rewriteAfterLift(liftMap, refs);
   VENOM_ASSERT_NULL(retVal);
 
-  BaseSymbol* bs = primary->getSymbol();
-  // TODO: this will probably need to be handled
-  // differently when we implement lifting of class nodes
-  if (dynamic_cast<ClassSymbol*>(bs)) return NULL;
-  VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
-  FuncSymbol* fs = static_cast<FuncSymbol*>(bs);
-  BoundFunction bf(fs, getTypeParams());
-  fs = bf.findSpecializedFuncSymbol();
-
-  LiftContext::LiftMap::const_iterator it = liftMap.find(fs);
+  BaseSymbol* bs = extractSymbol(primary->getSymbol());
+  if (!bs) return NULL;
+  LiftContext::LiftMap::const_iterator it = liftMap.find(bs);
   if (it == liftMap.end()) return NULL;
 
   const vector<BaseSymbol*>& liftedParams = it->second.first;
-  ASTStatementNode* stmt = it->second.second;
-  VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, stmt);
-  FuncDeclNode* fdn = static_cast<FuncDeclNode*>(stmt);
+  string liftedName = ExtractName(it->second.second);
 
   // map each lifted param to a vector of names (possibly
   // adding the param to *this* scopes
@@ -233,7 +252,7 @@ FunctionCallNode::rewriteAfterLift(
       new FunctionCallNodeSynthetic(
         // don't need a SymbolNode here, b/c the name is guaranteed to be
         // unique (since it is a lifted name)
-        new VariableNodeParser(fdn->getName(), NULL),
+        new VariableNodeParser(liftedName, NULL),
         InstantiatedTypeVec(),
         liftedParamExprs));
 }

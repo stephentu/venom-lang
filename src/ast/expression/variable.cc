@@ -179,10 +179,12 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
     ctx.liftMap.find(bs);
   if (it != ctx.liftMap.end()) {
     ASTStatementNode* liftedStmt = it->second.second;
-    // TODO: add classes when we lift classes
-    VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, liftedStmt);
-    string liftedName =
-      static_cast<FuncDeclNode*>(liftedStmt)->getName();
+    string liftedName;
+    if (FuncDeclNode* fdn = dynamic_cast<FuncDeclNode*>(liftedStmt)) {
+      liftedName = fdn->getName();
+    } else if (ClassDeclNode* cdn = dynamic_cast<ClassDeclNode*>(liftedStmt)) {
+      liftedName = cdn->getName();
+    } else VENOM_NOT_REACHED;
     return new VariableNodeParser(liftedName, NULL);
   }
 

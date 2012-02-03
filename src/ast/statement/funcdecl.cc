@@ -12,6 +12,7 @@
 
 #include <ast/expression/synthetic/variable.h>
 
+#include <ast/statement/assign.h>
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/return.h>
@@ -267,26 +268,58 @@ FuncDeclNode::codeGen(CodeGenerator& cg) {
   stmts->codeGen(cg);
 }
 
+FuncDeclNode*
+FuncDeclNode::newFuncDeclNodeForLift(
+      LiftContext& ctx,
+      const string& name,
+      const ExprNodeVec& params,
+      InstantiatedType* returnType,
+      ASTStatementNode* stmts) {
+  return new FuncDeclNodeSynthetic(
+      name,
+      InstantiatedTypeVec(),
+      params,
+      returnType,
+      stmts);
+}
+
 ASTStatementNode*
 FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
   assert(!isTypeParameterized());
+  assert(ctx.isLiftingClass() || ctx.curLiftSym == getSymbol());
 
   // clone the stmts, then insert the lifted refs as
   // parameters to this function. also rename it.
   ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmtsClone);
 
-  // ref params
+  // ref params, only if we are lifting this function,
+  // or this is the ctor of a class we are lifting
   ExprNodeVec newParams;
-  newParams.reserve(ctx.refs.vec.size() + params.size());
-  for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
-       it != ctx.refs.vec.end(); ++it) {
-    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
-    assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
-    newParams.push_back(
-        new VariableNodeSynthetic(
-          ctx.refParamName(static_cast<Symbol*>(*it)),
-          static_cast<Symbol*>(*it)->getInstantiatedType()->refify(
-            ctx.definedIn->getSemanticContext())));
+  if (ctx.isLiftingFunction() || isCtor())  {
+    newParams.reserve(ctx.refs.vec.size() + params.size());
+    for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
+         it != ctx.refs.vec.end(); ++it) {
+      VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+      assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
+      Symbol* s = static_cast<Symbol*>(*it);
+      newParams.push_back(
+          new VariableNodeSynthetic(
+            ctx.refParamName(s),
+            s->getInstantiatedType()->refify(
+              ctx.definedIn->getSemanticContext())));
+      if (isCtor()) {
+        // need to insert assignment statements into
+        // the stmtlist. but must insert *after* the super ()
+        // call
+        static_cast<StmtListNode*>(stmtsClone)->insertStatement(
+          1,
+          new AssignNode(
+            new AttrAccessNode(
+              new VariableSelfNode, ctx.refParamName(s)),
+            new VariableNodeParser(ctx.refParamName(s), NULL)));
+      }
+    }
   }
 
   // regular params
@@ -298,9 +331,9 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
             newParams.begin() + ctx.refs.vec.size(),
             ASTExpressionNode::CloneTemplateFunctor(t));
 
-  return new FuncDeclNodeSynthetic(
-      ctx.liftedName,
-      InstantiatedTypeVec(),
+  return newFuncDeclNodeForLift(
+      ctx,
+      ctx.isLiftingFunction() ? ctx.liftedName : name,
       newParams,
       getReturnType(),
       stmtsClone);
@@ -488,12 +521,7 @@ CtorDeclNode::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 CtorDeclNode::cloneForLiftImpl(LiftContext& ctx) {
-  return new CtorDeclNode(
-    util::transform_vec(params.begin(), params.end(),
-      ASTExpressionNode::CloneLiftFunctor(ctx)),
-    stmts->cloneForLift(ctx),
-    util::transform_vec(superArgs.begin(), superArgs.end(),
-      ASTExpressionNode::CloneLiftFunctor(ctx)));
+  return cloneForLiftImplHelper(ctx);
 }
 
 CtorDeclNode*
@@ -504,6 +532,22 @@ CtorDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
     stmts->cloneForTemplate(t),
     util::transform_vec(superArgs.begin(), superArgs.end(),
       ASTExpressionNode::CloneTemplateFunctor(t)));
+}
+
+FuncDeclNode*
+CtorDeclNode::newFuncDeclNodeForLift(
+      LiftContext& ctx,
+      const string& name,
+      const ExprNodeVec& params,
+      InstantiatedType* returnType,
+      ASTStatementNode* stmts) {
+  assert(name == "<ctor>");
+  assert(returnType->isVoid());
+  return new CtorDeclNode(
+      params,
+      stmts,
+      util::transform_vec(superArgs.begin(), superArgs.end(),
+        ASTExpressionNode::CloneLiftFunctor(ctx)));
 }
 
 }

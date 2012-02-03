@@ -103,6 +103,8 @@ protected:
                              analysis::SymbolTable* liftInto,
                              std::vector<ASTStatementNode*>& liftedStmts);
 
+  ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
+
   std::string       name;
   ASTStatementNode* stmts;
 };

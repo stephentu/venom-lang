@@ -54,6 +54,9 @@ struct LiftContext {
     : curLiftSym(curLiftSym), liftedName(liftedName),
       definedIn(definedIn), liftMap(liftMap) {}
 
+  bool isLiftingFunction() const;
+  bool isLiftingClass() const;
+
   std::string refParamName(analysis::Symbol* nonLocSym);
 
   static std::string RefParamName(analysis::Symbol* nonLocSym,

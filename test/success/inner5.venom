@@ -1,0 +1,8 @@
+def foo() -> int =
+  x = 10;
+  class InnerClass
+    def foobar() -> int = x; end
+  end
+  InnerClass().foobar();
+end
+print(foo());
