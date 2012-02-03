@@ -1,0 +1,11 @@
+class A{T}
+  attr elem::T
+end
+class B
+  attr a::A{int}
+end
+a = A{int}();
+a.elem = 10;
+b = B();
+b.a = a;
+print(b.a.elem);
