@@ -69,6 +69,7 @@ ASTNode*
 VariableNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
                                const set<BaseSymbol*>& refs) {
   BaseSymbol* bs = symbol;
+  // self/super nodes do not have symbols...
   if (!bs) return NULL;
   set<BaseSymbol*>::const_iterator it = refs.find(bs);
   if (it == refs.end()) return NULL;
