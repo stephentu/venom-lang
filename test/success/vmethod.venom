@@ -1,0 +1,9 @@
+class A
+  def overrideMe() = print("NOOOO"); end
+  def doAction() = overrideMe(); end
+end
+class B <- A
+  def overrideMe() = print("Good"); end
+end
+b = B();
+b.doAction();

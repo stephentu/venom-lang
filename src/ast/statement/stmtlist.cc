@@ -228,6 +228,9 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
         CloneForLift<FuncDeclNode, ASTStatementNode>(func, liftCtx);
       VENOM_ASSERT_TYPEOF_PTR(FuncDeclNode, clone);
 
+      // need to set context correctly
+      clone->setLocationContext(liftInto->getNode()->getLocationContext());
+
       // add to liftMap
       assert(liftMap.find(func->getSymbol()) == liftMap.end());
       liftMap[func->getSymbol()] = make_pair(liftCtx.refs.vec, clone);

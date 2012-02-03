@@ -109,6 +109,9 @@ VariableNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
       AttrAccessNode *rep = new AttrAccessNode(new VariableSelfNode, name);
       return replace(ctx, rep);
     }
+  } else if (dynamic_cast<MethodSymbol*>(bs)) {
+    AttrAccessNode *rep = new AttrAccessNode(new VariableSelfNode, name);
+    return replace(ctx, rep);
   }
   return NULL;
 }

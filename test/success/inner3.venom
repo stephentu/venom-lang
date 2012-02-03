@@ -1,0 +1,13 @@
+class A
+  attr x::int
+  def self(x::int) = self.x = x; end
+  def foo(x::int) -> int =
+    def bar(y::int) -> int = 
+      print(self.x);
+      self.x + x + y; 
+    end
+    bar(x);
+  end
+end
+a = A(10);
+print(a.foo(32));
