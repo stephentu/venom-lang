@@ -1,0 +1,12 @@
+class A{T}
+  def foo() =
+    x = 1;
+    def modifyX() =
+      x = 2;
+    end
+    print(x);
+    modifyX();
+    print(x);
+  end
+end
+A{int}().foo();
