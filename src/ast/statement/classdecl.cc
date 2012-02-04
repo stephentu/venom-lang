@@ -300,14 +300,33 @@ ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
         stmts->cloneForTemplate(t),
         itype);
   } else {
+    TypeTranslator tt = t;
+
+    // TODO: this is copied from
+    //    ast/statement/funcdecl.cc
+    // clone the type param types, so we can create new
+    // ClassSymbols for them
+    vector<InstantiatedType*> newTypeParamTypes;
+    newTypeParamTypes.reserve(typeParamTypes.size());
+    for (vector<InstantiatedType*>::iterator it = typeParamTypes.begin();
+         it != typeParamTypes.end(); ++it) {
+      VENOM_ASSERT_TYPEOF_PTR(TypeParamType, (*it)->getType());
+      TypeParamType* t = static_cast<TypeParamType*>((*it)->getType());
+      Type* t0 = ctx->createTypeParam(t->getName(), t->getPos());
+      newTypeParamTypes.push_back(t0->instantiate(ctx));
+
+      // add to type translator
+      tt.addTranslation(*it, newTypeParamTypes.back());
+    }
+
     // regular
     return new ClassDeclNodeSynthetic(
         name,
         util::transform_vec(
           parentTypes.begin(), parentTypes.end(),
-          TypeTranslator::TranslateFunctor(ctx, t)),
-        typeParamTypes,
-        stmts->cloneForTemplate(t),
+          TypeTranslator::TranslateFunctor(ctx, tt)),
+        newTypeParamTypes,
+        stmts->cloneForTemplate(tt),
         NULL);
   }
 }
