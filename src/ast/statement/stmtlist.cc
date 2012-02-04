@@ -218,8 +218,9 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
   for (vector<ASTStatementNode*>::iterator it = stmts.begin();
        it != stmts.end(); ) {
     ASTStatementNode* stmt = *it;
-    if (dynamic_cast<FuncDeclNode*>(stmt) ||
-        dynamic_cast<ClassDeclNode*>(stmt)) {
+    bool isFunc = dynamic_cast<FuncDeclNode*>(stmt);
+    bool isClass = dynamic_cast<ClassDeclNode*>(stmt);
+    if (isFunc || isClass) {
 
       // sanity checks
       LiftPhaseImplStmtAssertions(stmt);
@@ -263,6 +264,14 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       clone->initSymbolTable(liftInto);
       clone->semanticCheck(ctx);
       clone->typeCheck(ctx);
+
+      // mark lifted class
+      if (isClass) {
+        VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, stmt->getSymbol());
+        VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, clone->getSymbol());
+        static_cast<ClassSymbol*>(stmt->getSymbol())
+          ->setLifted(static_cast<ClassSymbol*>(clone->getSymbol()));
+      }
 
       liftedStmts.push_back(clone);
     } else {

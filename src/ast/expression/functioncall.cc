@@ -264,7 +264,7 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
     // new object
 
     InstantiatedType* klassType = funcType->getParams().at(0);
-    ClassSymbol* csym = klassType->findSpecializedClassSymbol();
+    ClassSymbol* csym = klassType->findCodeGeneratableClassSymbol();
     TypeTranslator t;
     FuncSymbol* ctorSym =
       csym->getClassSymbolTable()->findFuncSymbol(
@@ -360,7 +360,7 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
         assert(msym);
         assert(klass);
         SymbolTable* lookup =
-          klass->findSpecializedClassSymbol()->getClassSymbolTable();
+          klass->findCodeGeneratableClassSymbol()->getClassSymbolTable();
         TypeTranslator t;
         fs = lookup->findFuncSymbol(ms->getName(), SymbolTable::NoRecurse, t);
         VENOM_ASSERT_TYPEOF_PTR(MethodSymbol, fs);

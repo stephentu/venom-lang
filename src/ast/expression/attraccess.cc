@@ -18,7 +18,10 @@ BaseSymbol*
 AttrAccessNode::getSymbol() {
   InstantiatedType *obj = primary->getStaticType();
   TypeTranslator t;
-  return obj->getClassSymbolTable()->findBaseSymbol(
+  return obj
+    ->findCodeGeneratableClassSymbol()
+    ->getClassSymbolTable()
+    ->findBaseSymbol(
       name, SymbolTable::Any, SymbolTable::ClassLookup, t);
 }
 

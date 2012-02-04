@@ -381,6 +381,11 @@ InstantiatedType::findSpecializedClassSymbol() {
   return specialized;
 }
 
+ClassSymbol*
+InstantiatedType::findCodeGeneratableClassSymbol() {
+  return findSpecializedClassSymbol()->followLiftedChain();
+}
+
 string InstantiatedType::createClassNameImpl(bool fullName) const {
   stringstream buf;
   buf << (fullName ? type->stringify() : type->getName());

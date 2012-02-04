@@ -15,6 +15,7 @@ namespace ast {
   class ASTNode;
   class AssignNode;
   class FuncDeclNode;
+  class StmtListNode;
 }
 
 namespace backend {
@@ -286,6 +287,7 @@ private:
  * Represents a class declaration
  */
 class ClassSymbol : public BaseSymbol {
+  friend class ast::StmtListNode;
   friend class SymbolTable;
 protected:
   ClassSymbol(const std::string&         name,
@@ -294,8 +296,18 @@ protected:
               SymbolTable*               classTable, /* class's table */
               Type*                      type)
     : BaseSymbol(name, table), typeParams(typeParams),
-      classTable(classTable), type(type) {
+      classTable(classTable), type(type), lifted(NULL) {
     assert(type->getParams() == typeParams.size());
+  }
+
+  /**
+   * Can only set when lifted == NULL.
+   * Also class must not have type params
+   */
+  inline void setLifted(ClassSymbol* lifted) {
+    assert(!this->lifted);
+    assert(typeParams.empty());
+    this->lifted = lifted;
   }
 
 public:
@@ -310,12 +322,17 @@ public:
   inline Type* getType() { return type; }
   inline const Type* getType() const { return type; }
 
+  inline ClassSymbol* getLifted() { return lifted; }
+  inline const ClassSymbol* getLifted() const { return lifted; }
+
   virtual InstantiatedType*
     bind(SemanticContext* ctx,
          const TypeTranslator& t,
          const InstantiatedTypeVec& params);
 
   InstantiatedType* getSelfType(SemanticContext* ctx);
+
+  ClassSymbol* followLiftedChain();
 
   bool isTopLevelClass() const;
 
@@ -349,6 +366,7 @@ private:
   InstantiatedTypeVec typeParams;
   SymbolTable*        classTable;
   Type*               type;
+  ClassSymbol*        lifted;
 };
 
 class SpecializedClassSymbol : public ClassSymbol {

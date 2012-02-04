@@ -264,7 +264,7 @@ CodeGenerator::isLocalSymbol(const BaseSymbol* symbol) const {
 
 ClassSymbol*
 CodeGenerator::resolveToSymbol(InstantiatedType* klass) {
-  return klass->findSpecializedClassSymbol();
+  return klass->findCodeGeneratableClassSymbol();
 }
 
 void
@@ -279,7 +279,7 @@ CodeGenerator::addSymbolIfCreated(
   bool create;
   getClassRefIndexFromType(itype, create);
   if (create) {
-    classSymsToProcess.push_back(itype->findSpecializedClassSymbol());
+    classSymsToProcess.push_back(itype->findCodeGeneratableClassSymbol());
   }
 }
 

@@ -209,6 +209,14 @@ ClassSymbol::bind(SemanticContext* ctx,
         ctx, util::vec1(type->instantiate(ctx, params))));
 }
 
+ClassSymbol*
+ClassSymbol::followLiftedChain() {
+  ClassSymbol* cur = this;
+  while (cur->lifted) cur = cur->lifted;
+  assert(cur);
+  return cur;
+}
+
 InstantiatedType*
 ClassSymbol::getSelfType(SemanticContext* ctx) {
   return type->instantiate(ctx, typeParams);
@@ -239,7 +247,7 @@ ClassSymbol::linearizedOrder(vector<Symbol*>& attributes,
   }
 
   vector<SymbolTable*> tables;
-  classTable->linearizedClassOrder(tables, true);
+  classTable->linearizedClassOrder(tables);
 
   // attributes is easy, since there isn't any overriding
   // of attributes, we simply concat the attributes in order

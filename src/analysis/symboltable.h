@@ -235,9 +235,7 @@ public:
 
   void getModuleSymbols(std::vector<ModuleSymbol*>& symbols);
 
-  void linearizedClassOrder(
-      std::vector<SymbolTable*>& tables,
-      bool specialized);
+  void linearizedClassOrder(std::vector<SymbolTable*>& tables);
 
 private:
   /** The module (context) this symbol table belongs to */

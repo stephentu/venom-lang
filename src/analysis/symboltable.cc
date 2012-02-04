@@ -261,14 +261,11 @@ SymbolTable::getModuleSymbols(vector<ModuleSymbol*>& symbols) {
 }
 
 void
-SymbolTable::linearizedClassOrder(
-    vector<SymbolTable*>& tables,
-    bool specialized) {
+SymbolTable::linearizedClassOrder(vector<SymbolTable*>& tables) {
   for (vector<InstantiatedType*>::iterator it = classParents.begin();
        it != classParents.end(); ++it) {
-    ClassSymbol *csym = specialized ?
-      (*it)->findSpecializedClassSymbol() : (*it)->getClassSymbol();
-    csym->getClassSymbolTable()->linearizedClassOrder(tables, specialized);
+    ClassSymbol *csym = (*it)->findCodeGeneratableClassSymbol();
+    csym->getClassSymbolTable()->linearizedClassOrder(tables);
   }
   tables.push_back(this);
 }

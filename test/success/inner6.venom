@@ -1,0 +1,19 @@
+def foo(x::int) =
+  class Inner{A}
+    attr a::A
+    def self(a::A) = self.a = a; end
+  end
+  i = Inner{int}(10);
+  j = Inner{string}("foo");
+
+  class Inner2
+    attr a::Inner{int}
+    def modifyX() = x = x + a.a; end
+  end
+  k = Inner2();
+  k.a = i;
+  print(x);
+  k.modifyX();
+  print(x);
+end
+foo(10);

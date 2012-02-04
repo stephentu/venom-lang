@@ -372,6 +372,8 @@ public:
 
   ClassSymbol* findSpecializedClassSymbol();
 
+  ClassSymbol* findCodeGeneratableClassSymbol();
+
   InstantiatedType* refify(analysis::SemanticContext* ctx);
 
   /**
