@@ -1,0 +1,13 @@
+def f() -> object =
+  class Inner 
+    def foo()       -> string = "hello"; end
+    def stringify() -> string = foo();   end
+  end
+  def g() -> Inner = Inner(); end
+  print(g().foo());
+  x::Inner = g();
+  print(x.foo());
+  g();
+end
+i = f();
+print(i);

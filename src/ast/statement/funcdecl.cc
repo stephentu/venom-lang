@@ -335,7 +335,10 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
       ctx,
       ctx.isLiftingFunction() ? ctx.liftedName : name,
       newParams,
-      getReturnType(),
+      getReturnType()
+        ->findCodeGeneratableClassSymbol()
+        ->getType()
+        ->instantiate(symbols->getSemanticContext()),
       stmtsClone);
 }
 
