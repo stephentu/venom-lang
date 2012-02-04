@@ -1,0 +1,8 @@
+def foo() = 
+  def bar(x::int) = 
+    y::int = x;
+    print(y);
+  end
+  bar(20);
+end
+foo();
