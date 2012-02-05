@@ -43,6 +43,17 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+vector<string>
+ClassDeclNodeSynthetic::getTypeParamNames() const {
+  vector<string> ret;
+  ret.reserve(typeParamTypes.size());
+  for (vector<InstantiatedType*>::const_iterator it = typeParamTypes.begin();
+       it != typeParamTypes.end(); ++it) {
+    ret.push_back((*it)->getType()->getName());
+  }
+  return ret;
+}
+
 void
 ClassDeclNodeSynthetic::print(ostream& o, size_t indent) {
   o << "(class " << name << std::endl << util::indent(indent + 1);
@@ -72,21 +83,6 @@ ClassDeclNodeSynthetic::checkAndInitTypeParams(SemanticContext* ctx) {
 void
 ClassDeclNodeSynthetic::checkAndInitParents(SemanticContext* ctx) {}
 
-void
-ClassDeclNodeSynthetic::createClassSymbol(
-    const string& name,
-    SymbolTable* classTable,
-    Type* type,
-    const vector<InstantiatedType*>& typeParams) {
-  if (instantiation) {
-    assert(typeParams.empty());
-    symbols->createSpecializedClassSymbol(
-        classTable, instantiation, type);
-  } else {
-    ClassDeclNode::createClassSymbol(name, classTable, type, typeParams);
-  }
-}
-
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new ClassDeclNodeSynthetic(
@@ -103,13 +99,7 @@ ClassDeclNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
 
 ClassDeclNode*
 ClassDeclNodeSynthetic::cloneForTemplateImpl(const TypeTranslator& t) {
-  // TODO: assert that the TypeTranslator doesn't instantiate this
-  // class type
-  return new ClassDeclNodeSynthetic(
-      name,
-      parentTypes,
-      typeParamTypes,
-      stmts->cloneForTemplate(t));
+  return cloneForTemplateImplHelper(t);
 }
 
 }

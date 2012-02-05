@@ -49,6 +49,8 @@ public:
       assert(retType);
     }
 
+  virtual std::vector<std::string> getTypeParamNames() const;
+
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { return typeParamTypes; }
 

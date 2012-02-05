@@ -185,15 +185,15 @@ void run_test(bool success, const string& srcfile, size_t alignSize) {
   cout.precision(3);
   if (success) {
     if (res) {
-      cout << "File " << pad(srcfile, alignSize) << " (" << exec_ms << " ms) [OK]" << endl;
+      cout << "File " << pad(srcfile, alignSize) << " [   OK   ] (" << exec_ms << " ms)" << endl;
     } else {
-      cout << "File " << pad(srcfile, alignSize) << " (" << exec_ms << " ms) [FAILED]" << endl;
+      cout << "File " << pad(srcfile, alignSize) << " [ FAILED ] (" << exec_ms << " ms)" << endl;
     }
   } else {
     if (!res) {
-      cout << "File " << pad(srcfile, alignSize) << " (" << exec_ms << " ms) [OK]" << endl;
+      cout << "File " << pad(srcfile, alignSize) << " [   OK   ] (" << exec_ms << " ms)" << endl;
     } else {
-      cout << "File " << pad(srcfile, alignSize) << " (" << exec_ms << " ms) [FAILED]" << endl;
+      cout << "File " << pad(srcfile, alignSize) << " [ FAILED ] (" << exec_ms << " ms)" << endl;
     }
   }
   cout.unsetf(ios::floatfield);

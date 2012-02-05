@@ -43,6 +43,7 @@ namespace venom {
 namespace ast {
   /** Forward decl */
   class ASTExpressionNode;
+  class ParameterizedTypeString;
 }
 
 namespace analysis {
@@ -191,10 +192,9 @@ public:
    * (see InstantiatedType) for subtype relations.
    */
   virtual bool equals(const Type& other) const {
-    // TODO: symbol equality is implemented as pointer equality
-    // for now, fix later. Also will need to move this into
-    // type.cc if we don't use pointer equality (and remove the inline)
-    return name == other.name && symbol == other.symbol;
+    bool eqSyms = symbol == other.symbol;
+    assert(!eqSyms || (name == other.name));
+    return eqSyms;
   }
 
   /**
@@ -403,6 +403,8 @@ public:
 
   ClassSymbol* findCodeGeneratableClassSymbol();
 
+  InstantiatedType* findCodeGeneratableIType(analysis::SemanticContext* ctx);
+
   InstantiatedType* refify(analysis::SemanticContext* ctx);
 
   /**
@@ -419,6 +421,19 @@ public:
     assert(bool(ms) == bool(klass));
     return ms;
   }
+
+  ast::ParameterizedTypeString*
+    toParameterizedString(SymbolTable* boundaryScope);
+
+  struct ToParameterizedStringFunctor {
+    ToParameterizedStringFunctor(SymbolTable* boundaryScope)
+      : boundaryScope(boundaryScope) {}
+    typedef ast::ParameterizedTypeString* result_type;
+    inline ast::ParameterizedTypeString* operator()(InstantiatedType* t) const
+      { return t->toParameterizedString(boundaryScope); }
+  private:
+    analysis::SymbolTable* boundaryScope;
+  };
 
 protected:
   void

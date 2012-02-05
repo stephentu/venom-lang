@@ -94,7 +94,9 @@ StmtListNode::typeCheck(SemanticContext* ctx, InstantiatedType* expected) {
 struct _type_less_cmp {
   inline bool operator()(const Type* lhs,
                          const Type* rhs) const {
-    return lhs->getName() < rhs->getName();
+    assert(lhs->getClassSymbol());
+    assert(rhs->getClassSymbol());
+    return lhs->getClassSymbol() < rhs->getClassSymbol();
   }
 };
 
@@ -265,7 +267,8 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       string liftedName =
         ExtractName(stmt) + "$lifted_" + util::stringify(ctx->uniqueId());
 
-      LiftContext liftCtx(stmt->getSymbol(), liftedName, symbols, liftMap);
+      LiftContext liftCtx
+        (stmt->getSymbol(), liftedName, symbols, liftInto, liftMap);
 
       // gather all non-local refs first
       stmt->collectNonLocalRefs(liftCtx);

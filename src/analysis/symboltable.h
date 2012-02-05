@@ -177,7 +177,7 @@ public:
 
   /**
    * Is this symbol table a primary child of parent?  In other words, is parent
-   * a primary ancestor of this table?
+   * a primary ancestor of this table?. Returns true if this == parent
    */
   bool belongsTo(const SymbolTable* parent) const;
 

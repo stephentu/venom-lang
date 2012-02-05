@@ -51,12 +51,18 @@ namespace venom {
 namespace bootstrap {
 
 static inline vector<InstantiatedType*>
-createTypeParams(SemanticContext* ctx, size_t n) {
+createTypeParams(SymbolTable* scope, size_t n) {
+  SemanticContext* ctx = scope->getSemanticContext();
   vector<InstantiatedType*> ret;
   ret.reserve(n);
   for (size_t i = 0; i < n; i++) {
     string name = "T" + util::stringify(i);
-    ret.push_back(ctx->createTypeParam(name, i)->instantiate(ctx));
+    Type* t = ctx->createTypeParam(name, i);
+    ret.push_back(t->instantiate(ctx));
+    scope->createClassSymbol(
+        name,
+        ctx->getRootSymbolTable()->newChildScopeNoNode(),
+        t);
   }
   return ret;
 }
@@ -159,9 +165,10 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
 
 #define _CREATE_FUNC(n) \
   do { \
+    SymbolTable* scope = root->newChildScopeNoNode(); \
     root->createClassSymbol( \
-        "func" #n, root->newChildScopeNoNode(), \
-        Type::Func ## n ## Type, createTypeParams(ctx, 1 + n)); \
+        "func" #n, scope, \
+        Type::Func ## n ## Type, createTypeParams(scope, 1 + n)); \
   } while (0)
 
   _CREATE_FUNC(0);
@@ -237,7 +244,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
   _IMPL_OVERRIDE_ALL(BoolClassSym);
 
   SymbolTable *RefSymTab = root->newChildScopeNoNode();
-  vector<InstantiatedType*> RefTypeParam = createTypeParams(ctx, 1);
+  vector<InstantiatedType*> RefTypeParam = createTypeParams(RefSymTab, 1);
   ClassSymbol *RefClassSym =
     root->createClassSymbol("<ref>", RefSymTab, Type::RefType, RefTypeParam);
   RefSymTab->createMethodSymbol("<ctor>", RefSymTab->newChildScopeNoNode(),
@@ -247,14 +254,15 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                 NULL, true);
   RefSymTab->createClassAttributeSymbol("value", RefTypeParam[0], RefClassSym);
 
-  root->createClassSymbol("classtype", root->newChildScopeNoNode(), Type::ClassType,
-                          createTypeParams(ctx, 1));
+  SymbolTable *ClassTypeSymTab = root->newChildScopeNoNode();
+  root->createClassSymbol("classtype", ClassTypeSymTab, Type::ClassType,
+                          createTypeParams(ClassTypeSymTab, 1));
 
   root->createClassSymbol("<moduletype>", root->newChildScopeNoNode(),
                           Type::ModuleType, InstantiatedTypeVec());
 
   SymbolTable *ListSymTab = root->newChildScopeNoNode();
-  vector<InstantiatedType*> ListTypeParam = createTypeParams(ctx, 1);
+  vector<InstantiatedType*> ListTypeParam = createTypeParams(ListSymTab, 1);
   ClassSymbol *ListClassSym =
     root->createClassSymbol("list", ListSymTab, Type::ListType, ListTypeParam);
   ListSymTab->createMethodSymbol("<ctor>", ListSymTab->newChildScopeNoNode(),
@@ -287,7 +295,7 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                  NULL, true);
 
   SymbolTable *MapSymTab = root->newChildScopeNoNode();
-  vector<InstantiatedType*> MapTypeParams = createTypeParams(ctx, 2);
+  vector<InstantiatedType*> MapTypeParams = createTypeParams(MapSymTab, 2);
   ClassSymbol *MapClassSym =
     root->createClassSymbol("map", MapSymTab, Type::MapType, MapTypeParams);
   MapSymTab->createMethodSymbol("<ctor>", MapSymTab->newChildScopeNoNode(),

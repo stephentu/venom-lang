@@ -1,0 +1,6 @@
+def foo() =
+  def bar(i::int) = print(i); end
+  bar(30);
+end
+class int end
+foo();

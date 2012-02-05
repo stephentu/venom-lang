@@ -50,8 +50,9 @@ namespace ast {
 class ClassDeclNode : public ASTStatementNode {
 public:
   ClassDeclNode(const std::string& name,
-                ASTStatementNode* stmts)
-    : name(name), stmts(stmts) {
+                ASTStatementNode* stmts,
+                analysis::InstantiatedType* instantiation)
+    : name(name), stmts(stmts), instantiation(instantiation) {
     stmts->addLocationContext(ASTNode::TopLevelClassBody);
   }
 
@@ -65,13 +66,17 @@ public:
   // must call checkAndInitParents() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getParents() const = 0;
 
+  virtual std::vector<std::string> getTypeParamNames() const = 0;
+
   // must call checkAndInitTypeParams() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
   // the parameterized type which this ClassDeclNode instantiates
   // NULL if none
-  virtual analysis::InstantiatedType* getInstantiationOfType()
-    { return NULL; }
+  inline analysis::InstantiatedType* getInstantiationOfType()
+    { return instantiation; }
+  inline const analysis::InstantiatedType* getInstantiationOfType() const
+    { return instantiation; }
 
   /** Returns the NON-specialized self-type */
   analysis::InstantiatedType* getSelfType(analysis::SemanticContext* ctx);
@@ -117,7 +122,7 @@ protected:
 
   virtual void checkAndInitParents(analysis::SemanticContext* ctx) = 0;
 
-  virtual void createClassSymbol(
+  void createClassSymbol(
       const std::string& name,
       analysis::SymbolTable* classTable,
       analysis::Type* type,
@@ -134,8 +139,12 @@ protected:
 
   ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
 
+  ClassDeclNode* cloneForTemplateImplHelper(const analysis::TypeTranslator& t);
+
   std::string       name;
   ASTStatementNode* stmts;
+
+  analysis::InstantiatedType* instantiation;
 };
 
 /** comes from the parser */
@@ -145,8 +154,9 @@ public:
   ClassDeclNodeParser(const std::string&   name,
                       const TypeStringVec& parents,
                       const util::StrVec&  typeParams,
-                      ASTStatementNode*    stmts)
-    : ClassDeclNode(name, stmts),
+                      ASTStatementNode*    stmts,
+                      analysis::InstantiatedType* instantiation = NULL)
+    : ClassDeclNode(name, stmts, instantiation),
       parents(parents), typeParams(typeParams) {}
 
   ~ClassDeclNodeParser() {
@@ -158,6 +168,9 @@ public:
                parentTypes.size() == 1 :
                parents.size() == parentTypes.size());
       return parentTypes; }
+
+  virtual std::vector<std::string> getTypeParamNames() const
+    { return typeParams; }
 
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { assert(typeParams.size() == typeParamTypes.size());

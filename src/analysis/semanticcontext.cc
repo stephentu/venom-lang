@@ -59,6 +59,13 @@ string SemanticContext::getFullModuleName() const {
   return moduleName;
 }
 
+bool
+SemanticContext::isDescendantOf(const SemanticContext* that) const {
+  const SemanticContext* cur = this;
+  while (cur && cur != that) cur = cur->parent;
+  return cur == that;
+}
+
 void SemanticContext::collectObjectCode(vector<ObjectCode*>& objCodes) {
   if (objectCode) objCodes.push_back(objectCode);
   for (vector<SemanticContext*>::iterator it = children.begin();
@@ -131,15 +138,16 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
 
   TypeTranslator t;
-  SymbolTable *cur = symbols;
+  SymbolTable *cur = type->starting_scope ? type->starting_scope : symbols;
   BaseSymbol *bs = NULL;
   for (vector<string>::const_iterator it = type->names.begin();
        it != type->names.end(); ++it) {
     bs = cur->findBaseSymbol(
         *it,
-        SymbolTable::Class | SymbolTable::Module,
-        it == type->names.begin() ?
-            SymbolTable::AllowCurrentScope : SymbolTable::ClassLookup,
+        (SymbolTable::Class | SymbolTable::Module),
+        (it == type->names.begin()) ?
+            SymbolTable::AllowCurrentScope :
+            SymbolTable::ClassLookup,
         t);
     if (!bs) {
       throw SemanticViolationException(

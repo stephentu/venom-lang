@@ -55,8 +55,6 @@ namespace ast {
 
 InstantiatedType*
 ClassDeclNode::getSelfType(SemanticContext* ctx) {
-  InstantiatedType* itype = getInstantiationOfType();
-  if (itype) return itype;
   TypeTranslator t;
   ClassSymbol *cs = getSymbolTable()->findClassSymbol(
         getName(), SymbolTable::NoRecurse, t);
@@ -106,7 +104,8 @@ ClassDeclNode::semanticCheckImpl(SemanticContext* ctx, bool doRegister) {
 
   // now look for a ctor definition
   TypeTranslator t;
-  if (!stmts->getSymbolTable()->findFuncSymbol("<ctor>", SymbolTable::NoRecurse, t)) {
+  if (!stmts->getSymbolTable()->findFuncSymbol(
+        "<ctor>", SymbolTable::NoRecurse, t)) {
     // no ctor defined, insert a default one
     CtorDeclNode *ctor =
       new CtorDeclNode(ExprNodeVec(), new StmtListNode, ExprNodeVec());
@@ -150,11 +149,10 @@ ClassDeclNode::liftPhaseImpl(SemanticContext* ctx,
   static_cast<StmtListNode*>(stmts)->liftRecurseAndInsert(ctx);
 }
 
+// TODO: don't really need this override
 void
 ClassDeclNode::codeGen(CodeGenerator& cg) {
   assert(!isTypeParameterized());
-
-  // otherwise, continue as usual
   ASTStatementNode::codeGen(cg);
 }
 
@@ -170,7 +168,13 @@ ClassDeclNode::createClassSymbol(
     SymbolTable* classTable,
     Type* type,
     const vector<InstantiatedType*>& typeParams) {
-  symbols->createClassSymbol(name, classTable, type, typeParams);
+  if (instantiation) {
+    assert(typeParams.empty());
+    symbols->createSpecializedClassSymbol(
+        classTable, instantiation, type);
+  } else {
+    symbols->createClassSymbol(name, classTable, type, typeParams);
+  }
 }
 
 void
@@ -206,21 +210,75 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
     Symbol* s = static_cast<Symbol*>(*it);
     InstantiatedType* refType =
       s->getInstantiatedType()->refify(ctx.definedIn->getSemanticContext());
-    ClassAttrDeclNode *cattr = new ClassAttrDeclNode(
-        new VariableNodeSynthetic(ctx.refParamName(s), refType),
+    ClassAttrDeclNode *cattr =
+      new ClassAttrDeclNode(
+        new VariableNodeParser(
+          ctx.refParamName(s), refType->toParameterizedString(ctx.liftInto)),
         NULL);
     static_cast<StmtListNode*>(stmtsClone)->prependStatement(cattr);
   }
 
-  return new ClassDeclNodeSynthetic(
+  vector<InstantiatedType*> parents = getParents();
+  vector<ParameterizedTypeString*> parentTypeStrs(parents.size());
+  transform(parents.begin(), parents.end(),
+            parentTypeStrs.begin(),
+            InstantiatedType::ToParameterizedStringFunctor(ctx.liftInto));
+
+  return new ClassDeclNodeParser(
       ctx.liftedName,
-      getParents(),
-      InstantiatedTypeVec(),
-      stmtsClone);
+      parentTypeStrs,
+      util::StrVec(),
+      stmtsClone,
+      NULL);
 }
 
-struct functor {
-  functor(SemanticContext* ctx, SymbolTable* st)
+ClassDeclNode*
+ClassDeclNode::cloneForTemplateImplHelper(const TypeTranslator& t) {
+  BaseSymbol* bs = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
+  ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
+  SemanticContext* ctx = getSymbolTable()->getSemanticContext();
+  InstantiatedType* itype =
+    t.translate(ctx, cs->getSelfType(ctx));
+
+  // TODO: assert only two cases:
+  //   1) full type instantiation
+  //   2) no instantiations
+  // In other words, no partial instantiations allowed
+
+  vector<InstantiatedType*> parentTypes = getParents();
+
+  vector<InstantiatedType*> translated(parentTypes.size());
+  transform(parentTypes.begin(), parentTypes.end(),
+            translated.begin(), TypeTranslator::TranslateFunctor(ctx, t));
+
+  vector<ParameterizedTypeString*> translatedTypeStrs(translated.size());
+  transform(translated.begin(), translated.end(),
+            translatedTypeStrs.begin(),
+            InstantiatedType::ToParameterizedStringFunctor(symbols));
+
+  if (itype->isSpecializedType()) {
+    // instantiated type
+    InstantiatedType::AssertNoTypeParamPlaceholders(itype);
+    return new ClassDeclNodeParser(
+        itype->createClassName(),
+        translatedTypeStrs,
+        util::StrVec(),
+        stmts->cloneForTemplate(t),
+        itype);
+  } else {
+    // regular
+    return new ClassDeclNodeParser(
+        name,
+        translatedTypeStrs,
+        getTypeParamNames(),
+        stmts->cloneForTemplate(t),
+        NULL);
+  }
+}
+
+struct instantiate_functor {
+  instantiate_functor(SemanticContext* ctx, SymbolTable* st)
     : ctx(ctx), st(st) {}
   inline
   InstantiatedType* operator()(const ParameterizedTypeString* t) const {
@@ -263,7 +321,8 @@ ClassDeclNodeParser::checkAndInitParents(SemanticContext* ctx) {
   assert(parentTypes.empty());
   parentTypes.resize(parents.size());
   transform(parents.begin(), parents.end(),
-            parentTypes.begin(), functor(ctx, stmts->getSymbolTable()));
+            parentTypes.begin(),
+            instantiate_functor(ctx, stmts->getSymbolTable()));
   if (parents.empty()) {
     // if no explicit parents declared, parent is object
     parentTypes.push_back(InstantiatedType::ObjectType);
@@ -299,65 +358,7 @@ ClassDeclNodeParser::cloneForLiftImpl(LiftContext& ctx) {
 
 ClassDeclNode*
 ClassDeclNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
-  // assert that we have already registered this symbol
-  assert(parents.empty() ?
-           parentTypes.size() == 1 :
-           parents.size() == parentTypes.size());
-  assert(typeParamTypes.size() == typeParams.size());
-
-  BaseSymbol* bs = getSymbol();
-  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
-  ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
-  SemanticContext* ctx = getSymbolTable()->getSemanticContext();
-  InstantiatedType* itype =
-    t.translate(ctx, cs->getSelfType(ctx));
-
-  // TODO: assert only two cases:
-  //   1) full type instantiation
-  //   2) no instantiations
-  // In other words, no partial instantiations allowed
-
-  if (itype->isSpecializedType()) {
-    // instantiated type
-    InstantiatedType::AssertNoTypeParamPlaceholders(itype);
-    return new ClassDeclNodeSynthetic(
-        itype->createClassName(),
-        util::transform_vec(
-          parentTypes.begin(), parentTypes.end(),
-          TypeTranslator::TranslateFunctor(ctx, t)),
-        InstantiatedTypeVec(),
-        stmts->cloneForTemplate(t),
-        itype);
-  } else {
-    TypeTranslator tt = t;
-
-    // TODO: this is copied from
-    //    ast/statement/funcdecl.cc
-    // clone the type param types, so we can create new
-    // ClassSymbols for them
-    vector<InstantiatedType*> newTypeParamTypes;
-    newTypeParamTypes.reserve(typeParamTypes.size());
-    for (vector<InstantiatedType*>::iterator it = typeParamTypes.begin();
-         it != typeParamTypes.end(); ++it) {
-      VENOM_ASSERT_TYPEOF_PTR(TypeParamType, (*it)->getType());
-      TypeParamType* t = static_cast<TypeParamType*>((*it)->getType());
-      Type* t0 = ctx->createTypeParam(t->getName(), t->getPos());
-      newTypeParamTypes.push_back(t0->instantiate(ctx));
-
-      // add to type translator
-      tt.addTranslation(*it, newTypeParamTypes.back());
-    }
-
-    // regular
-    return new ClassDeclNodeSynthetic(
-        name,
-        util::transform_vec(
-          parentTypes.begin(), parentTypes.end(),
-          TypeTranslator::TranslateFunctor(ctx, tt)),
-        newTypeParamTypes,
-        stmts->cloneForTemplate(tt),
-        NULL);
-  }
+  return cloneForTemplateImplHelper(t);
 }
 
 }

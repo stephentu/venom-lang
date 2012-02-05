@@ -84,10 +84,6 @@ FuncDeclNode* ASTNode::getEnclosingFuncNode() {
   return NULL;
 }
 
-const FuncDeclNode* ASTNode::getEnclosingFuncNode() const {
-  return const_cast<ASTNode*>(this)->getEnclosingFuncNode();
-}
-
 ClassDeclNode* ASTNode::getEnclosingClassNode() {
   assert(symbols);
   ASTNode *cur = this;
@@ -100,8 +96,17 @@ ClassDeclNode* ASTNode::getEnclosingClassNode() {
   return NULL;
 }
 
-const ClassDeclNode* ASTNode::getEnclosingClassNode() const {
-  return const_cast<ASTNode*>(this)->getEnclosingClassNode();
+ASTStatementNode* ASTNode::getEnclosingTypeParameterizedNode() {
+  assert(symbols);
+  ASTNode *cur = this;
+  while (cur) {
+    if (cur->isTypeParameterized()) {
+      VENOM_ASSERT_TYPEOF_PTR(ASTStatementNode, cur);
+      return static_cast<ASTStatementNode*>(cur);
+    }
+    cur = cur->getSymbolTable()->getOwner();
+  }
+  return NULL;
 }
 
 void ASTNode::initSymbolTable(SymbolTable* symbols) {

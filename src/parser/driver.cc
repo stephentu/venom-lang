@@ -136,7 +136,16 @@ unsafe_compile_module(const string& fname, fstream& infile,
 struct _itype_less_cmp {
   inline bool operator()(const InstantiatedType* lhs,
                          const InstantiatedType* rhs) const {
-    return lhs->stringify() < rhs->stringify();
+    assert(lhs->getClassSymbol());
+    assert(rhs->getClassSymbol());
+    if (lhs->getClassSymbol() != rhs->getClassSymbol()) {
+      return lhs->getClassSymbol() < rhs->getClassSymbol();
+    }
+    assert(lhs->getParams().size() == rhs->getParams().size());
+    for (size_t i = 0; i < lhs->getParams().size(); i++) {
+      if (operator()(lhs->getParams()[i], rhs->getParams()[i])) return true;
+    }
+    return false;
   }
 };
 

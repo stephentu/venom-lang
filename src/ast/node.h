@@ -79,9 +79,10 @@ struct LiftContext {
   LiftContext(analysis::BaseSymbol* curLiftSym,
               const std::string& liftedName,
               analysis::SymbolTable* definedIn,
+              analysis::SymbolTable* liftInto,
               const LiftMap& liftMap)
     : curLiftSym(curLiftSym), liftedName(liftedName),
-      definedIn(definedIn), liftMap(liftMap) {}
+      definedIn(definedIn), liftInto(liftInto), liftMap(liftMap) {}
 
   bool isLiftingFunction() const;
   bool isLiftingClass() const;
@@ -94,6 +95,7 @@ struct LiftContext {
   analysis::BaseSymbol* const curLiftSym;
   const std::string liftedName;
   analysis::SymbolTable* const definedIn;
+  analysis::SymbolTable* const liftInto;
   const LiftMap liftMap;
 
   LiftContainer refs;
@@ -193,10 +195,16 @@ public:
   virtual void clearLocationContext(uint32_t ctx)    { locCtx &= ~ctx;     }
 
   FuncDeclNode* getEnclosingFuncNode();
-  const FuncDeclNode* getEnclosingFuncNode() const;
+  inline const FuncDeclNode* getEnclosingFuncNode() const
+    { return const_cast<ASTNode*>(this)->getEnclosingFuncNode(); }
 
   ClassDeclNode* getEnclosingClassNode();
-  const ClassDeclNode* getEnclosingClassNode() const;
+  inline const ClassDeclNode* getEnclosingClassNode() const
+    { return const_cast<ASTNode*>(this)->getEnclosingClassNode(); }
+
+  ASTStatementNode* getEnclosingTypeParameterizedNode();
+  inline const ASTStatementNode* getEnclosingTypeParameterizedNode() const
+    { return const_cast<ASTNode*>(this)->getEnclosingTypeParameterizedNode(); }
 
   /** Semantic checks **/
 

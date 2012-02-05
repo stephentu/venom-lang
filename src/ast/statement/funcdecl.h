@@ -71,6 +71,8 @@ public:
   inline ASTStatementNode* getStmts() { return stmts; }
   inline const ASTStatementNode* getStmts() const { return stmts; }
 
+  virtual std::vector<std::string> getTypeParamNames() const = 0;
+
   // must call checkAndInitTypeParams() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const = 0;
 
@@ -157,6 +159,9 @@ public:
   ~FuncDeclNodeParser() {
     if (retTypeString) delete retTypeString;
   }
+
+  virtual std::vector<std::string> getTypeParamNames() const
+    { return typeParams; }
 
   virtual std::vector<analysis::InstantiatedType*> getTypeParams() const
     { assert(typeParams.size() == typeParamTypes.size());

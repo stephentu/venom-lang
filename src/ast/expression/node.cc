@@ -60,7 +60,8 @@ string ParameterizedTypeString::stringify() const {
   return s.str();
 }
 
-ParameterizedTypeString* ParameterizedTypeString::clone() {
+ParameterizedTypeString*
+ParameterizedTypeString::clone() {
   return new ParameterizedTypeString(names,
       util::transform_vec(params.begin(), params.end(), CloneFunctor()));
 }

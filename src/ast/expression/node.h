@@ -40,8 +40,8 @@
 namespace venom {
 
 namespace analysis {
-  /** Forward decl for typeCheck */
   class InstantiatedType;
+  class SymbolTable;
   typedef std::vector<InstantiatedType*> InstantiatedTypeVec;
 }
 
@@ -52,12 +52,21 @@ namespace ast {
  * Type objects right away is because Type objects represent
  * properly resolved types, which we cannot get right away
  * from the parser */
-struct ParameterizedTypeString {
+class ParameterizedTypeString {
+  friend class analysis::InstantiatedType;
+private:
+  ParameterizedTypeString(const util::StrVec& names,
+                          const std::vector<ParameterizedTypeString*>& params,
+                          analysis::SymbolTable* starting_scope)
+    : names(names), params(params), starting_scope(starting_scope) {}
+
+public:
   ParameterizedTypeString(const util::StrVec& names)
-    : names(names) {}
+    : names(names), starting_scope(NULL) {}
   ParameterizedTypeString(const util::StrVec& names,
                           const std::vector<ParameterizedTypeString*>& params)
-    : names(names), params(params) {}
+    : names(names), params(params), starting_scope(NULL) {}
+
   ~ParameterizedTypeString() {
     util::delete_pointers(params.begin(), params.end());
   }
@@ -67,8 +76,9 @@ struct ParameterizedTypeString {
   ParameterizedTypeString* clone();
   struct CloneFunctor {
     typedef ParameterizedTypeString* result_type;
-    inline ParameterizedTypeString*
-		operator()(ParameterizedTypeString* ptr) const { return ptr->clone(); }
+    inline ParameterizedTypeString* operator()(
+        ParameterizedTypeString* ptr) const
+      { return ptr->clone(); }
   };
 
   struct StringerFunctor :
@@ -76,6 +86,8 @@ struct ParameterizedTypeString {
 
   const std::vector<std::string>              names;
   const std::vector<ParameterizedTypeString*> params;
+
+  analysis::SymbolTable* const starting_scope;
 };
 
 typedef std::vector<ParameterizedTypeString*> TypeStringVec;

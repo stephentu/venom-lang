@@ -227,20 +227,29 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
       ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
       SemanticContext* sctx = symbols->getSemanticContext();
+      // OK to use InstantiatedType object, because we use
+      // the type of the lifted class (type won't change after clone)
       return new VariableNodeSynthetic(name, cs->getSelfType(sctx));
     }
+
+    return new VariableNodeParser(
+        name, explicitType->toParameterizedString(ctx.liftInto));
   }
 
-  return new VariableNodeParser(
-      name, explicitTypeString ? explicitTypeString->clone() : NULL);
+  return new VariableNodeParser(name, NULL);
 }
 
 VariableNode*
 VariableNodeParser::cloneForTemplateImpl(const TypeTranslator& t) {
   InstantiatedType* itype = getExplicitType();
   if (itype) {
+    assert(explicitTypeString);
     SemanticContext* ctx = getSymbolTable()->getSemanticContext();
-    return new VariableNodeSynthetic(name, t.translate(ctx, itype));
+    itype = t.translate(ctx, itype);
+    ASTStatementNode* enclosing = getEnclosingTypeParameterizedNode();
+    assert(enclosing);
+    return new VariableNodeParser(
+        name, itype->toParameterizedString(enclosing->getSymbolTable()));
   }
   return new VariableNodeParser(name, NULL);
 }

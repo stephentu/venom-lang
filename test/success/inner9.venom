@@ -1,0 +1,17 @@
+def foo{Type1}(x::Type1) =
+  class Inner{Type2}
+    attr elem1::Type1
+    attr elem2::Type2
+    def self(elem1::Type1, elem2::Type2) = 
+      self.elem1 = elem1; 
+      self.elem2 = elem2;
+    end
+  end
+  def bar(x::Inner{Type1}) = 
+    print(x.elem1);
+    print(x.elem2);
+  end
+  bar(Inner{Type1}(x, x));
+end
+foo{int}(32);
+foo{string}("a");

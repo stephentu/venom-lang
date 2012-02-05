@@ -304,11 +304,11 @@ FuncDeclNode::newFuncDeclNodeForLift(
       const ExprNodeVec& params,
       InstantiatedType* returnType,
       ASTStatementNode* stmts) {
-  return new FuncDeclNodeSynthetic(
+  return new FuncDeclNodeParser(
       name,
-      InstantiatedTypeVec(),
+      StrVec(),
       params,
-      returnType,
+      returnType->toParameterizedString(ctx.liftInto),
       stmts);
 }
 
@@ -333,10 +333,12 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
       assert((*it)->getDefinedSymbolTable() == ctx.definedIn);
       Symbol* s = static_cast<Symbol*>(*it);
       newParams.push_back(
-          new VariableNodeSynthetic(
+          new VariableNodeParser(
             ctx.refParamName(s),
-            s->getInstantiatedType()->refify(
-              ctx.definedIn->getSemanticContext())));
+            s->getInstantiatedType()
+             ->findCodeGeneratableIType(ctx.definedIn->getSemanticContext())
+             ->refify(ctx.definedIn->getSemanticContext())
+             ->toParameterizedString(ctx.liftInto)));
       if (isCtor()) {
         // need to insert assignment statements into
         // the stmtlist. but must insert *after* the super ()
@@ -352,22 +354,18 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
   }
 
   // regular params
-  // right now, we use clone template (w/ an empty translator),
-  // since it does exactly what we want...
   TypeTranslator t;
   newParams.resize(newParams.size() + params.size());
   transform(params.begin(), params.end(),
             newParams.begin() + ctx.refs.vec.size(),
-            ASTExpressionNode::CloneTemplateFunctor(t));
+            ASTExpressionNode::CloneLiftFunctor(ctx));
 
   return newFuncDeclNodeForLift(
       ctx,
       ctx.isLiftingFunction() ? ctx.liftedName : name,
       newParams,
       getReturnType()
-        ->findCodeGeneratableClassSymbol()
-        ->getType()
-        ->instantiate(symbols->getSemanticContext()),
+        ->findCodeGeneratableIType(symbols->getSemanticContext()),
       stmtsClone);
 }
 
@@ -392,38 +390,23 @@ FuncDeclNode::cloneForTemplateImplHelper(const TypeTranslator& t) {
 
   if (translatedBF.isFullyInstantiated()) {
     InstantiatedType::AssertNoTypeParamPlaceholders(translatedBF.second);
-    return new FuncDeclNodeSynthetic(
+    return new FuncDeclNodeParser(
       translatedBF.createFuncName(),
-      InstantiatedTypeVec(),
+      StrVec(),
       util::transform_vec(params.begin(), params.end(),
         ASTExpressionNode::CloneTemplateFunctor(t)),
-      t.translate(ctx, retType),
+      t.translate(ctx, retType)
+        ->toParameterizedString(symbols),
       stmts->cloneForTemplate(t));
   } else {
-    TypeTranslator tt = t;
-
-    // clone the type param types, so we can create new
-    // ClassSymbols for them
-    vector<InstantiatedType*> newTypeParamTypes;
-    newTypeParamTypes.reserve(typeParamTypes.size());
-    for (vector<InstantiatedType*>::iterator it = typeParamTypes.begin();
-         it != typeParamTypes.end(); ++it) {
-      VENOM_ASSERT_TYPEOF_PTR(TypeParamType, (*it)->getType());
-      TypeParamType* t = static_cast<TypeParamType*>((*it)->getType());
-      Type* t0 = ctx->createTypeParam(t->getName(), t->getPos());
-      newTypeParamTypes.push_back(t0->instantiate(ctx));
-
-      // add to type translator
-      tt.addTranslation(*it, newTypeParamTypes.back());
-    }
-
-    return new FuncDeclNodeSynthetic(
+    return new FuncDeclNodeParser(
       name,
-      newTypeParamTypes,
+      getTypeParamNames(),
       util::transform_vec(params.begin(), params.end(),
-        ASTExpressionNode::CloneTemplateFunctor(tt)),
-      tt.translate(getSymbolTable()->getSemanticContext(), retType),
-      stmts->cloneForTemplate(tt));
+        ASTExpressionNode::CloneTemplateFunctor(t)),
+      t.translate(ctx, retType)
+        ->toParameterizedString(symbols),
+      stmts->cloneForTemplate(t));
   }
 }
 

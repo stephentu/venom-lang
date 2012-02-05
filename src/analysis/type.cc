@@ -415,6 +415,11 @@ InstantiatedType::findCodeGeneratableClassSymbol() {
   return findSpecializedClassSymbol()->followLiftedChain();
 }
 
+InstantiatedType*
+InstantiatedType::findCodeGeneratableIType(SemanticContext* ctx) {
+  return findCodeGeneratableClassSymbol()->getSelfType(ctx);
+}
+
 string InstantiatedType::createClassNameImpl(bool fullName) const {
   stringstream buf;
   buf << (fullName ? type->stringify() : type->getName());
@@ -434,6 +439,27 @@ InstantiatedType::refify(SemanticContext* ctx) {
   // should never refify a ref...
   assert(!getType()->equals(*Type::RefType));
   return Type::RefType->instantiate(ctx, util::vec1(this));
+}
+
+ParameterizedTypeString*
+InstantiatedType::toParameterizedString(SymbolTable* boundaryScope) {
+  assert(boundaryScope);
+
+  vector<ParameterizedTypeString*> sparams;
+  sparams.reserve(params.size());
+  for (vector<InstantiatedType*>::iterator it = params.begin();
+       it != params.end(); ++it) {
+    sparams.push_back((*it)->toParameterizedString(boundaryScope));
+  }
+
+  SymbolTable* classDefTable = getClassSymbol()->getDefinedSymbolTable();
+  SymbolTable* useScope =
+    classDefTable->belongsTo(boundaryScope) ? NULL : classDefTable;
+
+  return new ParameterizedTypeString(
+      util::vec1(getType()->getName()),
+      sparams,
+      useScope);
 }
 
 void

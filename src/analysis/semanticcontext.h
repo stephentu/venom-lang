@@ -142,6 +142,8 @@ public:
 
   std::string getFullModuleName() const;
 
+  bool isDescendantOf(const SemanticContext* that) const;
+
   inline SemanticContext*
     getProgramRoot() { return programRoot; }
   inline const SemanticContext*

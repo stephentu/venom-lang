@@ -1,0 +1,8 @@
+class foo end
+def test() = 
+  def f(arg::foo) =
+    print("got foo");
+  end
+  f(foo());
+end
+test();

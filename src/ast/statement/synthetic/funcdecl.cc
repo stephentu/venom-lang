@@ -39,6 +39,17 @@ using namespace venom::analysis;
 namespace venom {
 namespace ast {
 
+vector<string>
+FuncDeclNodeSynthetic::getTypeParamNames() const {
+  vector<string> ret;
+  ret.reserve(typeParamTypes.size());
+  for (vector<InstantiatedType*>::const_iterator it = typeParamTypes.begin();
+       it != typeParamTypes.end(); ++it) {
+    ret.push_back((*it)->getType()->getName());
+  }
+  return ret;
+}
+
 FuncDeclNode*
 FuncDeclNodeSynthetic::cloneImpl(CloneMode::Type type) {
   return new FuncDeclNodeSynthetic(

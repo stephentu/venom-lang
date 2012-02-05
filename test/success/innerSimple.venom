@@ -1,0 +1,7 @@
+def foo{A}() =
+  class Inner 
+    def self() = print("HI"); end
+  end
+  i::Inner = Inner();
+end
+foo{int}();
