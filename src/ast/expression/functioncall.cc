@@ -386,7 +386,7 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
         // TODO: eventually, we should fix this
         InstantiatedType* klass;
         MethodSymbol* msym = superType->findMethodSymbol(ms->getName(), klass);
-        assert(msym);
+        VENOM_ASSERT_NOT_NULL(msym);
         assert(klass);
         SymbolTable* lookup =
           klass->findCodeGeneratableClassSymbol()->getClassSymbolTable();

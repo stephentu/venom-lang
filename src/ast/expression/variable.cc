@@ -104,6 +104,7 @@ VariableNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
   if (it == refs.end()) return NULL;
   VENOM_ASSERT_TYPEOF_PTR(Symbol, bs);
   Symbol* sym = static_cast<Symbol*>(bs);
+  VENOM_ASSERT_NOT_NULL(sym);
   assert(sym->getDefinedSymbolTable() == symbols);
   assert(sym->isPromoteToRef());
   return replace(

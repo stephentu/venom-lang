@@ -221,11 +221,13 @@ StmtListNode::liftPhase(SemanticContext* ctx) {
   liftRecurseAndInsert(ctx);
 }
 
-static void LiftPhaseImplStmtAssertions(ASTStatementNode* stmt) {
+static inline void LiftPhaseImplStmtAssertions(ASTStatementNode* stmt) {
+#ifndef NDEBUG
   if (FuncDeclNode* func = dynamic_cast<FuncDeclNode*>(stmt)) {
     // should never lift a ctor
     assert(!func->isCtor());
   }
+#endif /* NDEBUG */
 }
 
 // TODO: make getName() a virtual function on ASTNode,
