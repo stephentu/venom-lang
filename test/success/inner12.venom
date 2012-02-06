@@ -1,0 +1,32 @@
+def Foo(x::int) -> int =
+
+  class Bar
+    def Baz() = 
+      def Quix() = 
+        print("HERE 1");
+      end
+      if x > 10 then
+        x = x + 1;
+        Quix();
+      else
+        def AAA() = 
+          print("HERE 2");
+        end
+        AAA();
+        x = x + 2;
+      end
+    end
+  end
+
+  def mkBar() -> Bar = Bar(); end
+
+  b = mkBar();
+  b.Baz();
+
+  return x;
+end
+
+x0 = Foo(0);
+x1 = Foo(100);
+print(x0);
+print(x1);
