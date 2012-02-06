@@ -1,0 +1,10 @@
+def foo() =
+  class A end
+  class B <- A 
+    def foo() = print("HI"); end
+  end
+  B().foo();
+  b::B = B();
+  b.foo();
+end
+foo();

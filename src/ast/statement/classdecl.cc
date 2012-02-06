@@ -219,8 +219,17 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
   }
 
   vector<InstantiatedType*> parents = getParents();
-  vector<ParameterizedTypeString*> parentTypeStrs(parents.size());
-  transform(parents.begin(), parents.end(),
+
+  vector<InstantiatedType*> tparents;
+  tparents.reserve(parents.size());
+  for (vector<InstantiatedType*>::iterator it = tparents.begin();
+       it != tparents.end(); ++it) {
+    tparents.push_back(
+        (*it)->findCodeGeneratableIType(ctx.definedIn->getSemanticContext()));
+  }
+
+  vector<ParameterizedTypeString*> parentTypeStrs(tparents.size());
+  transform(tparents.begin(), tparents.end(),
             parentTypeStrs.begin(),
             InstantiatedType::ToParameterizedStringFunctor(ctx.liftInto));
 
