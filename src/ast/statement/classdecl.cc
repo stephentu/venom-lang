@@ -144,9 +144,9 @@ ClassDeclNode::collectSpecialized(
 void
 ClassDeclNode::liftPhaseImpl(SemanticContext* ctx,
                              SymbolTable* liftInto,
-                             vector<ASTStatementNode*>& liftedStmts) {
-  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
-  static_cast<StmtListNode*>(stmts)->liftRecurseAndInsert(ctx);
+                             vector<ASTStatementNode*>& liftedStmts,
+                             bool excludeFunctions) {
+  stmts->liftPhaseImpl(ctx, liftInto, liftedStmts, true);
 }
 
 // TODO: don't really need this override
@@ -160,6 +160,13 @@ BaseSymbol*
 ClassDeclNode::getSymbol() {
   TypeTranslator t;
   return symbols->findClassSymbol(name, SymbolTable::NoRecurse, t);
+}
+
+ClassSymbol*
+ClassDeclNode::getClassSymbol() {
+  BaseSymbol* bsym = getSymbol();
+  VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bsym);
+  return static_cast<ClassSymbol*>(bsym);
 }
 
 void
@@ -200,6 +207,20 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
 
   ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
   VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+
+  if (isNestedClass()) {
+    ClassDeclNode* outerCdn = getEnclosingClassNode();
+    assert(outerCdn);
+    ClassSymbol* csym = outerCdn->getClassSymbol();
+    SemanticContext* sctx = ctx.definedIn->getSemanticContext();
+    ClassAttrDeclNode *cattr =
+      new ClassAttrDeclNode(
+        new VariableNodeParser(
+          "<outer>",
+          csym->getSelfType(sctx)->toParameterizedString(ctx.liftInto)),
+        NULL);
+    static_cast<StmtListNode*>(stmtsClone)->prependStatement(cattr);
+  }
 
   // now add ref versions of lifted symbols into
   // class body definition

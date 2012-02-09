@@ -189,7 +189,11 @@ public:
 
   bool isModuleLevelSymbolTable() const;
 
+  bool isClassSymbolTable() const;
+
   bool isDefined(const std::string& name, unsigned int type, RecurseMode mode);
+
+  size_t countClassBoundaries(const SymbolTable* outer) const;
 
   BaseSymbol*
   findBaseSymbol(const std::string& name, unsigned int type, RecurseMode mode,

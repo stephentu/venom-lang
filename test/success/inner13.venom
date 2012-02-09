@@ -1,0 +1,11 @@
+class A
+  def foo() = print("HI"); end
+  class B
+    def bar() = foo(); end
+  end
+  def exec() = 
+    b = B();
+    b.bar();
+  end
+end
+A().exec();

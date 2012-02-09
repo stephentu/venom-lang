@@ -256,12 +256,24 @@ FunctionCallNode::rewriteAfterLift(
   // map each lifted param to a vector of names (possibly
   // adding the param to *this* scopes
   ExprNodeVec liftedParamExprs;
-  liftedParamExprs.reserve(liftedParams.size() + args.size());
+  liftedParamExprs.reserve(liftedParams.size() + args.size() + 1);
+
+  if (ClassSymbol* csym = dynamic_cast<ClassSymbol*>(bs)) {
+    VENOM_ASSERT_TYPEOF_PTR(
+        ClassDeclNode, csym->getClassSymbolTable()->getOwner());
+    ClassDeclNode* cdn =
+      static_cast<ClassDeclNode*>(csym->getClassSymbolTable()->getOwner());
+    if (cdn->isNestedClass()) {
+      liftedParamExprs.push_back(new VariableSelfNode);
+    }
+  }
+
   for (vector<BaseSymbol*>::const_iterator it = liftedParams.begin();
        it != liftedParams.end(); ++it) {
     VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
     Symbol* sym = static_cast<Symbol*>(*it);
     assert(sym->isPromoteToRef());
+    assert(!sym->isObjectField());
     set<BaseSymbol*>::const_iterator it = refs.find(sym);
     assert(it != refs.end());
     liftedParamExprs.push_back(new VariableNodeParser(sym->getName(), NULL));
@@ -271,7 +283,7 @@ FunctionCallNode::rewriteAfterLift(
   ExprNodeVec clonedExprs(args.size());
   transform(args.begin(), args.end(),
             clonedExprs.begin(),
-						ASTExpressionNode::CloneFunctor(CloneMode::Structural));
+            ASTExpressionNode::CloneFunctor(CloneMode::Structural));
   liftedParamExprs.insert(liftedParamExprs.end(),
                           clonedExprs.begin(), clonedExprs.end());
 
@@ -421,26 +433,26 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
 
 FunctionCallNode*
 FunctionCallNodeParser::cloneImpl(CloneMode::Type type) {
-	switch (type) {
-	case CloneMode::Structural:
-		return new FunctionCallNodeParser(
-				primary->clone(type),
-				util::transform_vec(
-					typeArgs.begin(), typeArgs.end(),
-					ParameterizedTypeString::CloneFunctor()),
-				util::transform_vec(
-					args.begin(), args.end(),
-					ASTExpressionNode::CloneFunctor(type)));
-	case CloneMode::Semantic:
-		assert(typeArgs.size() == typeArgTypes.size());
-		return new FunctionCallNodeSynthetic(
-				primary->clone(type),
-				typeArgTypes,
-				util::transform_vec(
-					args.begin(), args.end(),
-					ASTExpressionNode::CloneFunctor(type)));
-	default: VENOM_NOT_REACHED;
-	}
+  switch (type) {
+  case CloneMode::Structural:
+    return new FunctionCallNodeParser(
+        primary->clone(type),
+        util::transform_vec(
+          typeArgs.begin(), typeArgs.end(),
+          ParameterizedTypeString::CloneFunctor()),
+        util::transform_vec(
+          args.begin(), args.end(),
+          ASTExpressionNode::CloneFunctor(type)));
+  case CloneMode::Semantic:
+    assert(typeArgs.size() == typeArgTypes.size());
+    return new FunctionCallNodeSynthetic(
+        primary->clone(type),
+        typeArgTypes,
+        util::transform_vec(
+          args.begin(), args.end(),
+          ASTExpressionNode::CloneFunctor(type)));
+  default: VENOM_NOT_REACHED;
+  }
 }
 
 ASTExpressionNode*
@@ -451,10 +463,22 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
     if (it != ctx.liftMap.end()) {
       const vector<BaseSymbol*>& liftedParams = it->second.first;
 
+      ExprNodeVec liftedParamExprs;
+      liftedParamExprs.reserve(liftedParams.size() + args.size() + 1);
+
+      // take care of <outer> reference first
+      if (ClassSymbol* csym = dynamic_cast<ClassSymbol*>(psym)) {
+        VENOM_ASSERT_TYPEOF_PTR(
+            ClassDeclNode, csym->getClassSymbolTable()->getOwner());
+        ClassDeclNode* cdn =
+          static_cast<ClassDeclNode*>(csym->getClassSymbolTable()->getOwner());
+        if (cdn->isNestedClass()) {
+          liftedParamExprs.push_back(new VariableSelfNode);
+        }
+      }
+
       // map each lifted param to a vector of names (possibly
       // adding the param to *this* scopes
-      ExprNodeVec liftedParamExprs;
-      liftedParamExprs.reserve(liftedParams.size() + args.size());
       for (vector<BaseSymbol*>::const_iterator it = liftedParams.begin();
            it != liftedParams.end(); ++it) {
         VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
@@ -466,7 +490,8 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
 
       // the regular params
       transform(args.begin(), args.end(),
-                liftedParamExprs.end(), ASTExpressionNode::CloneLiftFunctor(ctx));
+                liftedParamExprs.end(),
+                ASTExpressionNode::CloneLiftFunctor(ctx));
 
       // replace calling the rewritten function
       return new FunctionCallNodeParser(

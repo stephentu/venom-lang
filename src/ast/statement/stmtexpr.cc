@@ -67,7 +67,31 @@ StmtExprNode::codeGen(CodeGenerator& cg) {
 
 ASTNode*
 StmtExprNode::rewriteReturn(SemanticContext* ctx) {
-  return replace(ctx, new ReturnNode(expr->clone(CloneMode::Semantic)));
+
+  // TODO: FIXME
+  //
+  // This is kind of a hack- the reason we don't call replace
+  // on the ReturnNode (but rather the inner expr) is to avoid
+  // type-checking errors related to lifted classes.
+  //
+  // For example:
+  //
+  //   def foo() =
+  //     class Inner end
+  //     def bar() -> Inner = Inner(); end
+  //   end
+  //
+  // The return type of bar() is Inner, but after lifting, the
+  // expression of bar() will return an Inner$lifted_0 instance, which
+  // the type-system rejects as incompatible.
+  //
+  // There are various ways to fix this cleanly, but they involve
+  // significant rewrites of portions of the compiler. For now,
+  // we simply just do not type-check the return node (since we know
+  // there should *not* be any type errors since type-checking already
+  // passed)
+
+  return new ReturnNode(expr->replace(ctx, expr->clone(CloneMode::Semantic)));
 }
 
 StmtExprNode*

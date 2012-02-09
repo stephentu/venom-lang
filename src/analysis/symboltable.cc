@@ -116,11 +116,35 @@ SymbolTable::isModuleLevelSymbolTable() const {
 }
 
 bool
+SymbolTable::isClassSymbolTable() const {
+  return dynamic_cast<const ClassDeclNode*>(getOwner());
+}
+
+bool
 SymbolTable::isDefined(const string& name,
                        unsigned int type,
                        RecurseMode mode) {
   TypeTranslator t;
   return findBaseSymbol(name, type, mode, t);
+}
+
+size_t
+SymbolTable::countClassBoundaries(const SymbolTable* outer) const {
+  const SymbolTable* cur = this;
+  bool foundOuter = false;
+  size_t n = 0;
+  while (cur) {
+    if (cur == outer) {
+      foundOuter = true;
+      break;
+    }
+    if (cur->isClassSymbolTable()) n++;
+    cur = cur->getPrimaryParent();
+  }
+  if (!foundOuter) {
+    throw runtime_error("outer is not ancestor of this table");
+  }
+  return n;
 }
 
 BaseSymbol*

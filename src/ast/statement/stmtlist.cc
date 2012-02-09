@@ -206,9 +206,23 @@ StmtListNode::liftRecurseAndInsert(SemanticContext* ctx) {
   for (size_t i = 0; i < stmts.size(); i++) {
     if (stmts[i]->isTypeParameterized()) continue;
     vector<ASTStatementNode*> liftedStmts;
-    stmts[i]->liftPhaseImpl(ctx, symbols, liftedStmts);
-    // insert liftedStmts before pos i
-    stmts.insert(stmts.begin() + i,
+    stmts[i]->liftPhaseImpl(ctx, symbols, liftedStmts, false);
+
+    bool isClass = dynamic_cast<ClassDeclNode*>(stmts[i]);
+
+#ifndef NDEBUG
+    if (isClass) {
+      // should only be lifting classes out of classes
+      for (vector<ASTStatementNode*>::iterator it = liftedStmts.begin();
+           it != liftedStmts.end(); ++it) {
+        VENOM_ASSERT_TYPEOF_PTR(ClassDeclNode, *it);
+      }
+    }
+#endif /* NDEBUG */
+
+    // insert liftedStmts before stmt if function, and
+    // after stmt if class
+    stmts.insert(stmts.begin() + i + (isClass ? 1 : 0),
                  liftedStmts.begin(), liftedStmts.end());
     i += liftedStmts.size();
   }
@@ -244,7 +258,8 @@ static inline string ExtractName(ASTStatementNode* stmt) {
 void
 StmtListNode::liftPhaseImpl(SemanticContext* ctx,
                             SymbolTable* liftInto,
-                            vector<ASTStatementNode*>& liftedStmts) {
+                            vector<ASTStatementNode*>& liftedStmts,
+                            bool excludeFunctions) {
   liftRecurseAndInsert(ctx);
   LiftContext::LiftMap liftMap;
   set<BaseSymbol*> refs;
@@ -253,7 +268,7 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
     ASTStatementNode* stmt = *it;
     bool isFunc = dynamic_cast<FuncDeclNode*>(stmt);
     bool isClass = dynamic_cast<ClassDeclNode*>(stmt);
-    if (isFunc || isClass) {
+    if ((isFunc && !excludeFunctions) || isClass) {
 
       // sanity checks
       LiftPhaseImplStmtAssertions(stmt);

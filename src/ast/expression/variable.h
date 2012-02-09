@@ -39,6 +39,12 @@
 #include <analysis/typetranslator.h>
 
 namespace venom {
+
+namespace analysis {
+  /** forward decl */
+  class MethodSymbol;
+}
+
 namespace ast {
 
 class VariableNode : public ASTExpressionNode {
@@ -90,7 +96,8 @@ protected:
                   const analysis::InstantiatedTypeVec& typeParamArgs);
 
   bool isNonLocalRef(analysis::SymbolTable* definedIn,
-                     analysis::Symbol*& nonLocalSym);
+                     analysis::Symbol*& nonLocalSym,
+                     analysis::MethodSymbol*& nonLocalMeth);
 
   std::string name;
 

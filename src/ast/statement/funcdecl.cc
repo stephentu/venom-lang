@@ -336,8 +336,36 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
   // ref params, only if we are lifting this function,
   // or this is the ctor of a class we are lifting
   ExprNodeVec newParams;
-  if (ctx.isLiftingFunction() || isCtor())  {
-    newParams.reserve(ctx.refs.vec.size() + params.size());
+  bool ctor = isCtor();
+  if (ctx.isLiftingFunction() || ctor)  {
+    newParams.reserve(ctx.refs.vec.size() + params.size() + 1);
+    if (ctor) {
+      // add <outer> class reference as first parameter if necessary
+      ClassDeclNode* cdn = getEnclosingClassNode();
+      assert(cdn);
+      if (cdn->isNestedClass()) {
+        ClassDeclNode* outerCdn = cdn->getEnclosingClassNode();
+        assert(outerCdn);
+        ClassSymbol* csym = outerCdn->getClassSymbol();
+        SemanticContext* sctx = ctx.definedIn->getSemanticContext();
+        InstantiatedType* ctype = csym->getSelfType(sctx);
+        newParams.push_back(
+            new VariableNodeParser(
+              "<outer>",
+              ctype
+                ->findCodeGeneratableIType(sctx)
+                ->toParameterizedString(ctx.liftInto)));
+
+        // assignment statement
+        static_cast<StmtListNode*>(stmtsClone)->insertStatement(
+          1,
+          new AssignNode(
+            new AttrAccessNode(
+              new VariableSelfNode, "<outer>"),
+            new VariableNodeParser("<outer>", NULL)));
+      }
+    }
+
     for (vector<BaseSymbol*>::iterator it = ctx.refs.vec.begin();
          it != ctx.refs.vec.end(); ++it) {
       VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
@@ -350,7 +378,7 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
              ->findCodeGeneratableIType(ctx.definedIn->getSemanticContext())
              ->refify(ctx.definedIn->getSemanticContext())
              ->toParameterizedString(ctx.liftInto)));
-      if (isCtor()) {
+      if (ctor) {
         // need to insert assignment statements into
         // the stmtlist. but must insert *after* the super ()
         // call
@@ -366,9 +394,10 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
 
   // regular params
   TypeTranslator t;
+  size_t n = newParams.size();
   newParams.resize(newParams.size() + params.size());
   transform(params.begin(), params.end(),
-            newParams.begin() + ctx.refs.vec.size(),
+            newParams.begin() + n,
             ASTExpressionNode::CloneLiftFunctor(ctx));
 
   return newFuncDeclNodeForLift(

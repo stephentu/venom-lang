@@ -325,7 +325,7 @@ protected:
               SymbolTable*               classTable, /* class's table */
               Type*                      type)
     : BaseSymbol(name, table), typeParams(typeParams),
-      classTable(classTable), type(type), lifted(NULL) {
+      classTable(classTable), type(type), lifted(NULL), lifter(NULL) {
     assert(type->getParams() == typeParams.size());
   }
 
@@ -337,6 +337,8 @@ protected:
     assert(!this->lifted);
     assert(typeParams.empty());
     this->lifted = lifted;
+    assert(!this->lifted->lifter);
+    this->lifted->lifter = this;
   }
 
 public:
@@ -391,11 +393,21 @@ public:
    */
   ClassSymbol* instantiateSpecializedType(const TypeTranslator& t);
 
+  inline ClassSymbol* getUnliftedSymbol() {
+    ClassSymbol* cur = this;
+    while (cur->lifter) cur = cur->lifted;
+    return cur;
+  }
+
+  inline const ClassSymbol* getUnliftedSymbol() const
+    { return const_cast<ClassSymbol*>(this)->getUnliftedSymbol(); }
+
 private:
   InstantiatedTypeVec typeParams;
   SymbolTable*        classTable;
   Type*               type;
-  ClassSymbol*        lifted;
+  ClassSymbol*        lifted; // points to the *lifted* version of this symbol
+  ClassSymbol*        lifter; // points to the original version of this *lifted* symbol
 };
 
 class SpecializedClassSymbol : public ClassSymbol {

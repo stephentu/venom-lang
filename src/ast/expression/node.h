@@ -93,6 +93,7 @@ public:
 typedef std::vector<ParameterizedTypeString*> TypeStringVec;
 
 class ASTExpressionNode : public ASTNode {
+  friend class StmtExprNode;
 public:
   ASTExpressionNode() : staticType(NULL), expectedType(NULL) {}
 

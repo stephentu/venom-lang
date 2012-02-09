@@ -67,7 +67,8 @@ VariableNode::registerSymbol(SemanticContext* ctx) {
 void
 VariableNode::collectNonLocalRefs(LiftContext& ctx) {
   Symbol *s;
-  if (isNonLocalRef(ctx.definedIn, s)) {
+  MethodSymbol* m;
+  if (isNonLocalRef(ctx.definedIn, s, m) && s && !s->isObjectField()) {
     bool create;
     ctx.refs.create(s, create);
   }
@@ -82,15 +83,26 @@ VariableNode::typeCheckImpl(SemanticContext* ctx,
 }
 
 bool
-VariableNode::isNonLocalRef(SymbolTable* definedIn, Symbol*& nonLocalSym) {
+VariableNode::isNonLocalRef(SymbolTable* definedIn,
+                            Symbol*& nonLocalSym,
+                            MethodSymbol*& nonLocalMeth) {
   BaseSymbol* bsym = symbol;
   if (Symbol* sym = dynamic_cast<Symbol*>(bsym)) {
-    if (sym->getDefinedSymbolTable() == definedIn && !sym->isObjectField()) {
+    if (sym->getDefinedSymbolTable() == definedIn) {
       nonLocalSym = sym;
+      nonLocalMeth = NULL;
+      return true;
+    }
+  }
+  if (MethodSymbol* meth = dynamic_cast<MethodSymbol*>(bsym)) {
+    if (meth->getDefinedSymbolTable() == definedIn) {
+      nonLocalSym = NULL;
+      nonLocalMeth = meth;
       return true;
     }
   }
   nonLocalSym = NULL;
+  nonLocalMeth = NULL;
   return false;
 }
 
@@ -190,17 +202,45 @@ VariableNodeParser::cloneImpl(CloneMode::Type type) {
   }
 }
 
+static ASTExpressionNode*
+createAttrChain0(size_t n) {
+  assert(n > 0);
+  if (n == 1) return new VariableNodeParser("<outer>", NULL);
+  return new AttrAccessNode(createAttrChain0(n - 1), "<outer>");
+}
+
+static ASTExpressionNode*
+createAttrChain(size_t n, const string& name) {
+  return new AttrAccessNode(createAttrChain0(n), name);
+}
+
 ASTExpressionNode*
 VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
   Symbol* s;
-  if (isNonLocalRef(ctx.definedIn, s)) {
-    assert(!explicitTypeString);
-    assert(!explicitType);
-    string newName = ctx.refParamName(s);
-    return new AttrAccessNode(
-        new VariableNodeParser(newName, NULL), "value");
+  MethodSymbol* m;
+  if (isNonLocalRef(ctx.definedIn, s, m)) {
+    if (s && !s->isObjectField()) {
+      // case 1: non-local stack variable
+      assert(!explicitTypeString);
+      assert(!explicitType);
+      string newName = ctx.refParamName(s);
+      return new AttrAccessNode(
+          new VariableNodeParser(newName, NULL), "value");
+    }
+    if ((s && s->isObjectField()) || m) {
+      // case 2: non-local class member
+
+      // calculate how many <outer> deferences we need. it is equal to the
+      // number of class boundaries crossed when going from the *original*
+      // (non-lifted) scope to the symbol's scope
+
+      size_t n = symbols->countClassBoundaries(ctx.definedIn);
+      assert(n > 0);
+      return createAttrChain(n, name);
+    }
   }
 
+  // case 3: reference to the scope being lifted
   BaseSymbol* bs = symbol;
   if (bs == ctx.curLiftSym) {
     return new VariableNodeParser(ctx.liftedName, NULL);
@@ -211,6 +251,7 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
   if (it != ctx.liftMap.end()) {
     ASTStatementNode* liftedStmt = it->second.second;
     string liftedName;
+    // TODO: make getName() virtual function on ASTNode
     if (FuncDeclNode* fdn = dynamic_cast<FuncDeclNode*>(liftedStmt)) {
       liftedName = fdn->getName();
     } else if (ClassDeclNode* cdn = dynamic_cast<ClassDeclNode*>(liftedStmt)) {

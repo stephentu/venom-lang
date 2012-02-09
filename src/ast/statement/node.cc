@@ -60,11 +60,12 @@ void ASTStatementNode::typeCheck(SemanticContext* ctx,
 void
 ASTStatementNode::liftPhaseImpl(SemanticContext* ctx,
                                 SymbolTable* liftInto,
-                                vector<ASTStatementNode*>& liftedStmts) {
+                                vector<ASTStatementNode*>& liftedStmts,
+                                bool excludeFunctions) {
   forchild (kid) {
     if (!kid || kid->isTypeParameterized()) continue;
     if (ASTStatementNode *stmt = dynamic_cast<ASTStatementNode*>(kid)) {
-      stmt->liftPhaseImpl(ctx, liftInto, liftedStmts);
+      stmt->liftPhaseImpl(ctx, liftInto, liftedStmts, excludeFunctions);
     }
   } endfor
 }

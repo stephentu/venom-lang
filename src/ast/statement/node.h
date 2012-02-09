@@ -46,6 +46,7 @@ namespace analysis {
 namespace ast {
 
 class ASTStatementNode : public ASTNode {
+  friend class ClassDeclNode;
   friend class StmtListNode;
 public:
   ASTStatementNode() {}
@@ -57,7 +58,8 @@ public:
 protected:
   virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
                              analysis::SymbolTable* liftInto,
-                             std::vector<ASTStatementNode*>& liftedStmts);
+                             std::vector<ASTStatementNode*>& liftedStmts,
+                             bool excludeFunctions);
 
   virtual ASTStatementNode*
     replace(analysis::SemanticContext* ctx, ASTNode* replacement);

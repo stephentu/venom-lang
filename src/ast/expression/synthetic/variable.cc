@@ -59,7 +59,8 @@ VariableNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
   // assert that we should never be a non-local ref
 #ifndef NDEBUG
   Symbol* s;
-  assert(!isNonLocalRef(ctx.definedIn, s));
+  MethodSymbol* m;
+  assert(!isNonLocalRef(ctx.definedIn, s, m));
   BaseSymbol* bs = symbol;
   assert(bs != ctx.curLiftSym);
   LiftContext::LiftMap::const_iterator it =

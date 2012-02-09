@@ -140,7 +140,8 @@ public:
 protected:
   virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
                              analysis::SymbolTable* liftInto,
-                             std::vector<ASTStatementNode*>& liftedStmts);
+                             std::vector<ASTStatementNode*>& liftedStmts,
+                             bool excludeFunctions);
 
   void liftRecurseAndInsert(analysis::SemanticContext* ctx);
 

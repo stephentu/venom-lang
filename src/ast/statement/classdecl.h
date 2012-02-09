@@ -43,7 +43,10 @@
 namespace venom {
 
 /** Forward decl **/
-namespace analysis { class Type; }
+namespace analysis {
+  class ClassSymbol;
+  class Type;
+}
 
 namespace ast {
 
@@ -63,6 +66,10 @@ public:
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
 
+  analysis::ClassSymbol* getClassSymbol();
+  inline const analysis::ClassSymbol* getClassSymbol() const
+    { return const_cast<ClassDeclNode*>(this)->getClassSymbol(); }
+
   // must call checkAndInitParents() at least once before calling
   virtual std::vector<analysis::InstantiatedType*> getParents() const = 0;
 
@@ -80,6 +87,10 @@ public:
 
   /** Returns the NON-specialized self-type */
   analysis::InstantiatedType* getSelfType(analysis::SemanticContext* ctx);
+
+  /** Is this class itself a nested class */
+  inline bool isNestedClass() const
+    { return hasLocationContext(TopLevelClassBody); }
 
   virtual size_t getNumKids() const { return 1; }
 
@@ -135,7 +146,8 @@ protected:
 
   virtual void liftPhaseImpl(analysis::SemanticContext* ctx,
                              analysis::SymbolTable* liftInto,
-                             std::vector<ASTStatementNode*>& liftedStmts);
+                             std::vector<ASTStatementNode*>& liftedStmts,
+                             bool excludeFunctions);
 
   ASTStatementNode* cloneForLiftImplHelper(LiftContext& ctx);
 
