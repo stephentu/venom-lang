@@ -74,7 +74,8 @@ LiftContext::RefParamName(Symbol* nonLocSym, size_t pos) {
 ASTNode::~ASTNode() {}
 
 FuncDeclNode* ASTNode::getEnclosingFuncNode() {
-  ASTNode *cur = this;
+  assert(symbols);
+  ASTNode *cur = getSymbolTable()->getOwner();
   while (cur) {
     if (FuncDeclNode *fdn = dynamic_cast<FuncDeclNode*>(cur)) {
       return fdn;
@@ -86,7 +87,7 @@ FuncDeclNode* ASTNode::getEnclosingFuncNode() {
 
 ClassDeclNode* ASTNode::getEnclosingClassNode() {
   assert(symbols);
-  ASTNode *cur = this;
+  ASTNode *cur = getSymbolTable()->getOwner();
   while (cur) {
     if (ClassDeclNode *cdn = dynamic_cast<ClassDeclNode*>(cur)) {
       return cdn;
@@ -98,7 +99,7 @@ ClassDeclNode* ASTNode::getEnclosingClassNode() {
 
 ASTStatementNode* ASTNode::getEnclosingTypeParameterizedNode() {
   assert(symbols);
-  ASTNode *cur = this;
+  ASTNode *cur = getSymbolTable()->getOwner();
   while (cur) {
     if (cur->isTypeParameterized()) {
       VENOM_ASSERT_TYPEOF_PTR(ASTStatementNode, cur);
