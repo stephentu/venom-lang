@@ -255,8 +255,19 @@ FuncDeclNode::codeGen(CodeGenerator& cg) {
   VENOM_ASSERT_TYPEOF_PTR(FuncSymbol, bs);
 
   bool create;
-  cg.enterLocalFunction(static_cast<FuncSymbol*>(bs), create);
-  assert(create);
+  cg.enterLocalFunction(static_cast<FuncSymbol*>(bs), create, true);
+
+  // We cannot assert(create) here, since via transformations, we can
+  // run into the following situation (in pseudo-code):
+  //
+  //   def bar$lifted_0 =
+  //      ... foo() ...
+  //   end
+  //
+  //   def foo() = ... end
+  //
+  // This can happen if bar was originally a nested function in foo.
+
   cg.resetLocalVariables();
 
   // the calling convention is that args come in

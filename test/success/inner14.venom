@@ -1,0 +1,9 @@
+def foo(x::int) =
+  if x == 0 then return; end
+  def bar() =
+    print(x);
+    foo(x - 1);
+  end
+  bar(); 
+end
+foo(3);

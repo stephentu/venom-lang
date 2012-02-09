@@ -277,7 +277,8 @@ public:
    * returned is *NOT* the position in the local function pool, but rather
    * the position in the function reference table (which points into the local
    * function pool) */
-  size_t enterLocalFunction(analysis::FuncSymbol* symbol, bool& create);
+  size_t enterLocalFunction(analysis::FuncSymbol* symbol, bool& create,
+                            bool emitLabel = false);
 
   size_t enterExternalFunction(analysis::FuncSymbol* symbol, bool& create);
 

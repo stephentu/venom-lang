@@ -192,7 +192,9 @@ CodeGenerator::enterClass(InstantiatedType* klass, bool& create) {
 }
 
 size_t
-CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
+CodeGenerator::enterLocalFunction(FuncSymbol* symbol,
+                                  bool& create,
+                                  bool emitLabel) {
   // assert local function
   assert(symbol->getDefinedSymbolTable()->belongsTo(
          ctx->getModuleRoot()->getSymbolTable()));
@@ -200,10 +202,13 @@ CodeGenerator::enterLocalFunction(FuncSymbol* symbol, bool& create) {
   size_t idx = func_reference_table.createLocal(symbol, create);
 
   // create func start label
-  if (create) {
+  if (emitLabel) {
     Label *start = newBoundLabel();
     instToFuncLabels[start->index] = make_pair(start, symbol);
-    funcIdxToLabels[func_pool.vec.size() - 1] = start;
+
+    // map func-ref-index to func-pool-index
+    assert(func_reference_table.vec.at(idx).isLocal());
+    funcIdxToLabels[func_reference_table.vec[idx].getLocalIndex()] = start;
   }
 
   return idx;
