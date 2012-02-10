@@ -78,3 +78,10 @@ clean:
 .PHONY: count-lines
 count-lines: clean
 	cloc . --force-lang='yacc,yy' --force-lang='lex,ll'
+
+.PHONY: find-incomplete-tests
+find-incomplete-tests:
+	for file in `find ../test/success -name '*.venom'`; do \
+	  std_file=`echo $$file | sed 's/.venom$$/.stdout/'`; \
+	  test -e $$std_file || echo $$file; \
+	done;
