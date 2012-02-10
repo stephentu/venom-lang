@@ -53,6 +53,12 @@ using namespace venom::backend;
 namespace venom {
 namespace ast {
 
+StmtListNode*
+ClassDeclNode::getStmts() {
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+  return static_cast<StmtListNode*>(stmts);
+}
+
 InstantiatedType*
 ClassDeclNode::getSelfType(SemanticContext* ctx) {
   TypeTranslator t;

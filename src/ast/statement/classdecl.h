@@ -50,6 +50,9 @@ namespace analysis {
 
 namespace ast {
 
+/** Forward decl */
+class StmtListNode;
+
 class ClassDeclNode : public ASTStatementNode {
 public:
   ClassDeclNode(const std::string& name,
@@ -65,6 +68,10 @@ public:
 
   inline std::string& getName() { return name; }
   inline const std::string& getName() const { return name; }
+
+  StmtListNode* getStmts();
+  inline const StmtListNode* getStmts() const
+    { return const_cast<ClassDeclNode*>(this)->getStmts(); }
 
   analysis::ClassSymbol* getClassSymbol();
   inline const analysis::ClassSymbol* getClassSymbol() const

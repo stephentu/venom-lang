@@ -33,10 +33,14 @@
 #include <analysis/symbol.h>
 #include <analysis/symboltable.h>
 
+#include <ast/expression/attraccess.h>
 #include <ast/expression/variable.h>
+
 #include <ast/statement/assign.h>
 #include <ast/statement/classattrdecl.h>
 #include <ast/statement/classdecl.h>
+#include <ast/statement/funcdecl.h>
+#include <ast/statement/stmtlist.h>
 
 #include <backend/codegenerator.h>
 
@@ -121,16 +125,41 @@ ClassAttrDeclNode::typeCheck(SemanticContext* ctx,
 
 ASTNode*
 ClassAttrDeclNode::rewriteLocal(SemanticContext* ctx, RewriteMode mode) {
-  for (size_t i = 1; i < getNumKids(); i++) {
-    ASTNode* kid = getNthKid(i);
-    if (!kid) continue;
-    ASTNode* rep = kid->rewriteLocal(ctx, mode);
-    if (rep) {
-      assert(rep != kid);
-      setNthKid(i, rep);
-      delete kid;
-    }
+  if (mode != DeSugar) return NULL;
+
+  if (value) {
+    // need to copy initialization into ctor
+
+    // find ctor stmt list
+    ClassDeclNode* cdn = getEnclosingClassNode();
+    assert(cdn);
+    ClassSymbol* csym = cdn->getClassSymbol();
+    TypeTranslator t;
+    FuncSymbol* ctorSym = csym->getClassSymbolTable()->findFuncSymbol(
+        "<ctor>", SymbolTable::NoRecurse, t);
+    assert(ctorSym);
+    VENOM_ASSERT_TYPEOF_PTR(CtorDeclNode,
+                            ctorSym->getFunctionSymbolTable()->getOwner());
+    CtorDeclNode* ctorNode =
+      static_cast<CtorDeclNode*>(ctorSym->getFunctionSymbolTable()->getOwner());
+    StmtListNode* ctorStmts = ctorNode->getStmts();
+
+    // insert self.var = value into ctor stmts
+    ASTStatementNode* assign =
+      new AssignNode(
+          new AttrAccessNode(
+            new VariableSelfNode,
+            static_cast<VariableNode*>(variable)->getName()),
+          value->clone(CloneMode::Structural));
+
+    SemanticContext* ctx = ctorStmts->getSymbolTable()->getSemanticContext();
+    assign->initSymbolTable(ctorStmts->getSymbolTable());
+    assign->semanticCheck(ctx);
+    assign->typeCheck(ctx);
+
+    ctorStmts->insertStatement(1, assign);
   }
+
   return NULL;
 }
 

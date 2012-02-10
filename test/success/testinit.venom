@@ -1,0 +1,11 @@
+class A 
+  attr x::int = 10
+  attr y::string = "foobar"
+  attr z::int = 1
+  def self(z::int) =
+    self.z = z;
+  end
+end
+print(A(3).x);
+print(A(3).y);
+print(A(3).z);

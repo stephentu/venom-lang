@@ -43,6 +43,9 @@
 namespace venom {
 namespace ast {
 
+/** Forward decl */
+class StmtListNode;
+
 class FuncDeclNode : public ASTStatementNode {
 public:
   /** Takes ownership of params, retTypeString, and stmts */
@@ -68,8 +71,9 @@ public:
   inline ExprNodeVec& getParams() { return params; }
   inline const ExprNodeVec& getParams() const { return params; }
 
-  inline ASTStatementNode* getStmts() { return stmts; }
-  inline const ASTStatementNode* getStmts() const { return stmts; }
+  StmtListNode* getStmts();
+  inline const StmtListNode* getStmts() const
+    { return const_cast<FuncDeclNode*>(this)->getStmts(); }
 
   virtual std::vector<std::string> getTypeParamNames() const = 0;
 

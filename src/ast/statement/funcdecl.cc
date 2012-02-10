@@ -60,6 +60,12 @@ using namespace venom::util;
 namespace venom {
 namespace ast {
 
+StmtListNode*
+FuncDeclNode::getStmts() {
+  VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+  return static_cast<StmtListNode*>(stmts);
+}
+
 struct name_functor_t {
   inline string operator()(ASTExpressionNode* node) const {
     VENOM_ASSERT_TYPEOF_PTR(VariableNode, node);
