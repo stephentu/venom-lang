@@ -11,3 +11,6 @@ parser.output
 position.hh
 scanner.cc
 stack.hh
+scratch
+venom
+venom-test
