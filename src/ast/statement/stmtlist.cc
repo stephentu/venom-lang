@@ -220,9 +220,8 @@ StmtListNode::liftRecurseAndInsert(SemanticContext* ctx) {
     }
 #endif /* NDEBUG */
 
-    // insert liftedStmts before stmt if function, and
-    // after stmt if class
-    stmts.insert(stmts.begin() + i + (isClass ? 1 : 0),
+    // insert liftedStmts before stmt
+    stmts.insert(stmts.begin() + i,
                  liftedStmts.begin(), liftedStmts.end());
     i += liftedStmts.size();
   }

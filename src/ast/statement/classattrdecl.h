@@ -80,10 +80,6 @@ public:
 
   virtual void codeGen(backend::CodeGenerator& cg);
 
-  virtual ASTNode* rewriteAfterLift(
-      const LiftContext::LiftMap& liftMap,
-      const std::set<analysis::BaseSymbol*>& refs);
-
   VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_STMT(ClassAttrDeclNode)
 
   virtual void print(std::ostream& o, size_t indent = 0) {

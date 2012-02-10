@@ -169,12 +169,6 @@ ClassAttrDeclNode::codeGen(CodeGenerator& cg) {
   // ctor
 }
 
-ASTNode*
-ClassAttrDeclNode::rewriteAfterLift(const LiftContext::LiftMap& liftMap,
-                                    const set<BaseSymbol*>& refs) {
-  return NULL;
-}
-
 ClassAttrDeclNode*
 ClassAttrDeclNode::cloneImpl(CloneMode::Type type) {
   return new ClassAttrDeclNode(
