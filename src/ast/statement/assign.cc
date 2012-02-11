@@ -190,7 +190,8 @@ AssignNode::TypeCheckAssignment(
 
   if (lhs) {
     // require rhs <: lhs
-    if (!rhs->isSubtypeOf(*lhs)) {
+    if (!rhs->isSubtypeOf(*lhs) &&
+        !rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol())) {
       throw TypeViolationException(
           "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
     }

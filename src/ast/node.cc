@@ -71,6 +71,13 @@ LiftContext::RefParamName(Symbol* nonLocSym, size_t pos) {
   return nonLocSym->getName() + "$refparam_" + util::stringify(pos);
 }
 
+bool
+LiftContext::useExplicitTypeForClassSymbol(ClassSymbol* csym) {
+  return csym
+    ->getDefinedSymbolTable()
+    ->belongsTo(curLiftSym->getDefinedSymbolTable());
+}
+
 ASTNode::~ASTNode() {}
 
 FuncDeclNode* ASTNode::getEnclosingFuncNode() {

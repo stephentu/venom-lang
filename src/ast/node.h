@@ -47,6 +47,7 @@ namespace analysis {
   /** Forward decls **/
   class BaseSymbol;
   class BoundFunction;
+  class ClassSymbol;
   class Symbol;
   class InstantiatedType;
   class SemanticContext;
@@ -91,6 +92,8 @@ struct LiftContext {
 
   static std::string RefParamName(analysis::Symbol* nonLocSym,
                                   size_t pos);
+
+  bool useExplicitTypeForClassSymbol(analysis::ClassSymbol* csym);
 
   analysis::BaseSymbol* const curLiftSym;
   const std::string liftedName;

@@ -304,6 +304,16 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       liftMap[stmt->getSymbol()] = make_pair(liftCtx.refs.vec, clone);
 
       // remove the orig func stmt from the stmt list
+
+      // TODO: We have a memory leak here!
+      //
+      // However the problem is, class symbols still store a pointer
+      // to the deleted node. so we cannot really free it here.
+      //
+      // Eventually, we will use some sort of ref-counting pointer type,
+      // so that we don't have to worry about these memory issues.
+      //
+      // For now, we document the memory leak
       it = stmts.erase(it);
 
       // register the lifted symbol into the scope it is being
@@ -311,15 +321,17 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
       // we call rewriteAfterLift(), the symbols will be valid
       clone->initSymbolTable(liftInto);
       clone->semanticCheck(ctx);
-      clone->typeCheck(ctx);
 
       // mark lifted class
+      // WARNING: this *MUST* happen before typeChecking clone
       if (isClass) {
         VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, stmt->getSymbol());
         VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, clone->getSymbol());
         static_cast<ClassSymbol*>(stmt->getSymbol())
           ->setLifted(static_cast<ClassSymbol*>(clone->getSymbol()));
       }
+
+      clone->typeCheck(ctx);
 
       liftedStmts.push_back(clone);
     } else {

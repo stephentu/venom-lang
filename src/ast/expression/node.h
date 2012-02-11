@@ -71,6 +71,25 @@ public:
     util::delete_pointers(params.begin(), params.end());
   }
 
+  inline std::vector<std::string>& getNames() { return names; }
+  inline const std::vector<std::string>& getNames() const { return names; }
+
+  inline std::vector<ParameterizedTypeString*>& getParams()
+    { return params; }
+  inline const std::vector<ParameterizedTypeString*>& getParams() const
+    { return params; }
+
+  inline analysis::SymbolTable* getStartingScope() const
+    { return starting_scope; }
+
+  // returns this for chaining
+  inline ParameterizedTypeString* addPrefix(
+      const std::vector<std::string>& prefix) {
+    names.reserve(names.size() + prefix.size());
+    names.insert(names.begin(), prefix.begin(), prefix.end());
+    return this;
+  }
+
   std::string stringify() const;
 
   ParameterizedTypeString* clone();
@@ -84,10 +103,11 @@ public:
   struct StringerFunctor :
     public util::stringify_functor<ParameterizedTypeString>::ptr {};
 
-  const std::vector<std::string>              names;
-  const std::vector<ParameterizedTypeString*> params;
+private:
+  std::vector<std::string>              names;
+  std::vector<ParameterizedTypeString*> params;
 
-  analysis::SymbolTable* const starting_scope;
+  analysis::SymbolTable* starting_scope;
 };
 
 typedef std::vector<ParameterizedTypeString*> TypeStringVec;

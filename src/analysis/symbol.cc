@@ -359,6 +359,17 @@ ClassSymbol::instantiateSpecializedType(const TypeTranslator& t) {
   return newSym;
 }
 
+bool
+ClassSymbol::hasOuterReference() const {
+  // TODO: we need const versions of "findSymbol" on the
+  // symbol table
+  ClassSymbol *thiz = const_cast<ClassSymbol*>(this);
+  TypeTranslator t;
+  return thiz
+    ->getClassSymbolTable()
+    ->findSymbol("<outer>", SymbolTable::NoRecurse, t);
+}
+
 InstantiatedType*
 ModuleSymbol::bind(SemanticContext* ctx,
                    const TypeTranslator& t,

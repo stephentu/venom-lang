@@ -66,11 +66,20 @@ struct functor {
 };
 
 struct param_functor_t {
+  // lhs is the function type, rhs is the passed in type.
+  // require rhs to be a subtype of lhs
+
+  // TODO: this is a hack to work around a limitation in the
+  // lifting system
+  //
+  // returns true if rhs is a lift of lhs
+  inline bool checkLift(InstantiatedType* lhs,
+                        InstantiatedType* rhs) const {
+    return rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol());
+  }
   inline bool operator()(InstantiatedType* lhs,
                          InstantiatedType* rhs) const {
-    // lhs is the function type, rhs is the passed in type.
-    // require rhs to be a subtype of lhs
-    return !rhs->isSubtypeOf(*lhs);
+    return !rhs->isSubtypeOf(*lhs) && !checkLift(lhs, rhs);
   }
 } param_functor;
 

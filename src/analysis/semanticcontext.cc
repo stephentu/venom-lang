@@ -138,31 +138,32 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
                                     const ParameterizedTypeString* type) {
 
   TypeTranslator t;
-  SymbolTable *cur = type->starting_scope ? type->starting_scope : symbols;
+  SymbolTable *cur = type->getStartingScope() ?
+    type->getStartingScope() : symbols;
   BaseSymbol *bs = NULL;
-  for (vector<string>::const_iterator it = type->names.begin();
-       it != type->names.end(); ++it) {
+  for (vector<string>::const_iterator it = type->getNames().begin();
+       it != type->getNames().end(); ++it) {
     bs = cur->findBaseSymbol(
         *it,
         (SymbolTable::Class | SymbolTable::Module),
-        (it == type->names.begin()) ?
+        (it == type->getNames().begin()) ?
             SymbolTable::AllowCurrentScope :
             SymbolTable::ClassLookup,
         t);
     if (!bs) {
       throw SemanticViolationException(
-          "Type/Module " + util::join(type->names.begin(), it + 1, ".") +
+          "Type/Module " + util::join(type->getNames().begin(), it + 1, ".") +
           " not defined");
     }
     if (ClassSymbol *cs = dynamic_cast<ClassSymbol*>(bs)) {
-      if (it != type->names.end() - 1) {
+      if (it != type->getNames().end() - 1) {
         // TODO: fix this limitation
         // for now, only the outermost type can have type parameters
         if (cs->getType()->getParams()) {
           throw SemanticViolationException(
               "Implementation limitation: Cannot select inner class "
               "from parameterized class: " +
-              util::join(type->names.begin(), it + 1, "."));
+              util::join(type->getNames().begin(), it + 1, "."));
         }
       }
       cur = cs->getClassSymbolTable();
@@ -172,7 +173,7 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
             "Cannot access imported modules of another module");
       }
       cur = ms->getModuleSymbolTable();
-      if (it == type->names.end() - 1) {
+      if (it == type->getNames().end() - 1) {
         throw SemanticViolationException(
             "Cannot name module " + ms->getName() + " as type");
       }
@@ -181,8 +182,8 @@ SemanticContext::instantiateOrThrow(SymbolTable *symbols,
   }
   assert(bs);
   ClassSymbol *cs = static_cast<ClassSymbol*>(bs);
-  vector<InstantiatedType*> buf(type->params.size());
-  transform(type->params.begin(), type->params.end(),
+  vector<InstantiatedType*> buf(type->getParams().size());
+  transform(type->getParams().begin(), type->getParams().end(),
             buf.begin(), InstantiateFunctor(this, symbols));
 
   return t.translate(this, cs->getType()->instantiate(this, buf));

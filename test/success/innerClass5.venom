@@ -1,0 +1,9 @@
+class A
+  def foo(x::int) =
+    class B 
+      attr v::int = x
+    end
+    print(B().v);
+  end
+end
+A().foo(10);

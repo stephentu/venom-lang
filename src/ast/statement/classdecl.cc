@@ -214,7 +214,7 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
   ASTStatementNode* stmtsClone = stmts->cloneForLift(ctx);
   VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
 
-  if (isNestedClass()) {
+  if (isNestedClass() && !getClassSymbol()->hasOuterReference()) {
     ClassDeclNode* outerCdn = getEnclosingClassNode();
     assert(outerCdn);
     ClassSymbol* csym = outerCdn->getClassSymbol();

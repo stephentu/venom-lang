@@ -349,7 +349,8 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
       // add <outer> class reference as first parameter if necessary
       ClassDeclNode* cdn = getEnclosingClassNode();
       assert(cdn);
-      if (cdn->isNestedClass()) {
+      assert(cdn->getClassSymbol() == ctx.curLiftSym);
+      if (cdn->isNestedClass() && !cdn->getClassSymbol()->hasOuterReference()) {
         ClassDeclNode* outerCdn = cdn->getEnclosingClassNode();
         assert(outerCdn);
         ClassSymbol* csym = outerCdn->getClassSymbol();
@@ -359,6 +360,8 @@ FuncDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
             new VariableNodeParser(
               "<outer>",
               ctype
+                // TODO: I think outer types most likely
+                // don't have code generatable itypes yet
                 ->findCodeGeneratableIType(sctx)
                 ->toParameterizedString(ctx.liftInto)));
 

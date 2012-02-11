@@ -260,6 +260,8 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
     return new VariableNodeParser(liftedName, NULL);
   }
 
+  SemanticContext* sctx = symbols->getSemanticContext();
+
   // need to possibly retype, if the type is a lifted class
   if (explicitType) {
     LiftContext::LiftMap::const_iterator it =
@@ -268,14 +270,26 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       BaseSymbol* bs = it->second.second->getSymbol();
       VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, bs);
       ClassSymbol* cs = static_cast<ClassSymbol*>(bs);
-      SemanticContext* sctx = symbols->getSemanticContext();
+
       // OK to use InstantiatedType object, because we use
       // the type of the lifted class (type won't change after clone)
       return new VariableNodeSynthetic(name, cs->getSelfType(sctx));
     }
 
+    if (ctx.isLiftingClass() &&
+        ctx.useExplicitTypeForClassSymbol(explicitType->getClassSymbol())) {
+      return new VariableNodeSynthetic(name, explicitType);
+    }
+
     return new VariableNodeParser(
-        name, explicitType->toParameterizedString(ctx.liftInto));
+        name,
+        explicitType
+
+          // WARNING: calling findCodeGeneratableIType()
+          // causes several test regressions...
+          //->findCodeGeneratableIType(sctx)
+
+          ->toParameterizedString(ctx.liftInto));
   }
 
   return new VariableNodeParser(name, NULL);

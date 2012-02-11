@@ -402,6 +402,19 @@ public:
   inline const ClassSymbol* getUnliftedSymbol() const
     { return const_cast<ClassSymbol*>(this)->getUnliftedSymbol(); }
 
+  inline bool isLiftedClass() const { return lifter; }
+
+  inline bool isLiftOf(const ClassSymbol* that) const {
+    const ClassSymbol* cur = this;
+    while (cur) {
+      if (cur == that) return true;
+      cur = cur->lifter;
+    }
+    return false;
+  }
+
+  bool hasOuterReference() const;
+
 private:
   InstantiatedTypeVec typeParams;
   SymbolTable*        classTable;

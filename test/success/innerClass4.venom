@@ -1,0 +1,10 @@
+class A
+  class B
+    class C
+      def speak() = print("hello"); end
+    end
+    attr c::C = C()
+  end
+  attr b::B = B()
+end
+A().b.c.speak();
