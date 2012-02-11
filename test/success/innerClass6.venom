@@ -1,0 +1,19 @@
+def foo() =
+  class A 
+    class B 
+      class C
+        def self() = print("C"); end
+      end
+      def self() = print("B"); end
+      attr c::C = C()
+    end
+    def self() = print("A"); end
+    attr b::B = B()
+  end
+  class D 
+    def self() = print("D"); end
+  end
+  A();
+  D();
+end
+foo();

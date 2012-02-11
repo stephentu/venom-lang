@@ -87,7 +87,8 @@ inline string pad(const string& orig, size_t s) {
   return buf.str();
 }
 
-void run_test(bool success, const string& srcfile, size_t alignSize) {
+// returns true if passed, false if failed
+bool run_test(bool success, const string& srcfile, size_t alignSize) {
   // check to see if an .stdout file exists for srcfile.
   // if so, then we want to do execution also
   //
@@ -197,6 +198,8 @@ void run_test(bool success, const string& srcfile, size_t alignSize) {
     }
   }
   cout.unsetf(ios::floatfield);
+
+  return success ? res : !res;
 }
 
 struct max_size_functor_t {
@@ -205,14 +208,17 @@ struct max_size_functor_t {
   }
 } max_size_functor;
 
-void run_tests(bool success, const vector<string>& srcfiles, const string& import_path) {
+pair<size_t, size_t> run_tests(bool success, const vector<string>& srcfiles, const string& import_path) {
   global_compile_opts.venom_import_path = import_path;
   vector<string>::const_iterator largest =
     max_element(srcfiles.begin(), srcfiles.end(), max_size_functor);
+  size_t passed = 0;
   for (vector<string>::const_iterator it = srcfiles.begin();
        it != srcfiles.end(); ++it) {
-    run_test(success, *it, largest->size());
+    if (run_test(success, *it, largest->size())) passed++;
   }
+
+  return make_pair(passed, srcfiles.size());
 }
 
 int main(int argc, char **argv) {
@@ -256,11 +262,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  cout << "Running success tests" << endl;
-  run_tests(true, success_files, success_dir);
+  {
+    cout << "Running success tests" << endl;
+    pair<size_t, size_t> result = run_tests(true, success_files, success_dir);
+    cout << "Passed: " << result.first
+         << ", Failed: " << (result.second - result.first)
+         << ", Total: " << result.second << endl;
+  }
 
-  cout << endl << "Running failure tests" << endl;
-  run_tests(false, failure_files, failure_dir);
+  {
+    cout << endl << "Running failure tests" << endl;
+    pair<size_t, size_t> result = run_tests(false, failure_files, failure_dir);
+    cout << "Passed: " << result.first
+         << ", Failed: " << (result.second - result.first)
+         << ", Total: " << result.second << endl;
+  }
 
   return 0;
 }
