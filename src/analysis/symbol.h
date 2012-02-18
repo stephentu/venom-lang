@@ -397,14 +397,8 @@ public:
    */
   ClassSymbol* instantiateSpecializedType(const TypeTranslator& t);
 
-  inline ClassSymbol* getUnliftedSymbol() {
-    ClassSymbol* cur = this;
-    while (cur->lifter) cur = cur->lifted;
-    return cur;
-  }
-
-  inline const ClassSymbol* getUnliftedSymbol() const
-    { return const_cast<ClassSymbol*>(this)->getUnliftedSymbol(); }
+  inline ClassSymbol* getUnliftedSymbol() { return lifter; }
+  inline const ClassSymbol* getUnliftedSymbol() const { return lifter; }
 
   inline bool isLiftedClass() const { return lifter; }
 

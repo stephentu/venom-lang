@@ -1,0 +1,12 @@
+class A
+  def foo() = 
+    class B{T}
+      def self(t::T) = print(t); end
+    end
+    class C <- B{int}
+      def self(t::int) : super(t) = end
+    end
+    c::C = C(10);
+  end
+end
+A().foo();

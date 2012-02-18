@@ -468,6 +468,19 @@ ASTExpressionNode*
 FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
   BaseSymbol* psym = primary->getSymbol();
   if (psym) {
+
+    // if we are invoking a constructor directly, then
+    // set the symbol to the class symbol (since constructors
+    // should never be lifted symbols by themselves)
+    if (MethodSymbol* msym = dynamic_cast<MethodSymbol*>(psym)) {
+      if (msym->isConstructor()) {
+        assert(ctx.liftMap.find(msym) == ctx.liftMap.end());
+        if (msym->getClassSymbol()->getUnliftedSymbol()) {
+          psym = msym->getClassSymbol()->getUnliftedSymbol();
+        }
+      }
+    }
+
     LiftContext::LiftMap::const_iterator it = ctx.liftMap.find(psym);
     if (it != ctx.liftMap.end()) {
       const vector<BaseSymbol*>& liftedParams = it->second.first;
@@ -506,9 +519,12 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
         liftedParamExprs.push_back(new VariableNodeParser(paramName, NULL));
       }
 
+      size_t endPos = liftedParamExprs.size();
+      liftedParamExprs.resize(endPos + args.size());
+
       // the regular params
       transform(args.begin(), args.end(),
-                liftedParamExprs.end(),
+                liftedParamExprs.begin() + endPos,
                 ASTExpressionNode::CloneLiftFunctor(ctx));
 
       // replace calling the rewritten function
