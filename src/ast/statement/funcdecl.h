@@ -223,6 +223,8 @@ protected:
       ASTStatementNode* stmts);
 
 private:
+  bool hasCallToSuper() const;
+
   ExprNodeVec superArgs;
 };
 

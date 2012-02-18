@@ -535,24 +535,7 @@ CtorDeclNode::registerSymbol(SemanticContext* ctx) {
   VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
   StmtListNode* stmtListNode = static_cast<StmtListNode*>(stmts);
 
-  bool ctorCallFound = false;
-
-  { // pattern match for ctor
-
-    // TODO: gross and fragile...
-    if (stmtListNode->getNumKids())
-      if (StmtExprNode* s1 =
-            dynamic_cast<StmtExprNode*>(stmtListNode->getNthKid(0)))
-        if (FunctionCallNode* s2 =
-              dynamic_cast<FunctionCallNode*>(s1->getExpression()))
-          if (AttrAccessNode* s3 =
-                dynamic_cast<AttrAccessNode*>(s2->getPrimary()))
-            if (s3->getName() == "<ctor>")
-              if (dynamic_cast<VariableSuperNode*>(s3->getPrimary()))
-                ctorCallFound = true;
-  } // end pattern match
-
-  if (!ctorCallFound) {
+  if (!hasCallToSuper()) {
     // clone mode must be structural, because there are no
     // symbols at this point
     StmtExprNode *stmt =
@@ -590,12 +573,12 @@ CtorDeclNode::cloneForLiftImpl(LiftContext& ctx) {
 
 CtorDeclNode*
 CtorDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
+  assert(hasCallToSuper());
   return new CtorDeclNode(
     util::transform_vec(params.begin(), params.end(),
       ASTExpressionNode::CloneTemplateFunctor(t)),
     stmts->cloneForTemplate(t),
-    util::transform_vec(superArgs.begin(), superArgs.end(),
-      ASTExpressionNode::CloneTemplateFunctor(t)));
+    ExprNodeVec());
 }
 
 FuncDeclNode*
@@ -607,11 +590,35 @@ CtorDeclNode::newFuncDeclNodeForLift(
       ASTStatementNode* stmts) {
   assert(name == "<ctor>");
   assert(returnType->isVoid());
+  assert(hasCallToSuper());
   return new CtorDeclNode(
       params,
       stmts,
-      util::transform_vec(superArgs.begin(), superArgs.end(),
-        ASTExpressionNode::CloneLiftFunctor(ctx)));
+      ExprNodeVec());
+}
+
+bool
+CtorDeclNode::hasCallToSuper() const {
+  { // pattern match for ctor
+
+    VENOM_ASSERT_TYPEOF_PTR(StmtListNode, stmts);
+    StmtListNode* stmtListNode = static_cast<StmtListNode*>(stmts);
+
+    // TODO: gross and fragile...
+    if (stmtListNode->getNumKids())
+      if (StmtExprNode* s1 =
+            dynamic_cast<StmtExprNode*>(stmtListNode->getNthKid(0)))
+        if (FunctionCallNode* s2 =
+              dynamic_cast<FunctionCallNode*>(s1->getExpression()))
+          if (AttrAccessNode* s3 =
+                dynamic_cast<AttrAccessNode*>(s2->getPrimary()))
+            if (s3->getName() == "<ctor>")
+              if (dynamic_cast<VariableSuperNode*>(s3->getPrimary()))
+                return true;
+  } // end pattern match
+
+  // nothing found
+  return false;
 }
 
 }

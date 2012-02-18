@@ -57,14 +57,30 @@ ClassDeclNodeSynthetic::getTypeParamNames() const {
 void
 ClassDeclNodeSynthetic::print(ostream& o, size_t indent) {
   o << "(class " << name << std::endl << util::indent(indent + 1);
+
+  vector<string> parentnames(parentTypes.size());
+  transform(parentTypes.begin(), parentTypes.end(),
+            parentnames.begin(),
+            util::stringify_functor<InstantiatedType>::ptr());
+
+  // parents
+  o << "(parents (" <<
+    util::join(parentnames.begin(), parentnames.end(), " ") <<
+    "))" << std::endl << util::indent(indent + 1);
+
   vector<string> typenames(typeParamTypes.size());
   transform(typeParamTypes.begin(), typeParamTypes.end(),
             typenames.begin(),
             util::stringify_functor<InstantiatedType>::ptr());
+
+  // type params
   o << "(type-params (" <<
     util::join(typenames.begin(), typenames.end(), ",") <<
     "))" << std::endl << util::indent(indent + 1);
+
+  // statements
   stmts->print(o, indent + 1);
+
   o << ")";
 }
 

@@ -1,0 +1,28 @@
+class Baz
+  attr x::string
+  def self(x::string) = 
+    print(x); 
+    self.x = x;
+  end
+  def getX() -> string = x; end
+end
+
+class A
+  class B <- Baz
+    def self(x::int, y::string) : super(y) = print(x); end
+  end
+
+  attr elems::list{B} = []
+
+  def addB(x::int, y::string) =
+    b = B(x, y);
+    elems.append(b);
+  end
+end
+
+a = A();
+a.addB(10, "HI");
+a.addB(20, "BYE");
+
+print(a.elems[0].getX());
+print(a.elems[1].getX());

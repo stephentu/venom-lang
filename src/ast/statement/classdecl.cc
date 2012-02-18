@@ -249,8 +249,8 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
 
   vector<InstantiatedType*> tparents;
   tparents.reserve(parents.size());
-  for (vector<InstantiatedType*>::iterator it = tparents.begin();
-       it != tparents.end(); ++it) {
+  for (vector<InstantiatedType*>::iterator it = parents.begin();
+       it != parents.end(); ++it) {
     tparents.push_back(
         (*it)->findCodeGeneratableIType(ctx.definedIn->getSemanticContext()));
   }
@@ -327,10 +327,26 @@ struct instantiate_functor {
 void
 ClassDeclNodeParser::print(ostream& o, size_t indent) {
   o << "(class " << name << std::endl << util::indent(indent + 1);
+
+  // stringify parents
+  vector<string> sparents;
+  sparents.resize(parents.size());
+  transform(parents.begin(), parents.end(),
+            sparents.begin(), ParameterizedTypeString::StringerFunctor());
+
+  // parents
+  o << "(parents (" <<
+    util::join(sparents.begin(), sparents.end(), " ") <<
+    "))" << std::endl << util::indent(indent + 1);
+
+  // type params
   o << "(type-params (" <<
     util::join(typeParams.begin(), typeParams.end(), ",") <<
     "))" << std::endl << util::indent(indent + 1);
+
+  // statements
   stmts->print(o, indent + 1);
+
   o << ")";
 }
 
