@@ -224,7 +224,8 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
         new VariableNodeParser(
           "<outer>",
           csym->getSelfType(sctx)->toParameterizedString(ctx.liftInto)),
-        NULL);
+        NULL,
+        true /* private class attr */);
     static_cast<StmtListNode*>(stmtsClone)->prependStatement(cattr);
   }
 

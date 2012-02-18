@@ -1,0 +1,10 @@
+class A
+  class B 
+    def doStuff() = print("HI"); end
+  end
+  class C 
+    attr b::B = B()
+  end
+  def makeC() -> C = C(); end
+end
+A().makeC().b.doStuff();

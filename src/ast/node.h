@@ -62,6 +62,7 @@ namespace backend {
 
 namespace ast {
 
+class ASTExpressionNode;
 class ASTStatementNode;
 class FuncDeclNode;
 class ClassDeclNode;
@@ -412,6 +413,14 @@ public:
    * Definition is not in header, so it doesn't get inlined
    */
   void printStderr() const;
+
+  /** Static helpers **/
+
+  /**
+   * Returns <outer>. ... .<outer>.name (n outers)
+   */
+  static ASTExpressionNode*
+    CreateOuterAttrChain(size_t n, const std::string& name);
 
 protected:
 

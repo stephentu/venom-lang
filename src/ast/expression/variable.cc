@@ -202,18 +202,6 @@ VariableNodeParser::cloneImpl(CloneMode::Type type) {
   }
 }
 
-static ASTExpressionNode*
-createAttrChain0(size_t n) {
-  assert(n > 0);
-  if (n == 1) return new VariableNodeParser("<outer>", NULL);
-  return new AttrAccessNode(createAttrChain0(n - 1), "<outer>");
-}
-
-static ASTExpressionNode*
-createAttrChain(size_t n, const string& name) {
-  return new AttrAccessNode(createAttrChain0(n), name);
-}
-
 ASTExpressionNode*
 VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
   Symbol* s;
@@ -236,7 +224,7 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
 
       size_t n = symbols->countClassBoundaries(ctx.definedIn);
       assert(n > 0);
-      return createAttrChain(n, name);
+      return ASTNode::CreateOuterAttrChain(n, name);
     }
   }
 

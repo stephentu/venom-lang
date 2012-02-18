@@ -31,10 +31,14 @@
 
 #include <analysis/symboltable.h>
 
+#include <ast/expression/attraccess.h>
 #include <ast/expression/node.h>
+#include <ast/expression/variable.h>
+
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/node.h>
+
 #include <ast/node.h>
 
 #include <backend/codegenerator.h>
@@ -233,6 +237,18 @@ ASTNode::rewriteReturn(SemanticContext* ctx) { VENOM_NOT_REACHED; }
 void
 ASTNode::printStderr() const {
   const_cast<ASTNode*>(this)->print(cerr, 0);
+}
+
+static ASTExpressionNode* createAttrChain0(size_t n) {
+  assert(n > 0);
+  if (n == 1) return new VariableNodeParser("<outer>", NULL);
+  return new AttrAccessNode(createAttrChain0(n - 1), "<outer>");
+}
+
+ASTExpressionNode*
+ASTNode::CreateOuterAttrChain(size_t n, const string& name) {
+  if (n == 0) return new VariableNodeParser(name, NULL);
+  return new AttrAccessNode(createAttrChain0(n), name);
 }
 
 ASTNode*
