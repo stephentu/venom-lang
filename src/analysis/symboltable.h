@@ -206,7 +206,8 @@ public:
   Symbol*
   createClassAttributeSymbol(const std::string& name,
                              InstantiatedType* type,
-                             ClassSymbol* classSymbol);
+                             ClassSymbol* classSymbol,
+                             bool privateVariable);
 
   Symbol*
   findSymbol(const std::string& name, RecurseMode mode,

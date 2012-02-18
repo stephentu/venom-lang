@@ -156,7 +156,8 @@ ClassAttributeSymbol::cloneForTemplate(
   SymbolTable* table = newParent->getClassSymbolTable();
   SemanticContext* ctx = table->getSemanticContext();
   table->createClassAttributeSymbol(
-      name, t.translate(ctx, getInstantiatedType()), newParent);
+      name, t.translate(ctx, getInstantiatedType()),
+      newParent, privateVariable);
 }
 
 InstantiatedType*

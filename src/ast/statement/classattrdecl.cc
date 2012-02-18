@@ -59,12 +59,30 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
 
   // don't allow an attr to overshadow any decl
   // in a parent
-  if (symbols->isDefined(
-        var->getName(), SymbolTable::Any, SymbolTable::ClassParents)) {
-    throw SemanticViolationException(
-        "Name " + var->getName() + " already defined in parent");
+
+  TypeTranslator t;
+  BaseSymbol* bsym =
+    symbols->findBaseSymbol(
+        var->getName(), SymbolTable::Any, SymbolTable::ClassParents, t);
+  ClassAttributeSymbol* attrSym = dynamic_cast<ClassAttributeSymbol*>(bsym);
+
+  if (bsym) {
+    // found some symbol with the same name in a parent scope
+
+    if (!attrSym) {
+      // cannot shadow another class/method decl
+      throw SemanticViolationException(
+          "Name " + var->getName() + " already defined in parent");
+    }
+
+    if (!attrSym->isPrivateVariable() || !privateVariable) {
+      // only can shadow if both private
+      throw SemanticViolationException(
+          "Name " + var->getName() + " already defined in parent");
+    }
   }
 
+  // can never re-define in same class scope
   if (symbols->isDefined(
         var->getName(), SymbolTable::Any, SymbolTable::NoRecurse)) {
     throw SemanticViolationException(
@@ -79,7 +97,8 @@ ClassAttrDeclNode::registerSymbol(SemanticContext* ctx) {
   VENOM_ASSERT_TYPEOF_PTR(ClassSymbol, classSymbol);
 
   symbols->createClassAttributeSymbol(
-      var->getName(), itype, static_cast<ClassSymbol*>(classSymbol));
+      var->getName(), itype,
+      static_cast<ClassSymbol*>(classSymbol), privateVariable);
 }
 
 void

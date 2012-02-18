@@ -252,7 +252,8 @@ NewBootstrapSymbolTable(SemanticContext* ctx) {
                                 InstantiatedTypeVec(),
                                 InstantiatedType::VoidType, RefClassSym,
                                 NULL, true);
-  RefSymTab->createClassAttributeSymbol("value", RefTypeParam[0], RefClassSym);
+  RefSymTab->createClassAttributeSymbol(
+      "value", RefTypeParam[0], RefClassSym, false);
 
   SymbolTable *ClassTypeSymTab = root->newChildScopeNoNode();
   root->createClassSymbol("classtype", ClassTypeSymTab, Type::ClassType,

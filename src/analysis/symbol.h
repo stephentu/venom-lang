@@ -186,15 +186,18 @@ protected:
   ClassAttributeSymbol(const std::string& name,
                        SymbolTable*       table,
                        InstantiatedType*  type,
-                       ClassSymbol*       classSymbol)
+                       ClassSymbol*       classSymbol,
+                       bool               privateVariable)
     : Symbol(name, table, type, NULL),
-      classSymbol(classSymbol) {}
+      classSymbol(classSymbol), privateVariable(privateVariable) {}
 
   virtual ClassSymbol* getClassSymbolForSlotCalc() { return classSymbol; }
 
 public:
   inline ClassSymbol* getClassSymbol() { return classSymbol; }
   inline const ClassSymbol* getClassSymbol() const { return classSymbol; }
+
+  inline bool isPrivateVariable() const { return privateVariable; }
 
   virtual bool isObjectField() const { return true; }
 
@@ -203,6 +206,7 @@ public:
 
 private:
   ClassSymbol* classSymbol;
+  bool privateVariable;
 };
 
 /**

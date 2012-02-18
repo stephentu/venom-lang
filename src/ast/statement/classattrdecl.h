@@ -42,8 +42,10 @@ class ClassAttrDeclNode : public ASTStatementNode {
 public:
   /** Takes ownership of variable and value */
   ClassAttrDeclNode(ASTExpressionNode* variable,
-                    ASTExpressionNode* value)
-    : variable(variable), value(value) {}
+                    ASTExpressionNode* value,
+                    bool privateVariable = false)
+    : variable(variable), value(value),
+      privateVariable(privateVariable) {}
 
   ~ClassAttrDeclNode() {
     delete variable;
@@ -95,6 +97,7 @@ public:
 private:
   ASTExpressionNode* variable;
   ASTExpressionNode* value;
+  bool privateVariable;
 };
 
 }

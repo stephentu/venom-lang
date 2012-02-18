@@ -179,9 +179,11 @@ SymbolTable::createSymbol(const string&     name,
 
 Symbol*
 SymbolTable::createClassAttributeSymbol(
-  const string& name, InstantiatedType* type, ClassSymbol* classSymbol) {
+  const string& name, InstantiatedType* type,
+  ClassSymbol* classSymbol, bool privateVariable) {
 
-  Symbol *sym = new ClassAttributeSymbol(name, this, type, classSymbol);
+  Symbol *sym =
+    new ClassAttributeSymbol(name, this, type, classSymbol, privateVariable);
   symbolContainer.insert(name, sym);
   return sym;
 }
