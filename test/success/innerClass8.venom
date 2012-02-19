@@ -1,0 +1,12 @@
+class A
+  attr elem::int = 10
+  class B
+    class C
+      def speak() = print(elem); end
+    end
+    attr c = C()
+  end
+  attr b = B()
+end
+a = A();
+a.b.c.speak();

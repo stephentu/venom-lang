@@ -222,7 +222,15 @@ VariableNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       // number of class boundaries crossed when going from the *original*
       // (non-lifted) scope to the symbol's scope
 
-      size_t n = symbols->countClassBoundaries(ctx.definedIn);
+      ClassDeclNode* curClassScope = getEnclosingClassNode();
+      assert(curClassScope);
+
+      size_t n =
+        curClassScope
+          ->getClassSymbol()
+          ->getOriginalUnliftedSymbol()
+          ->getClassSymbolTable()
+          ->countClassBoundaries(ctx.definedIn);
       assert(n > 0);
       return ASTNode::CreateOuterAttrChain(n, name);
     }
