@@ -215,9 +215,9 @@ classdeclstmt : "class" IDENTIFIER typeparams inheritance classbodystmtlist "end
                 }
 
 attrdeclstmt : "attr" variable '=' expr
-             { $$ = new ast::ClassAttrDeclNode($2, $4);  }
+             { $$ = new ast::ClassAttrDeclNode($2, $4, false);  }
              | "attr" typedvariable attropteq
-             { $$ = new ast::ClassAttrDeclNode($2, $3);  }
+             { $$ = new ast::ClassAttrDeclNode($2, $3, false);  }
 
 attropteq : /* empty */ { $$ = NULL; }
           | '=' expr    { $$ = $2;   }

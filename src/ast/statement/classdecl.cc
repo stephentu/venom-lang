@@ -242,7 +242,8 @@ ClassDeclNode::cloneForLiftImplHelper(LiftContext& ctx) {
       new ClassAttrDeclNode(
         new VariableNodeParser(
           ctx.refParamName(s), refType->toParameterizedString(ctx.liftInto)),
-        NULL);
+        NULL,
+        false);
     static_cast<StmtListNode*>(stmtsClone)->prependStatement(cattr);
   }
 

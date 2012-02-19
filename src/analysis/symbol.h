@@ -400,6 +400,14 @@ public:
   inline ClassSymbol* getUnliftedSymbol() { return lifter; }
   inline const ClassSymbol* getUnliftedSymbol() const { return lifter; }
 
+  inline ClassSymbol* getOriginalUnliftedSymbol() {
+    ClassSymbol* cur = this;
+    while (cur->lifter) cur = cur->lifter;
+    return cur;
+  }
+  inline const ClassSymbol* getOriginalUnliftedSymbol() const
+    { return const_cast<ClassSymbol*>(this)->getOriginalUnliftedSymbol(); }
+
   inline bool isLiftedClass() const { return lifter; }
 
   inline bool isLiftOf(const ClassSymbol* that) const {

@@ -43,7 +43,7 @@ public:
   /** Takes ownership of variable and value */
   ClassAttrDeclNode(ASTExpressionNode* variable,
                     ASTExpressionNode* value,
-                    bool privateVariable = false)
+                    bool privateVariable)
     : variable(variable), value(value),
       privateVariable(privateVariable) {}
 

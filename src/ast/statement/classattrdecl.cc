@@ -192,21 +192,24 @@ ClassAttrDeclNode*
 ClassAttrDeclNode::cloneImpl(CloneMode::Type type) {
   return new ClassAttrDeclNode(
       variable->clone(type),
-      value ? value->clone(type) : NULL);
+      value ? value->clone(type) : NULL,
+      privateVariable);
 }
 
 ASTStatementNode*
 ClassAttrDeclNode::cloneForLiftImpl(LiftContext& ctx) {
   return new ClassAttrDeclNode(
       variable->cloneForLift(ctx),
-      value ? value->cloneForLift(ctx) : NULL);
+      value ? value->cloneForLift(ctx) : NULL,
+      privateVariable);
 }
 
 ClassAttrDeclNode*
 ClassAttrDeclNode::cloneForTemplateImpl(const TypeTranslator& t) {
   return new ClassAttrDeclNode(
       variable->cloneForTemplate(t),
-      value ? value->cloneForTemplate(t) : NULL);
+      value ? value->cloneForTemplate(t) : NULL,
+      privateVariable);
 }
 
 }

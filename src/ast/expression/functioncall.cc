@@ -495,10 +495,20 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
         ClassDeclNode* cdn =
           static_cast<ClassDeclNode*>(csym->getClassSymbolTable()->getOwner());
         if (cdn->isNestedClass()) {
+          ClassDeclNode* curClassScope = getEnclosingClassNode();
+          assert(curClassScope);
+
           ClassDeclNode* outer = cdn->getEnclosingClassNode();
           assert(outer);
-          size_t n = symbols->countClassBoundaries(
-              outer->getClassSymbol()->getClassSymbolTable());
+
+          size_t n =
+            curClassScope
+              ->getClassSymbol()
+              ->getOriginalUnliftedSymbol()
+              ->getClassSymbolTable()
+              ->countClassBoundaries(
+                outer->getClassSymbol()->getClassSymbolTable());
+
           if (n == 0) {
             liftedParamExprs.push_back(new VariableSelfNode);
           } else {
