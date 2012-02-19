@@ -107,8 +107,10 @@ AssignNode::rewriteAfterLift(
           new AssignExprNode(
             variable->clone(CloneMode::Semantic),
             new FunctionCallNodeSynthetic(
-              new SymbolNode(Type::RefType->getClassSymbol()),
-              util::vec1(variable->getStaticType()),
+              new VariableNodeParser(
+                variable->getStaticType()->refify(ctx)->createClassName(),
+                NULL),
+              InstantiatedTypeVec(),
               ExprNodeVec())));
 
         // semantic/typecheck so that we can rewrite the var/value
@@ -191,7 +193,8 @@ AssignNode::TypeCheckAssignment(
   if (lhs) {
     // require rhs <: lhs
     if (!rhs->isSubtypeOf(*lhs) &&
-        !rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol())) {
+        !rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol()) &&
+        !rhs->isSpecializationOf(lhs)) {
       throw TypeViolationException(
           "Cannot assign type " + rhs->stringify() + " to type " + lhs->stringify());
     }

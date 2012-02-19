@@ -441,6 +441,11 @@ InstantiatedType::refify(SemanticContext* ctx) {
   return Type::RefType->instantiate(ctx, util::vec1(this));
 }
 
+bool
+InstantiatedType::isSpecializationOf(InstantiatedType* that) const {
+  return getClassSymbol() == that->findSpecializedClassSymbol();
+}
+
 ParameterizedTypeString*
 InstantiatedType::toParameterizedString(SymbolTable* boundaryScope) {
   assert(boundaryScope);

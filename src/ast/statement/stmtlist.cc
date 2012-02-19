@@ -339,6 +339,34 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
     }
   }
 
+  // since this phase runs *after* template instantiation,
+  // need to instantiate ref types manually. while this may seem
+  // sub-optimal (why don't we just run lifting before template
+  // instantiation), this is probably the easier approach, since
+  // having to worry about type parameters while lifting is a bit
+  // more tricky (not impossible, but would be more code than this...)
+  SymbolTable* rootTable =
+    ctx->getProgramRoot()->getRootSymbolTable();
+  for (set<BaseSymbol*>::iterator it = refs.begin();
+       it != refs.end(); ++it) {
+    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
+    Symbol* sym = static_cast<Symbol*>(*it);
+
+    // TODO: this is somewhat copy/pasted from
+    // parser/driver.cc. Should refactor this out
+    InstantiatedType* itype = sym->getInstantiatedType()->refify(ctx);
+    TypeTranslator t;
+    ClassSymbol* csym =
+      rootTable->findClassSymbol(
+          itype->createClassName(),
+          SymbolTable::NoRecurse, t);
+    if (!csym) {
+      TypeTranslator t;
+      t.bind(itype);
+      itype->getClassSymbol()->instantiateSpecializedType(t);
+    }
+  }
+
   StmtNodeVec postPrepend;
   if (hasLocationContext(TopLevelFuncBody)) {
     // need to possibly rewrite parameters, for a case like this:
@@ -386,16 +414,19 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
         // param = ref{type}();
         ->appendExpression(
           new AssignExprNode(
-            new SymbolNode(s),
+            new VariableNodeParser(s->getName(), NULL),
             new FunctionCallNodeSynthetic(
-              new SymbolNode(Type::RefType->getClassSymbol()),
-              util::vec1(s->getInstantiatedType()),
+              new VariableNodeParser(
+                s->getInstantiatedType()->refify(ctx)->createClassName(),
+                NULL),
+              InstantiatedTypeVec(),
               ExprNodeVec())))
         // param.value = param$renamed;
         ->appendExpression(
           new AssignExprNode(
-            new AttrAccessNode(new SymbolNode(s), "value"),
-            new SymbolNode(repSym)));
+            new AttrAccessNode(
+              new VariableNodeParser(s->getName(), NULL), "value"),
+            new VariableNodeParser(repSym->getName(), NULL)));
 
       // get ready to insert this stmtexpr into the stmt body
       stmtexpr->initSymbolTable(symbols);
@@ -418,34 +449,6 @@ StmtListNode::liftPhaseImpl(SemanticContext* ctx,
   for (StmtNodeVec::reverse_iterator it = postPrepend.rbegin();
        it != postPrepend.rend(); ++it) {
     prependStatement(*it);
-  }
-
-  // since this phase runs *after* template instantiation,
-  // need to instantiate ref types manually. while this may seem
-  // sub-optimal (why don't we just run lifting before template
-  // instantiation), this is probably the easier approach, since
-  // having to worry about type parameters while lifting is a bit
-  // more tricky (not impossible, but would be more code than this...)
-  SymbolTable* rootTable =
-    ctx->getProgramRoot()->getRootSymbolTable();
-  for (set<BaseSymbol*>::iterator it = refs.begin();
-       it != refs.end(); ++it) {
-    VENOM_ASSERT_TYPEOF_PTR(Symbol, *it);
-    Symbol* sym = static_cast<Symbol*>(*it);
-
-    // TODO: this is somewhat copy/pasted from
-    // parser/driver.cc. Should refactor this out
-    InstantiatedType* itype = sym->getInstantiatedType()->refify(ctx);
-    TypeTranslator t;
-    ClassSymbol* csym =
-      rootTable->findClassSymbol(
-          itype->createClassName(),
-          SymbolTable::NoRecurse, t);
-    if (!csym) {
-      TypeTranslator t;
-      t.bind(itype);
-      itype->getClassSymbol()->instantiateSpecializedType(t);
-    }
   }
 }
 

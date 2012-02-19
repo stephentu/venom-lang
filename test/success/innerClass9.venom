@@ -8,7 +8,11 @@ def foo(x::int) =
           class C <- B
             def speak(t::T) = print(t); end
           end
+          class D <- B
+            def speak() = print(t); end
+          end
           C().speak(t);
+          D().speak();
         end
         bar{int}(x);
       end

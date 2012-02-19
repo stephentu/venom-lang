@@ -408,6 +408,11 @@ public:
   InstantiatedType* refify(analysis::SemanticContext* ctx);
 
   /**
+   * Returns true if this type is a specialization of that
+   */
+  bool isSpecializationOf(InstantiatedType* that) const;
+
+  /**
    * If findOrigDef is true, finds the original
    * definition for the method symbol. If it is false,
    * finds the first occurance from this type all the

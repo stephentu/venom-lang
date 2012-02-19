@@ -76,7 +76,8 @@ struct param_functor_t {
   // returns true if rhs is a lift of lhs
   inline bool checkLift(InstantiatedType* lhs,
                         InstantiatedType* rhs) const {
-    return rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol());
+    return rhs->getClassSymbol()->isLiftOf(lhs->getClassSymbol()) ||
+           rhs->isSpecializationOf(lhs);
   }
   inline bool operator()(InstantiatedType* lhs,
                          InstantiatedType* rhs) const {

@@ -1,0 +1,10 @@
+def bar() = 
+  def foo{T}(t::T) =
+    class A 
+      def speak() = print(t); end
+    end
+    A().speak();
+  end
+  foo{int}(100);
+end
+bar();
