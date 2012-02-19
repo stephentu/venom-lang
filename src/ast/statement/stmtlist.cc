@@ -494,8 +494,14 @@ StmtListNode::cloneImpl(CloneMode::Type type) {
 
 ASTStatementNode*
 StmtListNode::cloneForLiftImpl(LiftContext& ctx) {
+  StmtNodeVec filteredStmts;
+  filteredStmts.reserve(stmts.size());
+  for (StmtNodeVec::iterator it = stmts.begin();
+       it != stmts.end(); ++it) {
+    if (!(*it)->isTypeParameterized()) filteredStmts.push_back(*it);
+  }
   return new StmtListNode(
-      util::transform_vec(stmts.begin(), stmts.end(),
+      util::transform_vec(filteredStmts.begin(), filteredStmts.end(),
         ASTStatementNode::CloneLiftFunctor(ctx)));
 }
 

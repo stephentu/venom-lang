@@ -68,13 +68,7 @@ FunctionCallNodeSynthetic::cloneImpl(CloneMode::Type type) {
 
 ASTExpressionNode*
 FunctionCallNodeSynthetic::cloneForLiftImpl(LiftContext& ctx) {
-  // TODO: implement rewrite...
-  return new FunctionCallNodeSynthetic(
-      primary->cloneForLift(ctx),
-      typeArgTypes,
-      util::transform_vec(
-        args.begin(), args.end(),
-        ASTExpressionNode::CloneLiftFunctor(ctx)));
+  return cloneForLiftImplHelper(ctx);
 }
 
 FunctionCallNode*

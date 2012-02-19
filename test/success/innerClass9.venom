@@ -1,0 +1,19 @@
+def foo(x::int) =
+  if x < 10 then
+    class A 
+      def foo() =
+        class B
+        end
+        def bar{T}(t::T) =
+          class C <- B
+            def speak(t::T) = print(t); end
+          end
+          C().speak(t);
+        end
+        bar{int}(x);
+      end
+    end
+    A().foo();
+  end
+end
+foo(9);

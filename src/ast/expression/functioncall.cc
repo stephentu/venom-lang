@@ -441,30 +441,6 @@ FunctionCallNode::codeGen(CodeGenerator& cg) {
   }
 }
 
-FunctionCallNode*
-FunctionCallNodeParser::cloneImpl(CloneMode::Type type) {
-  switch (type) {
-  case CloneMode::Structural:
-    return new FunctionCallNodeParser(
-        primary->clone(type),
-        util::transform_vec(
-          typeArgs.begin(), typeArgs.end(),
-          ParameterizedTypeString::CloneFunctor()),
-        util::transform_vec(
-          args.begin(), args.end(),
-          ASTExpressionNode::CloneFunctor(type)));
-  case CloneMode::Semantic:
-    assert(typeArgs.size() == typeArgTypes.size());
-    return new FunctionCallNodeSynthetic(
-        primary->clone(type),
-        typeArgTypes,
-        util::transform_vec(
-          args.begin(), args.end(),
-          ASTExpressionNode::CloneFunctor(type)));
-  default: VENOM_NOT_REACHED;
-  }
-}
-
 static ASTExpressionNode* createChainOfOuters(size_t n) {
   assert(n > 0);
   if (n == 1) return new VariableNodeParser("<outer>", NULL);
@@ -472,20 +448,22 @@ static ASTExpressionNode* createChainOfOuters(size_t n) {
 }
 
 ASTExpressionNode*
-FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
-  assert(typeArgs.empty());
+FunctionCallNode::cloneForLiftImplHelper(LiftContext& ctx) {
+  assert(getTypeParams().empty());
 
   BaseSymbol* psym = primary->getSymbol();
   if (psym) {
 
-    // if we are invoking a constructor directly, then
-    // set the symbol to the class symbol (since constructors
-    // should never be lifted symbols by themselves)
+    // if we are invoking a constructor directly, then set the
+    // symbol to the class symbol (since constructors should never be lifted
+    // symbols by themselves)
+    bool foundCtor = false;
     if (MethodSymbol* msym = dynamic_cast<MethodSymbol*>(psym)) {
       if (msym->isConstructor()) {
         assert(ctx.liftMap.find(msym) == ctx.liftMap.end());
         if (msym->getClassSymbol()->getUnliftedSymbol()) {
           psym = msym->getClassSymbol()->getUnliftedSymbol();
+          foundCtor = true;
         }
       }
     }
@@ -498,7 +476,9 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       liftedParamExprs.reserve(liftedParams.size() + args.size() + 1);
 
       // take care of <outer> reference first
-      if (ClassSymbol* csym = dynamic_cast<ClassSymbol*>(psym)) {
+      ClassSymbol* csym;
+      if ((csym = dynamic_cast<ClassSymbol*>(psym)) &&
+          (!csym->isLiftedClass() || foundCtor)) {
         VENOM_ASSERT_TYPEOF_PTR(
             ClassDeclNode, csym->getClassSymbolTable()->getOwner());
         ClassDeclNode* cdn =
@@ -558,6 +538,35 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       util::transform_vec(
         args.begin(), args.end(),
         ASTExpressionNode::CloneLiftFunctor(ctx)));
+}
+
+FunctionCallNode*
+FunctionCallNodeParser::cloneImpl(CloneMode::Type type) {
+  switch (type) {
+  case CloneMode::Structural:
+    return new FunctionCallNodeParser(
+        primary->clone(type),
+        util::transform_vec(
+          typeArgs.begin(), typeArgs.end(),
+          ParameterizedTypeString::CloneFunctor()),
+        util::transform_vec(
+          args.begin(), args.end(),
+          ASTExpressionNode::CloneFunctor(type)));
+  case CloneMode::Semantic:
+    assert(typeArgs.size() == typeArgTypes.size());
+    return new FunctionCallNodeSynthetic(
+        primary->clone(type),
+        typeArgTypes,
+        util::transform_vec(
+          args.begin(), args.end(),
+          ASTExpressionNode::CloneFunctor(type)));
+  default: VENOM_NOT_REACHED;
+  }
+}
+
+ASTExpressionNode*
+FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  return cloneForLiftImplHelper(ctx);
 }
 
 FunctionCallNode*

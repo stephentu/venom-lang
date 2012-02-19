@@ -113,6 +113,8 @@ public:
 protected:
   virtual void checkAndInitTypeParams(analysis::SemanticContext* ctx) = 0;
 
+  ASTExpressionNode* cloneForLiftImplHelper(LiftContext& ctx);
+
   ASTExpressionNode* primary;
   ExprNodeVec        args;
 };
