@@ -27,7 +27,67 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ast/expression/synthetic/functioncall.h>
-#include <ast/expression/synthetic/outer.h>
-#include <ast/expression/synthetic/symbolnode.h>
-#include <ast/expression/synthetic/variable.h>
+#ifndef VENOM_AST_SYNTHETIC_OUTER_H
+#define VENOM_AST_SYNTHETIC_OUTER_H
+
+#include <ast/expression/node.h>
+
+namespace venom {
+namespace ast {
+
+/**
+ * This class exists as a hack
+ */
+class OuterNode : public ASTExpressionNode {
+public:
+  /** Takes ownership of expr */
+  OuterNode(ASTExpressionNode* primary)
+    : primary(primary) {}
+
+  ~OuterNode() { delete primary; }
+
+  inline ASTExpressionNode* getPrimary() { return primary; }
+  inline const ASTExpressionNode* getPrimary() const { return primary; }
+
+  virtual size_t getNumKids() const { return 1; }
+
+  virtual ASTNode* getNthKid(size_t kid) {
+    VENOM_CHECK_RANGE(kid, 1);
+    return primary;
+  }
+
+  virtual void setNthKid(size_t idx, ASTNode* kid) {
+    VENOM_CHECK_RANGE(idx, 1);
+    VENOM_SAFE_SET_EXPR(primary, kid);
+  }
+
+  virtual bool needsNewScope(size_t k) const {
+    VENOM_CHECK_RANGE(k, 1);
+    return false;
+  }
+
+  virtual void codeGen(backend::CodeGenerator& cg);
+
+  VENOM_AST_TYPED_CLONE_WITH_IMPL_DECL_EXPR(OuterNode)
+
+protected:
+  virtual analysis::InstantiatedType*
+    typeCheckImpl(analysis::SemanticContext* ctx,
+                  analysis::InstantiatedType* expected,
+                  const analysis::InstantiatedTypeVec& typeParamArgs);
+
+public:
+  virtual void print(std::ostream& o, size_t indent = 0) {
+    o << "(outer-node-synthetic ";
+    primary->print(o, indent);
+    o << ")";
+  }
+
+private:
+  ASTExpressionNode* primary;
+};
+
+}
+}
+
+#endif /* VENOM_AST_SYNTHETIC_OUTER_H */

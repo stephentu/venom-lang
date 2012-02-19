@@ -35,6 +35,8 @@
 #include <ast/expression/node.h>
 #include <ast/expression/variable.h>
 
+#include <ast/expression/synthetic/outer.h>
+
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
 #include <ast/statement/node.h>
@@ -242,7 +244,7 @@ ASTNode::printStderr() const {
 static ASTExpressionNode* createAttrChain0(size_t n) {
   assert(n > 0);
   if (n == 1) return new VariableNodeParser("<outer>", NULL);
-  return new AttrAccessNode(createAttrChain0(n - 1), "<outer>");
+  return new OuterNode(createAttrChain0(n - 1));
 }
 
 ASTExpressionNode*

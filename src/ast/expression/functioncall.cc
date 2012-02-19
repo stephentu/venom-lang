@@ -35,6 +35,7 @@
 #include <ast/expression/variable.h>
 
 #include <ast/expression/synthetic/functioncall.h>
+#include <ast/expression/synthetic/outer.h>
 
 #include <ast/statement/classdecl.h>
 #include <ast/statement/funcdecl.h>
@@ -464,6 +465,12 @@ FunctionCallNodeParser::cloneImpl(CloneMode::Type type) {
   }
 }
 
+static ASTExpressionNode* createChainOfOuters(size_t n) {
+  assert(n > 0);
+  if (n == 1) return new VariableNodeParser("<outer>", NULL);
+  return new OuterNode(createChainOfOuters(n - 1));
+}
+
 ASTExpressionNode*
 FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
   BaseSymbol* psym = primary->getSymbol();
@@ -512,8 +519,7 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
           if (n == 0) {
             liftedParamExprs.push_back(new VariableSelfNode);
           } else {
-            liftedParamExprs.push_back(
-                ASTNode::CreateOuterAttrChain(n - 1, "<outer>"));
+            liftedParamExprs.push_back(createChainOfOuters(n));
           }
         }
       }
