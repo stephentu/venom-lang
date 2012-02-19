@@ -473,6 +473,8 @@ static ASTExpressionNode* createChainOfOuters(size_t n) {
 
 ASTExpressionNode*
 FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
+  assert(typeArgs.empty());
+
   BaseSymbol* psym = primary->getSymbol();
   if (psym) {
 
@@ -546,17 +548,13 @@ FunctionCallNodeParser::cloneForLiftImpl(LiftContext& ctx) {
       // replace calling the rewritten function
       return new FunctionCallNodeParser(
           primary->cloneForLift(ctx),
-          util::transform_vec(
-            typeArgs.begin(), typeArgs.end(),
-            ParameterizedTypeString::CloneFunctor()),
+          TypeStringVec(),
           liftedParamExprs);
     }
   }
   return new FunctionCallNodeParser(
       primary->cloneForLift(ctx),
-      util::transform_vec(
-        typeArgs.begin(), typeArgs.end(),
-        ParameterizedTypeString::CloneFunctor()),
+      TypeStringVec(),
       util::transform_vec(
         args.begin(), args.end(),
         ASTExpressionNode::CloneLiftFunctor(ctx)));
